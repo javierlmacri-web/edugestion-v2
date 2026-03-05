@@ -219,7 +219,7 @@ const TABS = [
   { id: "materias",  icon: "📚", label: "Materias" },
   { id: "alumnos",   icon: "👤", label: "Alumnos" },
   { id: "eventos",   icon: "📅", label: "Eventos del Colegio" }, ];
-const Dashboard = ({ data, setData, colegioId }) => {
+const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
   const [vista, setVista] = useState(null); // null | "materias" | "alumnos" | "notas" | "promedio" | "actividades"
   const [detalleMateria, setDetalleMateria] = useState(null); const [detalleAlumno, setDetalleAlumno] = useState(null); const [matFiltro, setMatFiltro] = useState(null);
@@ -267,7 +267,7 @@ const Dashboard = ({ data, setData, colegioId }) => {
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Materias" }]} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>📚 Materias del Colegio</h2>
-          <Btn onClick={() => { setVista(null); setTimeout(() => { setTab("materias"); }, 10); }}>+ Nueva Materia</Btn>
+          <Btn onClick={() => { onChangeTab && onChangeTab("materias"); }}>+ Nueva Materia</Btn>
         </div>
         {mats.length === 0 ? <Empty icon="📚" msg="No hay materias registradas." /> : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
@@ -292,7 +292,7 @@ const Dashboard = ({ data, setData, colegioId }) => {
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Alumnos" }]} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>👤 Alumnos del Colegio</h2>
-          <Btn onClick={() => { setVista(null); setTimeout(() => { setTab("alumnos"); }, 10); }}>+ Nuevo Alumno</Btn>
+          <Btn onClick={() => { onChangeTab && onChangeTab("alumnos"); }}>+ Nuevo Alumno</Btn>
         </div>
         {als.length === 0 ? <Empty icon="👤" msg="No hay alumnos registrados." /> : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
@@ -1950,7 +1950,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
 
       {/* Contenido principal móvil */}
       <main style={{ flex: 1, padding: "16px 14px", overflowY: "auto" }}>
-        <View data={data} setData={setData} colegioId={colegioId} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
+        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
 
       {/* Tab bar inferior móvil */}
@@ -2005,7 +2005,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
         </div>
       </aside>
       <main style={{ flex: 1, padding: 32, overflowY: "auto" }}>
-        <View data={data} setData={setData} colegioId={colegioId} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
+        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
     </div>
   );
