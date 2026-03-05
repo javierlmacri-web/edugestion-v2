@@ -1692,8 +1692,9 @@ const AppInterna = ({ data, setData, colegioId, onSalir }) => {
   const col = data.colegios.find(c => c.id === colegioId);
   const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos };
   const View = views[tab];
+  const [tabKey, setTabKey] = useState(0);
   const goInicio = () => { setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false); };
-  const handleTab = (id) => { id === "dashboard" ? goInicio() : setTab(id); setMenuOpen(false); };
+  const handleTab = (id) => { if (id === "dashboard") { goInicio(); } else { setTab(id); setTabKey(k => k + 1); setMenuOpen(false); } };
   const handleExport = () => {
     setExportando(true);
     setTimeout(() => { exportarExcel(data, colegioId); setExportando(false); }, 100);
@@ -1737,7 +1738,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir }) => {
 
       {/* Contenido principal móvil */}
       <main style={{ flex: 1, padding: "16px 14px", overflowY: "auto" }}>
-        <View data={data} setData={setData} colegioId={colegioId} key={tab === "dashboard" ? `dash-${dashKey}` : tab} />
+        <View data={data} setData={setData} colegioId={colegioId} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
 
       {/* Tab bar inferior móvil */}
