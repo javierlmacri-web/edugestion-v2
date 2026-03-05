@@ -28,8 +28,8 @@ const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).
 const nc = (n) => { if (n === null || n === undefined) return C.muted; const v = parseFloat(n); return v >= 7 ? C.green : v >= 5 ? C.yellow : C.red; };
 
 const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias"};
-const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",created_at:null}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
-const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist"}; const out={}; for(const [k,v] of Object.entries(obj)){out[map[k]||k]=v;} return out; };
+const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",created_at:null}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
+const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac"}; const out={}; for(const [k,v] of Object.entries(obj)){out[map[k]||k]=v;} return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
 const saveD = async () => {};
 const upsertRow = async (table, obj) => { try { const {error} = await supabase.from(TABLE_MAP[table]).upsert(toDB(obj),{onConflict:"id"}); if(error)console.error("upsert",table,error); } catch(e){console.error(e);} };
