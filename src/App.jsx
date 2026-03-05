@@ -1036,7 +1036,24 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13 }}>
                   <Inp label="DNI" value={formNuevo.dni} onChange={e => setFormNuevo(f => ({ ...f, dni: e.target.value }))} placeholder="40123456" />
-                  <Inp label="Curso / Grado" value={formNuevo.curso} onChange={e => setFormNuevo(f => ({ ...f, curso: e.target.value }))} placeholder="Ej: 3° B" />
+                  <Sel label="Curso / Grado" value={formNuevo.curso} onChange={e => setFormNuevo(f => ({ ...f, curso: e.target.value }))}>
+                    <option value="">-- Seleccionar --</option>
+                    <optgroup label="1° Año">
+                      <option value="1° Año - División 1">1° Año - División 1</option>
+                      <option value="1° Año - División 2">1° Año - División 2</option>
+                      <option value="1° Año - División 3">1° Año - División 3</option>
+                    </optgroup>
+                    <optgroup label="2° y 3° Año">
+                      <option value="2° y 3° Año - División 1">2° y 3° Año - División 1</option>
+                      <option value="2° y 3° Año - División 2">2° y 3° Año - División 2</option>
+                      <option value="2° y 3° Año - División 3">2° y 3° Año - División 3</option>
+                    </optgroup>
+                    <optgroup label="4° y 5° Año">
+                      <option value="4° y 5° Año - División 1">4° y 5° Año - División 1</option>
+                      <option value="4° y 5° Año - División 2">4° y 5° Año - División 2</option>
+                      <option value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
+                    </optgroup>
+                  </Sel>
                 </div>
                 <Inp label="Email" value={formNuevo.email} onChange={e => setFormNuevo(f => ({ ...f, email: e.target.value }))} placeholder="juan@email.com" />
                 <Inp label="Teléfono" value={formNuevo.telefono} onChange={e => setFormNuevo(f => ({ ...f, telefono: e.target.value }))} placeholder="011-1234-5678" />
@@ -1241,7 +1258,24 @@ const Alumnos = ({ data, setData, colegioId }) => {
               <Inp label="DNI" value={form.dni} onChange={e => setForm(f => ({ ...f, dni: e.target.value }))} placeholder="40123456" />
               <Inp label="Fecha de nacimiento" type="date" value={form.fechaNac} onChange={e => setForm(f => ({ ...f, fechaNac: e.target.value }))} />
             </div>
-            <Inp label="Curso / Grado" value={form.curso} onChange={e => setForm(f => ({ ...f, curso: e.target.value }))} placeholder="Ej: 3° B" />
+            <Sel label="Curso / Grado" value={form.curso} onChange={e => setForm(f => ({ ...f, curso: e.target.value }))}>
+              <option value="">-- Seleccionar --</option>
+              <optgroup label="1° Año">
+                <option value="1° Año - División 1">1° Año - División 1</option>
+                <option value="1° Año - División 2">1° Año - División 2</option>
+                <option value="1° Año - División 3">1° Año - División 3</option>
+              </optgroup>
+              <optgroup label="2° y 3° Año">
+                <option value="2° y 3° Año - División 1">2° y 3° Año - División 1</option>
+                <option value="2° y 3° Año - División 2">2° y 3° Año - División 2</option>
+                <option value="2° y 3° Año - División 3">2° y 3° Año - División 3</option>
+              </optgroup>
+              <optgroup label="4° y 5° Año">
+                <option value="4° y 5° Año - División 1">4° y 5° Año - División 1</option>
+                <option value="4° y 5° Año - División 2">4° y 5° Año - División 2</option>
+                <option value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
+              </optgroup>
+            </Sel>
             <Inp label="Email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="juan@email.com" />
             <Inp label="Teléfono" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} placeholder="011-1234-5678" />
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
