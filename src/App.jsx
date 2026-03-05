@@ -805,27 +805,58 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>EVALUACIONES</div><div style={{ fontSize: 28, fontWeight: 900, color: C.dim }}>{notas.length}</div></div>
               <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>ASISTENCIA</div><div style={{ fontSize: 28, fontWeight: 900, color: asistColor }}>{pctAsist !== null ? `${pctAsist}%` : "—"}</div></div>
             </Box>
-            {notas.length >= 2 && (
-              <Box style={{ marginTop: 12, padding: "16px 22px" }}>
-                <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, marginBottom: 14, textTransform: "uppercase", letterSpacing: 1.1 }}>📈 Evolución de notas</div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
-                  {[...notas].sort((a,b) => new Date(a.fecha)-new Date(b.fecha)).map((n, i) => {
-                    const v = parseFloat(n.nota); const pct = isNaN(v) ? 0 : (v/10)*100;
-                    return (
-                      <div key={n.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                        <div style={{ fontSize: 10, color: nc(v), fontWeight: 700 }}>{n.nota}</div>
-                        <div style={{ width: "100%", height: `${pct}%`, minHeight: 4, background: nc(v), borderRadius: "4px 4px 0 0", transition: "height .3s" }} title={`${n.tipo}: ${n.nota} — ${n.fecha}`} />
-                        <div style={{ fontSize: 9, color: C.muted, textAlign: "center", writingMode: "vertical-rl", transform: "rotate(180deg)", height: 32, overflow: "hidden" }}>{n.tipo?.slice(0,3)}</div>
+            {notas.length >= 1 && (() => {
+              const tipoColors = { parcial: "#6c63ff", final: "#f87171", trabajo: "#2dd4bf", oral: "#fbbf24", recuperatorio: "#f97316", otro: "#60a5fa" };
+              const cuatri1 = notas.filter(n => { const m = new Date(n.fecha+"T12:00:00").getMonth()+1; return m>=3&&m<=6; });
+              const cuatri2 = notas.filter(n => { const m = new Date(n.fecha+"T12:00:00").getMonth()+1; return m>=8&&m<=11; });
+              const tiposPresentes = [...new Set(notas.map(n=>n.tipo).filter(Boolean))];
+              const maxNota = 10;
+              const BarGroup = ({ notasGrupo, label }) => (
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textAlign: "center", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
+                  {notasGrupo.length === 0 ? (
+                    <div style={{ textAlign: "center", color: C.muted, fontSize: 12, padding: "20px 0" }}>Sin notas</div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 120, padding: "0 8px" }}>
+                      {[...notasGrupo].sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).map(n => {
+                        const v = parseFloat(n.nota);
+                        const pct = isNaN(v) ? 0 : (v/maxNota)*100;
+                        const color = tipoColors[n.tipo] || C.dim;
+                        return (
+                          <div key={n.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, minWidth: 28 }}>
+                            <div style={{ fontSize: 11, fontWeight: 900, color }}>{n.nota}</div>
+                            <div style={{ width: "100%", height: `${pct}%`, minHeight: 4, background: color, borderRadius: "4px 4px 0 0", transition: "height .4s", cursor: "default", position: "relative" }}
+                              title={`${n.tipo}: ${n.nota}
+${n.descripcion||""}
+${n.fecha||""}`} />
+                            <div style={{ fontSize: 9, color: C.muted, textAlign: "center", overflow: "hidden", maxWidth: "100%", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{n.fecha?.slice(5)}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+              return (
+                <Box style={{ marginTop: 12, padding: "18px 22px" }}>
+                  <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, marginBottom: 16, textTransform: "uppercase", letterSpacing: 1.1 }}>📊 Evolución por cuatrimestre</div>
+                  <div style={{ display: "flex", gap: 0 }}>
+                    <BarGroup notasGrupo={cuatri1} label="1° Cuatrimestre (Mar–Jun)" />
+                    <div style={{ width: 1, background: C.border, margin: "0 16px" }} />
+                    <BarGroup notasGrupo={cuatri2} label="2° Cuatrimestre (Ago–Nov)" />
+                  </div>
+                  {/* Leyenda tipos */}
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+                    {tiposPresentes.map(tipo => (
+                      <div key={tipo} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ width: 12, height: 12, borderRadius: 3, background: tipoColors[tipo]||C.dim }} />
+                        <span style={{ fontSize: 11, color: C.dim, textTransform: "capitalize" }}>{tipo}</span>
                       </div>
-                    );
-                  })}
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                  <span style={{ fontSize: 10, color: C.muted }}>Primera evaluación</span>
-                  <span style={{ fontSize: 10, color: C.muted }}>Última evaluación</span>
-                </div>
-              </Box>
-            )}
+                    ))}
+                  </div>
+                </Box>
+              );
+            })()}
             </>
           )}
         </div> )}
