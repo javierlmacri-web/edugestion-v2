@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
-  "https://obzxttlnzfsokxfzrmwa.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ienh0dGxuemZzb2t4ZnpybXdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MjcyNDcsImV4cCI6MjA4ODIwMzI0N30.em1fE8WMv-VQeKF3Gh7T9ofSCeAmNTVMgsPOu7E9MgY"
+  "https://vqwosiwppdfsifwravsh.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ienh0dGxuemZzb2t4ZnpybXdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MjcyNDcsImV4cCI6MjA4ODIwMzI0N30.z5zeE7-mNHe7Ie6AalyYBCmnMWXqLR-wGoL5HLjMmhw"
 );
 const C = {
   bg: "#0c0e16", card: "#151821", card2: "#1a1d2b", border: "#242736",
