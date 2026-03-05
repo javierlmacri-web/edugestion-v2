@@ -1764,7 +1764,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir }) => {
         </div>
         <nav style={{ flex: 1, padding: "12px 9px", display: "flex", flexDirection: "column", gap: 3 }}>
           {TABS.map(t => (
-            <button key={t.id} onClick={() => t.id === "dashboard" ? goInicio() : setTab(t.id)}
+            <button key={t.id} onClick={() => handleTab(t.id)}
               style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: tab === t.id ? 700 : 500, transition: "all .15s", background: tab === t.id ? C.accentDim : "transparent", color: tab === t.id ? C.accentL : C.dim }}>
               <span style={{ fontSize: 16 }}>{t.icon}</span>{t.label}
             </button>
