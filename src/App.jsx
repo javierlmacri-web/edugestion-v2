@@ -156,7 +156,7 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
   const save = () => {
     if (!form.nombre.trim()) return;
     if (editId) setData(d => ({ ...d, colegios: d.colegios.map(c => c.id === editId ? { ...c, ...form } : c) }));
-    else setData(d => ({ ...d, colegios: [...d.colegios, { id: uid(), ...form }] }));
+    else setData(d => ({ ...d, colegios: [...d.colegios, { id: uid(), ciclo: new Date().getFullYear().toString(), ...form }] }));
     setPop(false); setEditId(null); };
   const del = (id) => { if (!confirm("¿Eliminar colegio y todos sus datos?")) return; setData(d => ({ ...d, colegios: d.colegios.filter(c => c.id !== id), alumnos: d.alumnos.filter(a => a.colegioId !== id), materias: d.materias.filter(m => m.colegioId !== id) })); };
   return (
@@ -186,6 +186,7 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
                         <div style={{ width: 50, height: 50, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🏫</div>
                         <div>
                           <div style={{ color: C.text, fontWeight: 800, fontSize: 16 }}>{col.nombre}</div>
+                          {col.ciclo && <div style={{ color: C.accentL, fontSize: 12, marginTop: 2, fontWeight: 700 }}>📅 Ciclo {col.ciclo}</div>}
                           {col.direccion && <div style={{ color: C.muted, fontSize: 12, marginTop: 3 }}>📍 {col.direccion}</div>} </div> </div> <div style={{ display: "flex", gap: 20 }}>
                         <div><div style={{ fontSize: 22, fontWeight: 900, color: C.accentL }}>{als}</div><div style={{ fontSize: 11, color: C.muted }}>Alumnos</div></div>
                         <div><div style={{ fontSize: 22, fontWeight: 900, color: C.blue }}>{mats}</div><div style={{ fontSize: 11, color: C.muted }}>Materias</div></div>
@@ -204,6 +205,7 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
                 <span style={{ fontSize: 28 }}>+</span>Agregar Colegio </button> </div> </> )} </div> {pop && ( <Pop title={editId ? "Editar Colegio" : "Agregar Colegio"} onClose={() => { setPop(false); setEditId(null); }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <Inp label="Nombre *" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} placeholder="Colegio San Martín" />
+            <Inp label="Ciclo Lectivo" value={form.ciclo||""} onChange={e => setForm(f => ({ ...f, ciclo: e.target.value }))} placeholder={new Date().getFullYear().toString()} />
             <Inp label="Dirección" value={form.direccion} onChange={e => setForm(f => ({ ...f, direccion: e.target.value }))} placeholder="Av. Corrientes 1234" />
             <Inp label="Teléfono" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} placeholder="011-4444-5555" />
             <Inp label="Email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="info@colegio.edu.ar" />
@@ -795,13 +797,37 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               ))}
             </div> )}
           {notas.length > 0 && (
+            <>
             <Box style={{ marginTop: 20, display: "flex", gap: 28, padding: "16px 22px", flexWrap: "wrap" }}>
               <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>PROMEDIO</div><div style={{ fontSize: 28, fontWeight: 900, color: nc(prom) }}>{prom}</div></div>
               <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>NOTA MÁX.</div><div style={{ fontSize: 28, fontWeight: 900, color: C.green }}>{vals.length ? Math.max(...vals) : "—"}</div></div>
               <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>NOTA MÍN.</div><div style={{ fontSize: 28, fontWeight: 900, color: C.red }}>{vals.length ? Math.min(...vals) : "—"}</div></div>
               <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>EVALUACIONES</div><div style={{ fontSize: 28, fontWeight: 900, color: C.dim }}>{notas.length}</div></div>
               <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>ASISTENCIA</div><div style={{ fontSize: 28, fontWeight: 900, color: asistColor }}>{pctAsist !== null ? `${pctAsist}%` : "—"}</div></div>
-            </Box> )}
+            </Box>
+            {notas.length >= 2 && (
+              <Box style={{ marginTop: 12, padding: "16px 22px" }}>
+                <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, marginBottom: 14, textTransform: "uppercase", letterSpacing: 1.1 }}>📈 Evolución de notas</div>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
+                  {[...notas].sort((a,b) => new Date(a.fecha)-new Date(b.fecha)).map((n, i) => {
+                    const v = parseFloat(n.nota); const pct = isNaN(v) ? 0 : (v/10)*100;
+                    return (
+                      <div key={n.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                        <div style={{ fontSize: 10, color: nc(v), fontWeight: 700 }}>{n.nota}</div>
+                        <div style={{ width: "100%", height: `${pct}%`, minHeight: 4, background: nc(v), borderRadius: "4px 4px 0 0", transition: "height .3s" }} title={`${n.tipo}: ${n.nota} — ${n.fecha}`} />
+                        <div style={{ fontSize: 9, color: C.muted, textAlign: "center", writingMode: "vertical-rl", transform: "rotate(180deg)", height: 32, overflow: "hidden" }}>{n.tipo?.slice(0,3)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                  <span style={{ fontSize: 10, color: C.muted }}>Primera evaluación</span>
+                  <span style={{ fontSize: 10, color: C.muted }}>Última evaluación</span>
+                </div>
+              </Box>
+            )}
+            </>
+          )}
         </div> )}
       {/* ── ACTIVIDADES ── */}
       {subTab === "actividades" && (
@@ -940,6 +966,11 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
   const emptyForm = { nombre: "", apellido: "", dni: "", curso: "", email: "", telefono: "" };
 
   const [formNuevo, setFormNuevo] = useState(emptyForm);
+  const [popMasiva, setPopMasiva] = useState(false);
+  const [notasMasivas, setNotasMasivas] = useState({});
+  const [tipoMasivo, setTipoMasivo] = useState("parcial");
+  const [fechaMasiva, setFechaMasiva] = useState(new Date().toISOString().slice(0,10));
+  const [descMasiva, setDescMasiva] = useState("");
   const alumnosColegio = data.alumnos.filter(a => a.colegioId === colegioId);
   const inscriptos = data.inscripciones
     ? data.inscripciones.filter(i => i.materiaId === materiaId).map(i => i.alumnoId)
@@ -963,6 +994,20 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
     if (!confirm("¿Quitar este alumno de la materia?")) return;
     setData(d => ({ ...d, inscripciones: (d.inscripciones || []).filter(i => !(i.materiaId === materiaId && i.alumnoId === alumnoId)) }));
   };
+  const saveMasiva = () => {
+    const nuevasNotas = [];
+    for (const [alumnoId, nota] of Object.entries(notasMasivas)) {
+      const v = parseFloat(nota);
+      if (!isNaN(v) && v >= 0 && v <= 10) {
+        nuevasNotas.push({ id: uid(), alumnoId, materiaId, nota: String(v), tipo: tipoMasivo, descripcion: descMasiva, fecha: fechaMasiva });
+      }
+    }
+    if (nuevasNotas.length === 0) { alert("No ingresaste ninguna nota válida."); return; }
+    setData(d => ({ ...d, notas: [...d.notas, ...nuevasNotas] }));
+    setPopMasiva(false); setNotasMasivas({}); setDescMasiva("");
+    alert(`✅ Se guardaron ${nuevasNotas.length} notas.`);
+  };
+
   if (alumnoSeleccionado) {
     const al = data.alumnos.find(a => a.id === alumnoSeleccionado);
     return (
@@ -986,7 +1031,10 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
             {materia?.descripcion && <div style={{ color: C.muted, fontSize: 13 }}>{materia.descripcion}</div>}
             <div style={{ color: C.dim, fontSize: 13, marginTop: 4 }}>{alumnosMateria.length} alumnos inscriptos</div>
           </div></div>
-        <Btn onClick={() => { setBusqueda(""); setPopAgregarAlumno(true); }}>+ Agregar Alumno</Btn>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Btn v="ghost" onClick={() => setPopMasiva(true)}>📋 Carga masiva</Btn>
+          <Btn onClick={() => { setBusqueda(""); setPopAgregarAlumno(true); }}>+ Agregar Alumno</Btn>
+        </div>
       </div>
       {alumnosMateria.length === 0 ? (
         <div style={{ textAlign: "center", paddingTop: 50 }}>
@@ -1023,6 +1071,47 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
               </Box> );
           })}
         </div> )}
+      {/* Pop carga masiva */}
+      {popMasiva && (
+        <Pop title={`📋 Carga masiva de notas — ${materia?.nombre}`} onClose={() => { setPopMasiva(false); setNotasMasivas({}); }} wide>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Sel label="Tipo de evaluación" value={tipoMasivo} onChange={e => setTipoMasivo(e.target.value)}>
+                <option value="parcial">Parcial</option>
+                <option value="final">Final</option>
+                <option value="trabajo">Trabajo práctico</option>
+                <option value="oral">Oral</option>
+                <option value="recuperatorio">Recuperatorio</option>
+                <option value="otro">Otro</option>
+              </Sel>
+              <Inp label="Fecha" type="date" value={fechaMasiva} onChange={e => setFechaMasiva(e.target.value)} />
+            </div>
+            <Inp label="Descripción (opcional)" value={descMasiva} onChange={e => setDescMasiva(e.target.value)} placeholder="Ej: Primer parcial unidades 1-3" />
+            <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+              <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>Notas por alumno (0-10)</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 340, overflowY: "auto" }}>
+                {alumnosMateria.map(al => (
+                  <div key={al.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C.bg, borderRadius: 10, padding: "10px 14px", border: `1px solid ${C.border}` }}>
+                    <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al.apellido}, {al.nombre}
+                      {al.curso && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
+                    </div>
+                    <input type="number" min="0" max="10" step="0.1" placeholder="—"
+                      value={notasMasivas[al.id] || ""}
+                      onChange={e => setNotasMasivas(n => ({ ...n, [al.id]: e.target.value }))}
+                      style={{ width: 70, background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
+                      onFocus={e => e.target.style.borderColor = C.accent}
+                      onBlur={e => e.target.style.borderColor = C.border} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <Btn v="ghost" onClick={() => { setPopMasiva(false); setNotasMasivas({}); }}>Cancelar</Btn>
+              <Btn onClick={saveMasiva}>💾 Guardar todas las notas</Btn>
+            </div>
+          </div>
+        </Pop>
+      )}
       {/* Pop agregar alumno */}
       {popAgregarAlumno && (
         <Pop title={creandoNuevo ? `➕ Nuevo alumno en ${materia?.nombre}` : `Agregar alumno a ${materia?.nombre}`} onClose={() => { setPopAgregarAlumno(false); setCreandoNuevo(false); setBusqueda(""); setFormNuevo(emptyForm); }} wide>
@@ -1162,6 +1251,73 @@ const Materias = ({ data, setData, colegioId }) => {
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
     </div> ); };
+const imprimirBoletin = (data, alumnoId, colegioId) => {
+  const alumno = data.alumnos.find(a => a.id === alumnoId);
+  const colegio = data.colegios.find(c => c.id === colegioId);
+  const materiaIds = [...new Set((data.inscripciones||[]).filter(i => i.alumnoId === alumnoId).map(i => i.materiaId))];
+  const todasNotas = data.notas.filter(n => n.alumnoId === alumnoId);
+  const vals = todasNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+  const promGeneral = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : "—";
+  const nc2 = (n) => { if (!n || n==="—") return "#666"; const v=parseFloat(n); return v>=7?"#16a34a":v>=5?"#d97706":"#dc2626"; };
+  
+  const materiasHTML = materiaIds.map(mid => {
+    const mat = data.materias.find(m => m.id === mid);
+    const mNotas = todasNotas.filter(n => n.materiaId === mid);
+    const mVals = mNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+    const mProm = mVals.length ? (mVals.reduce((a,b)=>a+b,0)/mVals.length).toFixed(1) : "—";
+    const asistencias = (data.asistencias||[]).filter(a => a.alumnoId===alumnoId && a.materiaId===mid);
+    const presentes = asistencias.filter(a=>a.estado==="presente").length;
+    const pctAsist = asistencias.length ? Math.round((presentes/asistencias.length)*100) : null;
+    return `
+      <div style="margin-bottom:20px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+        <div style="background:#f3f4f6;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:15px;">${mat?.nombre||"—"}</strong>
+          <span style="font-size:20px;font-weight:900;color:${nc2(mProm)}">${mProm}</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="background:#f9fafb;">
+            <th style="padding:8px 12px;text-align:left;border-bottom:1px solid #e5e7eb;">Tipo</th>
+            <th style="padding:8px 12px;text-align:left;border-bottom:1px solid #e5e7eb;">Descripción</th>
+            <th style="padding:8px 12px;text-align:left;border-bottom:1px solid #e5e7eb;">Fecha</th>
+            <th style="padding:8px 12px;text-align:center;border-bottom:1px solid #e5e7eb;">Nota</th>
+          </tr></thead>
+          <tbody>${mNotas.sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).map(n=>`
+            <tr><td style="padding:7px 12px;border-bottom:1px solid #f3f4f6;">${n.tipo}</td>
+            <td style="padding:7px 12px;border-bottom:1px solid #f3f4f6;">${n.descripcion||"—"}</td>
+            <td style="padding:7px 12px;border-bottom:1px solid #f3f4f6;">${n.fecha||"—"}</td>
+            <td style="padding:7px 12px;border-bottom:1px solid #f3f4f6;text-align:center;font-weight:700;color:${nc2(n.nota)}">${n.nota}</td></tr>
+          `).join("")}</tbody>
+        </table>
+        ${pctAsist!==null?`<div style="padding:8px 16px;font-size:12px;color:#6b7280;">Asistencia: <strong>${pctAsist}%</strong> (${presentes}/${asistencias.length} clases)</div>`:""}
+      </div>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Boletín — ${alumno?.apellido}, ${alumno?.nombre}</title>
+  <style>body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:24px;color:#111;}@media print{body{padding:0;}}</style>
+  </head><body>
+  <div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #111;">
+    <h2 style="margin:0 0 4px;font-size:20px;">${colegio?.nombre||""}</h2>
+    ${colegio?.direccion?`<div style="font-size:13px;color:#666;">${colegio.direccion}</div>`:""}
+    <h1 style="margin:16px 0 4px;font-size:24px;">BOLETÍN DE CALIFICACIONES</h1>
+    <div style="font-size:14px;color:#666;">Emitido el ${new Date().toLocaleDateString("es-AR")}</div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-bottom:20px;padding:12px 16px;background:#f9fafb;border-radius:8px;">
+    <div><strong>Alumno:</strong> ${alumno?.apellido}, ${alumno?.nombre}</div>
+    ${alumno?.curso?`<div><strong>Curso:</strong> ${alumno.curso}</div>`:""}
+    ${alumno?.dni?`<div><strong>DNI:</strong> ${alumno.dni}</div>`:""}
+    <div><strong>Promedio general:</strong> <span style="color:${nc2(promGeneral)};font-weight:700;">${promGeneral}</span></div>
+  </div>
+  ${materiasHTML}
+  <div style="margin-top:40px;display:flex;justify-content:space-around;">
+    <div style="text-align:center;"><div style="border-top:1px solid #111;width:180px;padding-top:6px;font-size:12px;">Firma del docente</div></div>
+    <div style="text-align:center;"><div style="border-top:1px solid #111;width:180px;padding-top:6px;font-size:12px;">Firma del directivo</div></div>
+  </div>
+  </body></html>`;
+
+  const w = window.open("","_blank"); w.document.write(html); w.document.close(); w.print();
+};
+
+
 const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
   const alumno = data.alumnos.find(a => a.id === alumnoId);
   const materiaIds = [...new Set((data.inscripciones || []).filter(i => i.alumnoId === alumnoId).map(i => i.materiaId))];
@@ -1182,6 +1338,7 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
                 {alumno?.dni && <span>🪪 DNI: {alumno.dni}</span>}
                 {alumno?.email && <span>✉️ {alumno.email}</span>}
                 {alumno?.telefono && <span>📞 {alumno.telefono}</span>}</div></div></div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
           <div style={{ display: "flex", gap: 20, textAlign: "center" }}>
             <div>
               <div style={{ fontSize: 30, fontWeight: 900, color: nc(promGeneral) }}>{promGeneral ?? "—"}</div>
@@ -1194,7 +1351,9 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
               <div style={{ fontSize: 11, color: C.muted }}>Actividades</div></div>
             <div>
               <div style={{ fontSize: 30, fontWeight: 900, color: C.blue }}>{materiaIds.length}</div>
-              <div style={{ fontSize: 11, color: C.muted }}>Materias</div> </div> </div> </div> </div>  {materiaIds.length === 0 ? ( <div style={{ textAlign: "center", padding: "48px 20px" }}>
+              <div style={{ fontSize: 11, color: C.muted }}>Materias</div> </div> </div>
+          <Btn v="ghost" sm onClick={() => imprimirBoletin(data, alumnoId, colegioId)}>🖨️ Imprimir Boletín</Btn>
+        </div> </div> </div>  {materiaIds.length === 0 ? ( <div style={{ textAlign: "center", padding: "48px 20px" }}>
           <div style={{ fontSize: 44, marginBottom: 14 }}>📚</div>
           <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Este alumno no está inscripto en ninguna materia</div>
           <div style={{ color: C.dim, fontSize: 14 }}>Inscribilo desde la sección <strong style={{ color: C.accentL }}>Materias</strong> para empezar a registrar notas y actividades.</div>
@@ -1237,6 +1396,8 @@ const Alumnos = ({ data, setData, colegioId }) => {
   const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); const [editId, setEditId] = useState(null);
   const [filtro, setFiltro] = useState(""); const [alumnoViendo, setAlumnoViendo] = useState(null);
   const alumnos = data.alumnos.filter(a => a.colegioId === colegioId);
+  const cursos = [...new Set(alumnos.map(a => a.curso).filter(Boolean))].sort();
+  const [filtroCurso, setFiltroCurso] = useState("");
   const save = () => {
     if (!form.nombre.trim() || !form.apellido.trim()) return;
     if (editId) setData(d => ({ ...d, alumnos: d.alumnos.map(a => a.id === editId ? { ...a, ...form } : a) }));
@@ -1248,7 +1409,7 @@ const Alumnos = ({ data, setData, colegioId }) => {
   const edit = (a) => {
     setForm({ nombre: a.nombre, apellido: a.apellido, dni: a.dni || "", fechaNac: a.fechaNac || "", curso: a.curso || "", email: a.email || "", telefono: a.telefono || "" });
     setEditId(a.id); setPop(true); };
-  const filtered = alumnos.filter(a => `${a.nombre} ${a.apellido} ${a.dni || ""}`.toLowerCase().includes(filtro.toLowerCase()));
+  const filtered = alumnos.filter(a => `${a.nombre} ${a.apellido} ${a.dni || ""}`.toLowerCase().includes(filtro.toLowerCase()) && (!filtroCurso || a.curso === filtroCurso));
   if (alumnoViendo) {
     return <AlumnoPerfilGlobal data={data} setData={setData} alumnoId={alumnoViendo} colegioId={colegioId} onBack={() => setAlumnoViendo(null)} />;
   }
@@ -1258,7 +1419,15 @@ const Alumnos = ({ data, setData, colegioId }) => {
         <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 800 }}>👤 Alumnos del Colegio</h2>
         <Btn onClick={() => { setEditId(null); setForm({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); setPop(true); }}>+ Nuevo Alumno</Btn>
       </div>
-      <Inp placeholder="🔍 Buscar por nombre, apellido o DNI..." value={filtro} onChange={e => setFiltro(e.target.value)} style={{ marginBottom: 20 }} />
+      <Inp placeholder="🔍 Buscar por nombre, apellido o DNI..." value={filtro} onChange={e => setFiltro(e.target.value)} style={{ marginBottom: 12 }} />
+      {cursos.length > 0 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+          <button onClick={() => setFiltroCurso("")} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroCurso ? C.accent : C.border}`, background: !filtroCurso ? C.accentDim : "transparent", color: !filtroCurso ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Todos</button>
+          {cursos.map(c => (
+            <button key={c} onClick={() => setFiltroCurso(c)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroCurso === c ? C.accent : C.border}`, background: filtroCurso === c ? C.accentDim : "transparent", color: filtroCurso === c ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{c}</button>
+          ))}
+        </div>
+      )}
       {filtered.length === 0 ? <Empty icon="👤" msg="No hay alumnos en este colegio." /> : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
           {filtered.map(al => {
@@ -1266,11 +1435,14 @@ const Alumnos = ({ data, setData, colegioId }) => {
             const notas = data.notas.filter(n => n.alumnoId === al.id);
             const vals = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom = avg(vals);
             return (
-              <Box key={al.id} hi style={{ cursor: "pointer", position: "relative", paddingBottom: 54 }}
+              <Box key={al.id} hi style={{ cursor: "pointer", position: "relative", paddingBottom: 54, borderColor: prom !== null && parseFloat(prom) < 6 ? C.red + "66" : undefined }}
                 onClick={() => setAlumnoViendo(al.id)}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                  <div>
-                    <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{al.apellido}, {al.nombre}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{al.apellido}, {al.nombre}</div>
+                      {prom !== null && parseFloat(prom) < 6 && <span style={{ background: C.red + "22", color: C.red, border: `1px solid ${C.red}44`, borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>⚠️ Bajo</span>}
+                    </div>
                     {al.dni && <div style={{ color: C.muted, fontSize: 12 }}>DNI: {al.dni}</div>} {al.curso && <div style={{ color: C.dim, fontSize: 12 }}>Curso: {al.curso}</div>} </div> <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 28, fontWeight: 900, color: nc(prom) }}>{prom ?? "—"}</div>
                     <div style={{ fontSize: 11, color: C.muted }}>{notas.length} notas</div> </div> </div> {materiaIds.length > 0 && ( <div style={{ marginBottom: 10, display: "flex", flexWrap: "wrap", gap: 4 }}>
