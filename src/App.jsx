@@ -1787,7 +1787,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir }) => {
         </div>
       </aside>
       <main style={{ flex: 1, padding: 32, overflowY: "auto" }}>
-        <View data={data} setData={setData} colegioId={colegioId} key={tab === "dashboard" ? `dash-${dashKey}` : tab} />
+        <View data={data} setData={setData} colegioId={colegioId} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
     </div>
   );
