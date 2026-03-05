@@ -810,26 +810,27 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               const cuatri1 = notas.filter(n => { const m = new Date(n.fecha+"T12:00:00").getMonth()+1; return m>=3&&m<=6; });
               const cuatri2 = notas.filter(n => { const m = new Date(n.fecha+"T12:00:00").getMonth()+1; return m>=8&&m<=11; });
               const tiposPresentes = [...new Set(notas.map(n=>n.tipo).filter(Boolean))];
-              const maxNota = 10;
-              const BarGroup = ({ notasGrupo, label }) => (
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textAlign: "center", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
+              const HBarGroup = ({ notasGrupo, label }) => (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: C.accentL, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10, paddingBottom: 6, borderBottom: `1px solid ${C.border}` }}>{label}</div>
                   {notasGrupo.length === 0 ? (
-                    <div style={{ textAlign: "center", color: C.muted, fontSize: 12, padding: "20px 0" }}>Sin notas</div>
+                    <div style={{ color: C.muted, fontSize: 12, padding: "10px 0 16px" }}>Sin notas registradas</div>
                   ) : (
-                    <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 120, padding: "0 8px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {[...notasGrupo].sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).map(n => {
                         const v = parseFloat(n.nota);
-                        const pct = isNaN(v) ? 0 : (v/maxNota)*100;
+                        const pct = isNaN(v) ? 0 : (v/10)*100;
                         const color = tipoColors[n.tipo] || C.dim;
                         return (
-                          <div key={n.id} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, minWidth: 28 }}>
-                            <div style={{ fontSize: 11, fontWeight: 900, color }}>{n.nota}</div>
-                            <div style={{ width: "100%", height: `${pct}%`, minHeight: 4, background: color, borderRadius: "4px 4px 0 0", transition: "height .4s", cursor: "default", position: "relative" }}
-                              title={`${n.tipo}: ${n.nota}
-${n.descripcion||""}
-${n.fecha||""}`} />
-                            <div style={{ fontSize: 9, color: C.muted, textAlign: "center", overflow: "hidden", maxWidth: "100%", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{n.fecha?.slice(5)}</div>
+                          <div key={n.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{ width: 100, fontSize: 11, color: C.dim, textAlign: "right", flexShrink: 0, textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.descripcion || n.tipo}</div>
+                            <div style={{ flex: 1, background: C.bg, borderRadius: 6, height: 24, overflow: "hidden", position: "relative" }}>
+                              <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 6, transition: "width .5s ease", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 8 }}>
+                                <span style={{ fontSize: 12, fontWeight: 900, color: "#fff" }}>{n.nota}</span>
+                              </div>
+                              <div style={{ position: "absolute", top: 0, left: "60%", width: 2, height: "100%", background: "#ffffff22" }} title="Nota 6" />
+                            </div>
+                            <div style={{ width: 14, height: 14, borderRadius: 3, background: color, flexShrink: 0 }} title={n.tipo} />
                           </div>
                         );
                       })}
@@ -838,21 +839,22 @@ ${n.fecha||""}`} />
                 </div>
               );
               return (
-                <Box style={{ marginTop: 12, padding: "18px 22px" }}>
-                  <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, marginBottom: 16, textTransform: "uppercase", letterSpacing: 1.1 }}>📊 Evolución por cuatrimestre</div>
-                  <div style={{ display: "flex", gap: 0 }}>
-                    <BarGroup notasGrupo={cuatri1} label="1° Cuatrimestre (Mar–Jun)" />
-                    <div style={{ width: 1, background: C.border, margin: "0 16px" }} />
-                    <BarGroup notasGrupo={cuatri2} label="2° Cuatrimestre (Ago–Nov)" />
-                  </div>
-                  {/* Leyenda tipos */}
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+                <Box style={{ marginTop: 12, padding: "20px 24px" }}>
+                  <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, marginBottom: 18, textTransform: "uppercase", letterSpacing: 1.1 }}>📊 Evolución por cuatrimestre</div>
+                  <HBarGroup notasGrupo={cuatri1} label="1° Cuatrimestre — Marzo a Junio" />
+                  <div style={{ borderTop: `1px solid ${C.border}`, margin: "16px 0" }} />
+                  <HBarGroup notasGrupo={cuatri2} label="2° Cuatrimestre — Agosto a Noviembre" />
+                  <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
                     {tiposPresentes.map(tipo => (
-                      <div key={tipo} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <div style={{ width: 12, height: 12, borderRadius: 3, background: tipoColors[tipo]||C.dim }} />
-                        <span style={{ fontSize: 11, color: C.dim, textTransform: "capitalize" }}>{tipo}</span>
+                      <div key={tipo} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ width: 14, height: 14, borderRadius: 3, background: tipoColors[tipo]||C.dim }} />
+                        <span style={{ fontSize: 12, color: C.dim, textTransform: "capitalize" }}>{tipo}</span>
                       </div>
                     ))}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+                      <div style={{ width: 2, height: 14, background: "#ffffff22" }} />
+                      <span style={{ fontSize: 11, color: C.muted }}>línea blanca = nota 6</span>
+                    </div>
                   </div>
                 </Box>
               );
