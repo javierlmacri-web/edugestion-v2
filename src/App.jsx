@@ -223,7 +223,10 @@ const Dashboard = ({ data, setData, colegioId }) => {
     return (
       <div>
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Materias" }]} />
-        <h2 style={{ color: C.text, margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>📚 Materias del Colegio</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>📚 Materias del Colegio</h2>
+          <Btn onClick={() => { setVista(null); setTimeout(() => { setTab("materias"); }, 10); }}>+ Nueva Materia</Btn>
+        </div>
         {mats.length === 0 ? <Empty icon="📚" msg="No hay materias registradas." /> : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
             {mats.map(m => {
@@ -245,7 +248,10 @@ const Dashboard = ({ data, setData, colegioId }) => {
     return (
       <div>
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Alumnos" }]} />
-        <h2 style={{ color: C.text, margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>👤 Alumnos del Colegio</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>👤 Alumnos del Colegio</h2>
+          <Btn onClick={() => { setVista(null); setTimeout(() => { setTab("alumnos"); }, 10); }}>+ Nuevo Alumno</Btn>
+        </div>
         {als.length === 0 ? <Empty icon="👤" msg="No hay alumnos registrados." /> : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
             {als.map(al => {
