@@ -80,6 +80,46 @@ const Empty = ({ icon, msg }) => (
       </span>
     ))}
   </div> );
+const Login = ({ onLogin }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [show, setShow] = useState(false);
+  useEffect(() => { setTimeout(() => setShow(true), 80); }, []);
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) { setError("Ingresá email y contraseña."); return; }
+    setLoading(true); setError("");
+    const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (err) { setError("Email o contraseña incorrectos."); return; }
+    onLogin(data.user);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, position: "relative" }}>
+      <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", width: 600, height: 600, background: `radial-gradient(circle, ${C.accent}0e 0%, transparent 70%)`, pointerEvents: "none" }} />
+      <div style={{ opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(24px)", transition: "all .7s ease", width: "100%", maxWidth: 420, zIndex: 1 }}>
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div style={{ width: 80, height: 80, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 38, margin: "0 auto 20px" }}>🎓</div>
+          <h1 style={{ fontSize: 28, fontWeight: 900, color: C.text, margin: "0 0 8px", letterSpacing: -1 }}>EduGestión</h1>
+          <p style={{ color: C.dim, fontSize: 14, margin: 0 }}>Ingresá con tu cuenta para continuar</p>
+        </div>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 28, display: "flex", flexDirection: "column", gap: 16 }}>
+          <Inp label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" onKeyDown={e => e.key === "Enter" && handleLogin()} />
+          <Inp label="Contraseña" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleLogin()} />
+          {error && <div style={{ background: C.red + "18", border: `1px solid ${C.red}33`, borderRadius: 10, padding: "10px 14px", color: C.red, fontSize: 13 }}>{error}</div>}
+          <button onClick={handleLogin} disabled={loading} style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, border: "none", borderRadius: 12, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: loading ? "wait" : "pointer", marginTop: 4, transition: "all .2s", opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Ingresando..." : "Ingresar →"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const Welcome = ({ onGo }) => {
   const [show, setShow] = useState(false);
   useEffect(() => { setTimeout(() => setShow(true), 80); }, []);
@@ -1683,7 +1723,7 @@ const useIsMobile = () => {
   return mobile;
 };
 
-const AppInterna = ({ data, setData, colegioId, onSalir }) => {
+const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
   const [tab, setTab] = useState("dashboard");
   const [dashKey, setDashKey] = useState(0);
   const [exportando, setExportando] = useState(false);
@@ -1784,6 +1824,12 @@ const AppInterna = ({ data, setData, colegioId, onSalir }) => {
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             ← Cambiar colegio
           </button>
+          <button onClick={onLogout}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
+            🚪 Cerrar sesión
+          </button>
         </div>
       </aside>
       <main style={{ flex: 1, padding: 32, overflowY: "auto" }}>
@@ -1793,9 +1839,20 @@ const AppInterna = ({ data, setData, colegioId, onSalir }) => {
   );
 };
 export default function App() {
-  const [screen, setScreen] = useState("welcome"); const [colegioId, setColegioId] = useState(null); const [data, setDataRaw] = useState(INIT);
+  const [screen, setScreen] = useState("login"); const [colegioId, setColegioId] = useState(null); const [data, setDataRaw] = useState(INIT);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { loadD().then(d => { if (d) setDataRaw({ ...INIT, ...d }); setLoading(false); }); }, []);
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) { setUser(session.user); setScreen("welcome"); }
+      setLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) { setUser(session.user); } else { setUser(null); setScreen("login"); }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+  useEffect(() => { if (user) { loadD().then(d => { if (d) setDataRaw({ ...INIT, ...d }); }); } }, [user]);
   const setData = useCallback((fn) => {
     setDataRaw(prev => {
       const next = typeof fn === "function" ? fn(prev) : fn;
@@ -1816,12 +1873,15 @@ export default function App() {
       return next;
     });
   }, []);
+  const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); setScreen("login"); setColegioId(null); setDataRaw(INIT); };
+
   if (loading) return (
     <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", color: C.muted, fontSize: 16 }}>Cargando...</div>
   );
   return (
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      {screen === "login" && <Login onLogin={u => { setUser(u); setScreen("welcome"); }} />}
       {screen === "welcome" && <Welcome onGo={() => setScreen("colegios")} />}
       {screen === "colegios" && <ColegioSelector data={data} setData={setData} onSelect={id => { setColegioId(id); setScreen("app"); }} onBack={() => setScreen("welcome")} />}
-      {screen === "app" && colegioId && <AppInterna data={data} setData={setData} colegioId={colegioId} onSalir={() => { setColegioId(null); setScreen("colegios"); }} />}
+      {screen === "app" && colegioId && <AppInterna data={data} setData={setData} colegioId={colegioId} onSalir={() => { setColegioId(null); setScreen("colegios"); }} onLogout={handleLogout} />}
     </div> ); }
