@@ -1694,7 +1694,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir }) => {
   const View = views[tab];
   const [tabKey, setTabKey] = useState(0);
   const goInicio = () => { setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false); };
-  const handleTab = (id) => { if (id === "dashboard") { goInicio(); } else { setTab(id); setTabKey(k => k + 1); setMenuOpen(false); } };
+  const handleTab = (id) => { if (id === "dashboard") { goInicio(); } else if (id === tab) { setTabKey(k => k + 1); setMenuOpen(false); } else { setTab(id); setTabKey(k => k + 1); setMenuOpen(false); } };
   const handleExport = () => {
     setExportando(true);
     setTimeout(() => { exportarExcel(data, colegioId); setExportando(false); }, 100);
