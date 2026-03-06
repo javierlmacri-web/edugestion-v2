@@ -1986,7 +1986,7 @@ const useIsMobile = () => {
 };
 
 const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
-  const [tab, setTab] = useState("dashboard");
+  const [tab, setTab] = useState(() => localStorage.getItem("lastTab") || "dashboard");
   const [dashKey, setDashKey] = useState(0);
   const [exportando, setExportando] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1998,6 +1998,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
   const goInicio = () => {
     setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false);
     window.history.pushState({ tab: "dashboard" }, "", "#");
+    localStorage.setItem("lastTab", "dashboard");
   };
   const handleTab = (id) => {
     if (id === "dashboard") { goInicio(); }
@@ -2005,6 +2006,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
     else {
       setTab(id); setTabKey(k => k + 1); setMenuOpen(false);
       window.history.pushState({ tab: id }, "", "#" + id);
+      localStorage.setItem("lastTab", id);
     }
   };
   const goBack = () => { goInicio(); };
@@ -2128,12 +2130,18 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
   );
 };
 export default function App() {
-  const [screen, setScreen] = useState("login"); const [colegioId, setColegioId] = useState(null); const [data, setDataRaw] = useState(INIT);
+  const [screen, setScreen] = useState("login"); 
+  const [colegioId, setColegioId] = useState(() => localStorage.getItem("lastColegioId") || null);
+  const [data, setDataRaw] = useState(INIT);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) { setUser(session.user); setScreen("welcome"); }
+      if (session?.user) { 
+        setUser(session.user); 
+        const savedColegio = localStorage.getItem("lastColegioId");
+        setScreen(savedColegio ? "app" : "welcome");
+      }
       setLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -2162,7 +2170,7 @@ export default function App() {
       return next;
     });
   }, []);
-  const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); setScreen("login"); setColegioId(null); setDataRaw(INIT); };
+  const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); setScreen("login"); setColegioId(null); setDataRaw(INIT); localStorage.removeItem("lastColegioId"); localStorage.removeItem("lastTab"); };
 
   useEffect(() => {
     const onPop = (e) => {
@@ -2181,6 +2189,6 @@ export default function App() {
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
       {screen === "login" && <Login onLogin={u => { setUser(u); setScreen("welcome"); }} />}
       {screen === "welcome" && <Welcome onGo={() => { setScreen("colegios"); window.history.pushState({ screen: "colegios" }, "", "#colegios"); }} />}
-      {screen === "colegios" && <ColegioSelector data={data} setData={setData} onSelect={id => { setColegioId(id); setScreen("app"); window.history.pushState({ screen: "app" }, "", "#app"); }} onBack={() => setScreen("welcome")} />}
-      {screen === "app" && colegioId && <AppInterna data={data} setData={setData} colegioId={colegioId} onSalir={() => { setColegioId(null); setScreen("colegios"); }} onLogout={handleLogout} />}
+      {screen === "colegios" && <ColegioSelector data={data} setData={setData} onSelect={id => { setColegioId(id); setScreen("app"); localStorage.setItem("lastColegioId", id); window.history.pushState({ screen: "app" }, "", "#app"); }} onBack={() => setScreen("welcome")} />}
+      {screen === "app" && colegioId && <AppInterna data={data} setData={setData} colegioId={colegioId} onSalir={() => { setColegioId(null); setScreen("colegios"); localStorage.removeItem("lastColegioId"); localStorage.removeItem("lastTab"); }} onLogout={handleLogout} />}
     </div> ); }
