@@ -1056,7 +1056,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
     <div>
       <Breadcrumb items={[{ label: "Materias", onClick: onBack }, { label: materia?.nombre }]} />
       {/* Cabecera materia */}
-      <div style={{ background: C.card2, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px 24px", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ background: C.card2, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px 24px", marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 52, height: 52, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>📚</div>
           <div>
@@ -1064,7 +1064,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
             {materia?.descripcion && <div style={{ color: C.muted, fontSize: 13 }}>{materia.descripcion}</div>}
             <div style={{ color: C.dim, fontSize: 13, marginTop: 4 }}>{alumnosMateria.length} alumnos inscriptos</div>
           </div></div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <Btn v="ghost" onClick={() => setPopMasiva(true)}>📋 Carga masiva</Btn>
           <Btn onClick={() => { setBusqueda(""); setPopAgregarAlumno(true); }}>+ Agregar Alumno</Btn>
         </div>
