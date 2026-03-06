@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"; // update
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js"; // update
 
 const supabase = createClient(
   "https://vqwosiwppdfsifwravsh.supabase.co",
