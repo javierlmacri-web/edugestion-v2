@@ -218,7 +218,8 @@ const TABS = [
   { id: "dashboard", icon: "🏠", label: "Inicio" },
   { id: "materias",  icon: "📚", label: "Materias" },
   { id: "alumnos",   icon: "👤", label: "Alumnos" },
-  { id: "eventos",   icon: "📅", label: "Eventos del Colegio" }, ];
+  { id: "eventos",   icon: "📅", label: "Eventos del Colegio" },
+  { id: "documentos", icon: "📁", label: "Archivos/Docs" }, ];
 const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
   const [vista, setVista] = useState(null); // null | "materias" | "alumnos" | "notas" | "promedio" | "actividades"
@@ -2064,7 +2065,7 @@ const Reportes = ({ data, setData, onClose }) => {
 };
 
 
-const ADMIN_EMAIL = "javier.l.macri@gmail.com"; // Cambiar por tu email
+const ADMIN_EMAIL = "javierimacri@gmail.com"; // Cambiar por tu email
 
 const PanelFallas = ({ user, onClose }) => {
   const [fallas, setFallas] = useState([]);
@@ -2149,6 +2150,192 @@ const FormReporte = ({ user, tab, onClose }) => {
 };
 
 
+const Documentos = ({ data, setData, colegioId }) => {
+  const [archivos, setArchivos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [subiendo, setSubiendo] = useState(false);
+  const [confirmQueue, setConfirmQueue] = useState([]);
+  const [procesando, setProcesando] = useState(false);
+  const [filtroAlumno, setFiltroAlumno] = useState("");
+  const alumnos = data.alumnos.filter(a => a.colegioId === colegioId);
+
+  useEffect(() => {
+    supabase.from("documentos").select("*").eq("colegio_id", colegioId).order("created_at", { ascending: false })
+      .then(({ data: docs }) => { setArchivos(docs || []); setLoading(false); });
+  }, [colegioId]);
+
+  const tipoLabel = { examen: "📝 Examen", trabajo: "📋 Trabajo práctico", documento: "📄 Documento", dni: "🪪 DNI/Documentación" };
+
+  const analizarArchivo = async (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target.result.split(",")[1];
+        const isPdf = file.type === "application/pdf";
+        try {
+          const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 300,
+              messages: [{
+                role: "user",
+                content: [
+                  isPdf
+                    ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } }
+                    : { type: "image", source: { type: "base64", media_type: file.type, data: base64 } },
+                  { type: "text", text: `Analizá este documento. Respondé SOLO en JSON sin markdown así: {"nombre":"apellido nombre del alumno o persona encontrada","tipo":"examen|trabajo|documento|dni","descripcion":"descripción breve de qué es el documento en máximo 10 palabras"}. Si no encontrás nombre respondé nombre vacío.` }
+                ]
+              }]
+            })
+          });
+          const d = await res.json();
+          const text = d.content?.[0]?.text || "{}";
+          const clean = text.replace(/```json|```/g, "").trim();
+          resolve(JSON.parse(clean));
+        } catch { resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const subirArchivos = async (files) => {
+    if (!files.length) return;
+    setProcesando(true);
+    const queue = [];
+    for (const file of Array.from(files)) {
+      const analisis = await analizarArchivo(file);
+      const alumnoEncontrado = alumnos.find(a => {
+        const nombre = analisis.nombre?.toLowerCase() || "";
+        return nombre && (
+          `${a.apellido} ${a.nombre}`.toLowerCase().includes(nombre) ||
+          nombre.includes(a.apellido?.toLowerCase()) ||
+          nombre.includes(a.nombre?.toLowerCase())
+        );
+      });
+      queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "" });
+    }
+    setConfirmQueue(queue);
+    setProcesando(false);
+  };
+
+  const confirmarYSubir = async (item, alumnoId, tipo) => {
+    setSubiendo(true);
+    const path = `${colegioId}/${alumnoId || "sin-alumno"}/${Date.now()}_${item.file.name}`;
+    const { error } = await supabase.storage.from("documentos").upload(path, item.file);
+    if (error) { alert("Error al subir archivo: " + error.message); setSubiendo(false); return; }
+    const { data: urlData } = supabase.storage.from("documentos").getPublicUrl(path);
+    const doc = { id: uid(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: urlData.publicUrl, storage_path: path, fecha: new Date().toISOString().slice(0,10) };
+    await supabase.from("documentos").insert(doc);
+    setArchivos(a => [doc, ...a]);
+    setConfirmQueue(q => q.filter(x => x !== item));
+    setSubiendo(false);
+  };
+
+  const eliminarDoc = async (doc) => {
+    if (!confirm("¿Eliminar este archivo?")) return;
+    await supabase.storage.from("documentos").remove([doc.storage_path]);
+    await supabase.from("documentos").delete().eq("id", doc.id);
+    setArchivos(a => a.filter(x => x.id !== doc.id));
+  };
+
+  const docsFiltrados = archivos.filter(d => !filtroAlumno || d.alumno_id === filtroAlumno);
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>📁 Archivos y Documentos</h2>
+        <label style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, color: "#fff", padding: "10px 18px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
+          {procesando ? "🔍 Analizando..." : "⬆️ Subir archivos"}
+          <input type="file" multiple accept="image/*,.pdf" style={{ display: "none" }} onChange={e => subirArchivos(e.target.files)} disabled={procesando} />
+        </label>
+      </div>
+
+      {/* Cola de confirmación */}
+      {confirmQueue.length > 0 && (
+        <Box style={{ marginBottom: 20, border: `1px solid ${C.accent}44`, background: C.accentDim }}>
+          <div style={{ fontSize: 13, color: C.accentL, fontWeight: 800, marginBottom: 14, textTransform: "uppercase", letterSpacing: 1 }}>🔍 Confirmar archivos detectados ({confirmQueue.length})</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {confirmQueue.map((item, i) => (
+              <div key={i} style={{ background: C.card, borderRadius: 12, padding: "14px 16px", border: `1px solid ${C.border}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: C.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>📄 {item.file.name}</div>
+                    {item.analisis.descripcion && <div style={{ color: C.muted, fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
+                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        <option value="">— Sin alumno asignado —</option>
+                        {alumnos.map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
+                      </select>
+                      <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, analisis:{...x.analisis, tipo: e.target.value}} : x))}
+                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        <option value="examen">📝 Examen</option>
+                        <option value="trabajo">📋 Trabajo práctico</option>
+                        <option value="documento">📄 Documento</option>
+                        <option value="dni">🪪 DNI/Documentación</option>
+                      </select>
+                    </div>
+                    {item.alumnoSugerido && <div style={{ color: C.accentL, fontSize: 12, marginTop: 6 }}>✨ IA sugirió: {item.alumnoSugerido.apellido}, {item.alumnoSugerido.nombre}</div>}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <Btn onClick={() => confirmarYSubir(item, item.alumnoId, item.analisis.tipo||"documento")} disabled={subiendo}>✓ Confirmar</Btn>
+                    <Btn v="ghost" onClick={() => setConfirmQueue(q => q.filter((_,j) => j!==i))}>✕</Btn>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Box>
+      )}
+
+      {/* Filtro por alumno */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        <button onClick={() => setFiltroAlumno("")} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroAlumno ? C.accent : C.border}`, background: !filtroAlumno ? C.accentDim : "transparent", color: !filtroAlumno ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Todos</button>
+        {alumnos.map(a => (
+          <button key={a.id} onClick={() => setFiltroAlumno(a.id)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroAlumno===a.id ? C.accent : C.border}`, background: filtroAlumno===a.id ? C.accentDim : "transparent", color: filtroAlumno===a.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{a.apellido}, {a.nombre}</button>
+        ))}
+      </div>
+
+      {/* Lista de archivos */}
+      {loading ? <div style={{ color: C.muted, textAlign: "center", padding: 40 }}>Cargando...</div> :
+      docsFiltrados.length === 0 ? <Empty icon="📁" msg="No hay archivos subidos todavía." /> :
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+        {docsFiltrados.map(doc => {
+          const al = alumnos.find(a => a.id === doc.alumno_id);
+          const isImg = doc.url?.match(/\.(jpg|jpeg|png|webp|gif)$/i);
+          return (
+            <Box key={doc.id} style={{ padding: 0, overflow: "hidden" }}>
+              {isImg ? (
+                <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                  <img src={doc.url} alt={doc.nombre} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
+                </a>
+              ) : (
+                <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 100, background: C.bg, textDecoration: "none" }}>
+                  <span style={{ fontSize: 40 }}>📄</span>
+                </a>
+              )}
+              <div style={{ padding: "12px 14px" }}>
+                <div style={{ color: C.text, fontWeight: 700, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.nombre}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <span style={{ background: C.accentDim, color: C.accentL, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{tipoLabel[doc.tipo] || doc.tipo}</span>
+                    {al && <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>👤 {al.apellido}, {al.nombre}</div>}
+                    <div style={{ color: C.dim, fontSize: 11, marginTop: 2 }}>{doc.fecha}</div>
+                  </div>
+                  <button onClick={() => eliminarDoc(doc)} style={{ background: C.red+"22", border: `1px solid ${C.red}44`, color: C.red, borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontSize: 13 }}>🗑</button>
+                </div>
+              </div>
+            </Box>
+          );
+        })}
+      </div>}
+    </div>
+  );
+};
+
+
 const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [tab, setTab] = useState(() => localStorage.getItem("lastTab") || "dashboard");
   const [showReporte, setShowReporte] = useState(false);
@@ -2159,7 +2346,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useIsMobile();
   const col = data.colegios.find(c => c.id === colegioId);
-  const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos };
+  const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos };
   const View = views[tab];
   const [tabKey, setTabKey] = useState(0);
   const goInicio = () => {
