@@ -2297,13 +2297,15 @@ const Documentos = ({ data, setData, colegioId }) => {
         </Box>
       )}
 
-      {/* Filtro por alumno */}
+      {/* Filtro por alumno - solo si hay archivos */}
+      {archivos.length > 0 && (
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         <button onClick={() => setFiltroAlumno("")} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroAlumno ? C.accent : C.border}`, background: !filtroAlumno ? C.accentDim : "transparent", color: !filtroAlumno ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Todos</button>
         {alumnos.map(a => (
           <button key={a.id} onClick={() => setFiltroAlumno(a.id)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroAlumno===a.id ? C.accent : C.border}`, background: filtroAlumno===a.id ? C.accentDim : "transparent", color: filtroAlumno===a.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{a.apellido}, {a.nombre}</button>
         ))}
       </div>
+      )}
 
       {/* Lista de archivos */}
       {loading ? <div style={{ color: C.muted, textAlign: "center", padding: 40 }}>Cargando...</div> :
