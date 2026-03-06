@@ -2164,13 +2164,23 @@ export default function App() {
   }, []);
   const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); setScreen("login"); setColegioId(null); setDataRaw(INIT); };
 
+  useEffect(() => {
+    const onPop = (e) => {
+      const s = e.state?.screen;
+      if (s === "welcome" || s === "colegios") { setScreen(s); setColegioId(null); }
+      else if (s === "login") { handleLogout(); }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   if (loading) return (
     <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", color: C.muted, fontSize: 16 }}>Cargando...</div>
   );
   return (
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
       {screen === "login" && <Login onLogin={u => { setUser(u); setScreen("welcome"); }} />}
-      {screen === "welcome" && <Welcome onGo={() => setScreen("colegios")} />}
-      {screen === "colegios" && <ColegioSelector data={data} setData={setData} onSelect={id => { setColegioId(id); setScreen("app"); }} onBack={() => setScreen("welcome")} />}
+      {screen === "welcome" && <Welcome onGo={() => { setScreen("colegios"); window.history.pushState({ screen: "colegios" }, "", "#colegios"); }} />}
+      {screen === "colegios" && <ColegioSelector data={data} setData={setData} onSelect={id => { setColegioId(id); setScreen("app"); window.history.pushState({ screen: "app" }, "", "#app"); }} onBack={() => setScreen("welcome")} />}
       {screen === "app" && colegioId && <AppInterna data={data} setData={setData} colegioId={colegioId} onSalir={() => { setColegioId(null); setScreen("colegios"); }} onLogout={handleLogout} />}
     </div> ); }
