@@ -1995,21 +1995,28 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
   const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos };
   const View = views[tab];
   const [tabKey, setTabKey] = useState(0);
-  const [navStack, setNavStack] = useState([]);
-  const goInicio = () => { setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false); setNavStack([]); };
+  const goInicio = () => {
+    setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false);
+    window.location.hash = "";
+  };
   const handleTab = (id) => {
     if (id === "dashboard") { goInicio(); }
-    else if (id === tab) { setTabKey(k => k + 1); setMenuOpen(false); setNavStack(s => [...s, tab]); }
-    else { setNavStack(s => [...s, tab]); setTab(id); setTabKey(k => k + 1); setMenuOpen(false); }
+    else {
+      setTab(id); setTabKey(k => k + 1); setMenuOpen(false);
+      window.location.hash = id;
+    }
   };
-  const goBack = () => {
-    if (navStack.length === 0) { goInicio(); return; }
-    const prev = navStack[navStack.length - 1];
-    setNavStack(s => s.slice(0, -1));
-    if (prev === "dashboard") { setTab("dashboard"); setDashKey(k => k + 1); }
-    else { setTab(prev); setTabKey(k => k + 1); }
-    setMenuOpen(false);
-  };
+  const goBack = () => { window.history.back(); };
+  useEffect(() => {
+    const onHash = () => {
+      const h = window.location.hash.replace("#", "") || "dashboard";
+      if (h === "dashboard") { setTab("dashboard"); setDashKey(k => k + 1); }
+      else { setTab(h); setTabKey(k => k + 1); }
+      setMenuOpen(false);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
   const handleExport = () => {
     setExportando(true);
     setTimeout(() => { exportarExcel(data, colegioId); setExportando(false); }, 100);
