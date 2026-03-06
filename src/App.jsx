@@ -18,7 +18,7 @@ const S = {
   grid2:  { display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 },
   upper:  { fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1.1 },
   ellip:  { whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }, };
-const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [] };
+const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [], reportes: [] };
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 const fmt = (d) => { if (!d) return "—"; return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }); };
@@ -1985,8 +1985,175 @@ const useIsMobile = () => {
   return mobile;
 };
 
-const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
+const Reportes = ({ data, setData, onClose }) => {
+  const [form, setForm] = useState({ titulo: "", descripcion: "", prioridad: "media" });
+  const reportes = [...(data.reportes||[])].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+  const prioColor = { alta: "#f87171", media: "#fbbf24", baja: "#2dd4bf" };
+  const estadoColor = { pendiente: "#fbbf24", "en revision": "#6c63ff", resuelto: "#2dd4bf" };
+
+  const save = () => {
+    if (!form.titulo.trim() || !form.descripcion.trim()) { alert("Completá título y descripción."); return; }
+    const nuevo = { id: uid(), titulo: form.titulo, descripcion: form.descripcion, prioridad: form.prioridad, estado: "pendiente", fecha: new Date().toISOString().slice(0,10) };
+    setData(d => ({ ...d, reportes: [...(d.reportes||[]), nuevo] }));
+    setForm({ titulo: "", descripcion: "", prioridad: "media" });
+  };
+
+  const cambiarEstado = (id, estado) => {
+    setData(d => ({ ...d, reportes: d.reportes.map(r => r.id === id ? { ...r, estado } : r) }));
+  };
+
+  const eliminar = (id) => {
+    setData(d => ({ ...d, reportes: d.reportes.filter(r => r.id !== id) }));
+  };
+
+  return (
+    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: C.bg, padding: 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 900 }}>🐛 Panel de Reportes</h2>
+        <Btn v="ghost" onClick={onClose}>← Volver</Btn>
+      </div>
+
+      {/* Formulario nuevo reporte */}
+      <Box style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 12, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 16 }}>Nuevo reporte</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Inp label="Título *" value={form.titulo} onChange={e => setForm(f => ({...f, titulo: e.target.value}))} placeholder="Ej: El botón guardar no responde" />
+          <Inp label="Descripción *" value={form.descripcion} onChange={e => setForm(f => ({...f, descripcion: e.target.value}))} placeholder="Describí el problema con detalle..." />
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
+            <Sel label="Prioridad" value={form.prioridad} onChange={e => setForm(f => ({...f, prioridad: e.target.value}))}>
+              <option value="alta">🔴 Alta</option>
+              <option value="media">🟡 Media</option>
+              <option value="baja">🟢 Baja</option>
+            </Sel>
+            <Btn onClick={save}>+ Agregar reporte</Btn>
+          </div>
+        </div>
+      </Box>
+
+      {/* Lista de reportes */}
+      {reportes.length === 0 ? <Empty icon="🐛" msg="No hay reportes registrados." /> : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {reportes.map(r => (
+            <Box key={r.id} style={{ borderLeft: `3px solid ${prioColor[r.prioridad]||C.border}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                    <span style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{r.titulo}</span>
+                    <span style={{ background: prioColor[r.prioridad]+"22", color: prioColor[r.prioridad], border: `1px solid ${prioColor[r.prioridad]}44`, borderRadius: 6, padding: "1px 8px", fontSize: 11, fontWeight: 700, textTransform: "capitalize" }}>{r.prioridad}</span>
+                    <span style={{ background: estadoColor[r.estado]+"22", color: estadoColor[r.estado], border: `1px solid ${estadoColor[r.estado]}44`, borderRadius: 6, padding: "1px 8px", fontSize: 11, fontWeight: 700, textTransform: "capitalize" }}>{r.estado}</span>
+                  </div>
+                  <div style={{ color: C.muted, fontSize: 13, marginBottom: 10 }}>{r.descripcion}</div>
+                  <div style={{ fontSize: 11, color: C.dim }}>📅 {fmt(r.fecha)}</div>
+                </div>
+                <button onClick={() => eliminar(r.id)} style={{ background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 16, flexShrink: 0 }} title="Eliminar">🗑</button>
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                {["pendiente","en revision","resuelto"].map(e => (
+                  <button key={e} onClick={() => cambiarEstado(r.id, e)}
+                    style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${r.estado===e ? estadoColor[e] : C.border}`, background: r.estado===e ? estadoColor[e]+"22" : "transparent", color: r.estado===e ? estadoColor[e] : C.dim, fontSize: 11, fontWeight: 700, cursor: "pointer", textTransform: "capitalize" }}>
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </Box>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+const ADMIN_EMAIL = "javierimacri@gmail.com"; // Cambiar por tu email
+
+const PanelFallas = ({ user, onClose }) => {
+  const [fallas, setFallas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const isAdmin = user?.email === ADMIN_EMAIL;
+
+  useEffect(() => {
+    supabase.from("fallas").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+      setFallas(data || []);
+      setLoading(false);
+    });
+  }, []);
+
+  const marcarResuelto = async (id) => {
+    await supabase.from("fallas").update({ estado: "resuelto" }).eq("id", id);
+    setFallas(f => f.map(x => x.id === id ? { ...x, estado: "resuelto" } : x));
+  };
+
+  const eliminar = async (id) => {
+    await supabase.from("fallas").delete().eq("id", id);
+    setFallas(f => f.filter(x => x.id !== id));
+  };
+
+  return (
+    <Pop title="🐛 Panel de fallas reportadas" onClose={onClose} wide>
+      {loading ? <div style={{ color: C.muted, textAlign: "center", padding: 20 }}>Cargando...</div> :
+      fallas.length === 0 ? <Empty icon="✅" msg="No hay fallas reportadas." /> :
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 500, overflowY: "auto" }}>
+        {fallas.map(f => (
+          <div key={f.id} style={{ background: C.bg, border: `1px solid ${f.estado==="resuelto" ? C.green+"44" : C.red+"44"}`, borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ background: f.estado==="resuelto" ? C.green+"22" : C.red+"22", color: f.estado==="resuelto" ? C.green : C.red, border: `1px solid ${f.estado==="resuelto" ? C.green+"44" : C.red+"44"}`, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{f.estado==="resuelto" ? "✅ Resuelto" : "🔴 Pendiente"}</span>
+                  <span style={{ color: C.muted, fontSize: 11 }}>{f.email}</span>
+                  <span style={{ color: C.dim, fontSize: 11 }}>{new Date(f.created_at).toLocaleDateString("es-AR")}</span>
+                </div>
+                <div style={{ color: C.text, fontSize: 14 }}>{f.descripcion}</div>
+                {f.seccion && <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>Sección: {f.seccion}</div>}
+              </div>
+              {isAdmin && (
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  {f.estado !== "resuelto" && <button onClick={() => marcarResuelto(f.id)} style={{ background: C.green+"22", border: `1px solid ${C.green}44`, color: C.green, borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>✓</button>}
+                  <button onClick={() => eliminar(f.id)} style={{ background: C.red+"22", border: `1px solid ${C.red}44`, color: C.red, borderRadius: 8, padding: "6px 10px", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>🗑</button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>}
+    </Pop>
+  );
+};
+
+const FormReporte = ({ user, tab, onClose }) => {
+  const [desc, setDesc] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const enviar = async () => {
+    if (!desc.trim()) { alert("Describí la falla."); return; }
+    setLoading(true);
+    await supabase.from("fallas").insert({ id: uid(), email: user?.email || "anon", descripcion: desc, seccion: tab, estado: "pendiente" });
+    setLoading(false);
+    alert("✅ Falla reportada. Gracias!");
+    onClose();
+  };
+
+  return (
+    <Pop title="🐛 Reportar una falla" onClose={onClose}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ background: C.accentDim, border: `1px solid ${C.accent}44`, borderRadius: 10, padding: "10px 14px", fontSize: 13, color: C.accentL }}>
+          Sección actual: <strong>{tab}</strong>
+        </div>
+        <Inp label="Describí la falla *" value={desc} onChange={e => setDesc(e.target.value)} placeholder="Ej: Al guardar una nota me aparece error..." />
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <Btn v="ghost" onClick={onClose}>Cancelar</Btn>
+          <Btn onClick={enviar} disabled={loading}>{loading ? "Enviando..." : "📤 Enviar reporte"}</Btn>
+        </div>
+      </div>
+    </Pop>
+  );
+};
+
+
+const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [tab, setTab] = useState(() => localStorage.getItem("lastTab") || "dashboard");
+  const [showReporte, setShowReporte] = useState(false);
+  const [showPanel, setShowPanel] = useState(false);
+  const isAdmin = user?.email === ADMIN_EMAIL;
   const [dashKey, setDashKey] = useState(0);
   const [exportando, setExportando] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -2115,12 +2282,28 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             ← Cambiar colegio
           </button>
+          <button onClick={() => setShowReporte(true)}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.yellow; }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
+            🐛 Reportar falla
+          </button>
+          {isAdmin && (
+          <button onClick={() => setShowPanel(true)}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.accent; }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
+            📋 Ver fallas
+          </button>
+          )}
           <button onClick={onLogout}
             style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             🚪 Cerrar sesión
           </button>
+          {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
+          {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
         </div>
       </aside>
       <main style={{ flex: 1, padding: 32, overflowY: "auto" }}>
@@ -2190,5 +2373,5 @@ export default function App() {
       {screen === "login" && <Login onLogin={u => { setUser(u); setScreen("welcome"); }} />}
       {screen === "welcome" && <Welcome onGo={() => { setScreen("colegios"); window.history.pushState({ screen: "colegios" }, "", "#colegios"); }} />}
       {screen === "colegios" && <ColegioSelector data={data} setData={setData} onSelect={id => { setColegioId(id); setScreen("app"); localStorage.setItem("lastColegioId", id); window.history.pushState({ screen: "app" }, "", "#app"); }} onBack={() => setScreen("welcome")} />}
-      {screen === "app" && colegioId && <AppInterna data={data} setData={setData} colegioId={colegioId} onSalir={() => { setColegioId(null); setScreen("colegios"); localStorage.removeItem("lastColegioId"); localStorage.removeItem("lastTab"); }} onLogout={handleLogout} />}
+      {screen === "app" && colegioId && <AppInterna data={data} setData={setData} colegioId={colegioId} user={user} onSalir={() => { setColegioId(null); setScreen("colegios"); localStorage.removeItem("lastColegioId"); localStorage.removeItem("lastTab"); }} onLogout={handleLogout} />}
     </div> ); }
