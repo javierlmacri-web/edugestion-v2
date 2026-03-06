@@ -2064,7 +2064,7 @@ const Reportes = ({ data, setData, onClose }) => {
 };
 
 
-const ADMIN_EMAIL = "javierimacri@gmail.com"; // Cambiar por tu email
+const ADMIN_EMAIL = "javier.l.macri@gmail.com"; // Cambiar por tu email
 
 const PanelFallas = ({ user, onClose }) => {
   const [fallas, setFallas] = useState([]);
