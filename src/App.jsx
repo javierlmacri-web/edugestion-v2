@@ -2173,7 +2173,7 @@ const Documentos = ({ data, setData, colegioId }) => {
         const base64 = e.target.result.split(",")[1];
         const isPdf = file.type === "application/pdf";
         try {
-          const res = await fetch("https://api.anthropic.com/v1/messages", {
+          const res = await fetch("/api/analyze", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -2193,8 +2193,9 @@ const Documentos = ({ data, setData, colegioId }) => {
           const d = await res.json();
           const text = d.content?.[0]?.text || "{}";
           const clean = text.replace(/```json|```/g, "").trim();
+          console.log("IA respuesta:", text, "| Parsed:", clean);
           resolve(JSON.parse(clean));
-        } catch { resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
+        } catch(err) { console.log("IA error:", err, text); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
       };
       reader.readAsDataURL(file);
     });
