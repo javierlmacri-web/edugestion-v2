@@ -1105,8 +1105,27 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           })}
         </div> )}
       {/* Pop carga masiva */}
-      {popMasiva && (
-        <Pop title={`📋 Carga masiva de notas — ${materia?.nombre}`} onClose={() => { setPopMasiva(false); setNotasMasivas({}); }} wide>
+      {popMasiva && (() => {
+        const [tabMasiva, setTabMasiva] = React.useState("notas");
+        const [tipoAct, setTipoAct] = React.useState("positiva");
+        const [descAct, setDescAct] = React.useState("");
+        const [fechaAct, setFechaAct] = React.useState(new Date().toISOString().slice(0,10));
+        const [horaAct, setHoraAct] = React.useState("");
+        const saveActividades = () => {
+          if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
+          const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct, descripcion: descAct, fecha: fechaAct, hora: horaAct }));
+          setData(d => ({ ...d, actividades: [...d.actividades, ...nuevas] }));
+          setPopMasiva(false); setDescAct(""); setHoraAct("");
+          alert(`✅ Se registraron ${nuevas.length} actividades.`);
+        };
+        return (
+        <Pop title={`📋 Carga masiva — ${materia?.nombre}`} onClose={() => { setPopMasiva(false); setNotasMasivas({}); }} wide>
+          <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+            {[{id:"notas",label:"📝 Notas"},{id:"actividades",label:"⚡ Actividades"}].map(t => (
+              <button key={t.id} onClick={() => setTabMasiva(t.id)} style={{ padding: "8px 20px", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, background: tabMasiva===t.id ? C.accent : C.bg, color: tabMasiva===t.id ? "#fff" : C.dim, transition: "all .15s" }}>{t.label}</button>
+            ))}
+          </div>
+          {tabMasiva === "notas" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <Sel label="Tipo de evaluación" value={tipoMasivo} onChange={e => setTipoMasivo(e.target.value)}>
@@ -1122,7 +1141,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
             <Inp label="Descripción (opcional)" value={descMasiva} onChange={e => setDescMasiva(e.target.value)} placeholder="Ej: Primer parcial unidades 1-3" />
             <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
               <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>Notas por alumno (0-10)</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 340, overflowY: "auto" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto" }}>
                 {alumnosMateria.map(al => (
                   <div key={al.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C.bg, borderRadius: 10, padding: "10px 14px", border: `1px solid ${C.border}` }}>
                     <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al.apellido}, {al.nombre}
@@ -1143,8 +1162,41 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
               <Btn onClick={saveMasiva}>💾 Guardar todas las notas</Btn>
             </div>
           </div>
+          )}
+          {tabMasiva === "actividades" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Sel label="Tipo de actividad *" value={tipoAct} onChange={e => setTipoAct(e.target.value)}>
+                <option value="positiva">✅ Positiva</option>
+                <option value="negativa">❌ Negativa</option>
+                <option value="participacion">🙋 Participación</option>
+                <option value="tarea">📚 Tarea</option>
+                <option value="comportamiento">⚠️ Comportamiento</option>
+                <option value="otro">📌 Otro</option>
+              </Sel>
+              <Inp label="Fecha" type="date" value={fechaAct} onChange={e => setFechaAct(e.target.value)} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <Inp label="Descripción *" value={descAct} onChange={e => setDescAct(e.target.value)} placeholder="Ej: Participó activamente en clase" />
+              <Inp label="Hora (opcional)" type="time" value={horaAct} onChange={e => setHoraAct(e.target.value)} />
+            </div>
+            <div style={{ background: C.bg, borderRadius: 10, padding: "12px 16px", border: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>Se registrará para {alumnosMateria.length} alumno{alumnosMateria.length!==1?"s":""}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 180, overflowY: "auto" }}>
+                {alumnosMateria.map(al => (
+                  <div key={al.id} style={{ color: C.text, fontSize: 13, padding: "4px 0" }}>• {al.apellido}, {al.nombre}{al.curso ? ` — ${al.curso}` : ""}</div>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <Btn v="ghost" onClick={() => { setPopMasiva(false); }}>Cancelar</Btn>
+              <Btn onClick={saveActividades}>⚡ Registrar para todos</Btn>
+            </div>
+          </div>
+          )}
         </Pop>
-      )}
+        );
+      })()}
       {/* Pop agregar alumno */}
       {popAgregarAlumno && (
         <Pop title={creandoNuevo ? `➕ Nuevo alumno en ${materia?.nombre}` : `Agregar alumno a ${materia?.nombre}`} onClose={() => { setPopAgregarAlumno(false); setCreandoNuevo(false); setBusqueda(""); setFormNuevo(emptyForm); }} wide>
