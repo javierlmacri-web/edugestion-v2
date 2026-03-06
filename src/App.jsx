@@ -1106,11 +1106,12 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
         </div> )}
       {/* Pop carga masiva */}
       {popMasiva && (() => {
-        const [tabMasiva, setTabMasiva] = React.useState("notas");
-        const [tipoAct, setTipoAct] = React.useState("positiva");
-        const [descAct, setDescAct] = React.useState("");
-        const [fechaAct, setFechaAct] = React.useState(new Date().toISOString().slice(0,10));
-        const [horaAct, setHoraAct] = React.useState("");
+        const MasivaModal = () => {
+        const [tabMasiva, setTabMasiva] = useState("notas");
+        const [tipoAct, setTipoAct] = useState("positiva");
+        const [descAct, setDescAct] = useState("");
+        const [fechaAct, setFechaAct] = useState(new Date().toISOString().slice(0,10));
+        const [horaAct, setHoraAct] = useState("");
         const saveActividades = () => {
           if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
           const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct, descripcion: descAct, fecha: fechaAct, hora: horaAct }));
@@ -1196,6 +1197,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           )}
         </Pop>
         );
+        }; return <MasivaModal />;
       })()}
       {/* Pop agregar alumno */}
       {popAgregarAlumno && (
