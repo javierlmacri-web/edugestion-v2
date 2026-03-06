@@ -1995,23 +1995,21 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
   const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos };
   const View = views[tab];
   const [tabKey, setTabKey] = useState(0);
-  const goInicio = () => { setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false); history.pushState({ tab: "dashboard" }, ""); };
+  const [navStack, setNavStack] = useState([]);
+  const goInicio = () => { setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false); setNavStack([]); };
   const handleTab = (id) => {
     if (id === "dashboard") { goInicio(); }
-    else if (id === tab) { setTabKey(k => k + 1); setMenuOpen(false); history.pushState({ tab: id }, ""); }
-    else { setTab(id); setTabKey(k => k + 1); setMenuOpen(false); history.pushState({ tab: id }, ""); }
+    else if (id === tab) { setTabKey(k => k + 1); setMenuOpen(false); setNavStack(s => [...s, tab]); }
+    else { setNavStack(s => [...s, tab]); setTab(id); setTabKey(k => k + 1); setMenuOpen(false); }
   };
-  useEffect(() => {
-    history.replaceState({ tab: "dashboard" }, "");
-    const onPop = (e) => {
-      const t = e.state?.tab || "dashboard";
-      if (t === "dashboard") { setTab("dashboard"); setDashKey(k => k + 1); }
-      else { setTab(t); setTabKey(k => k + 1); }
-      setMenuOpen(false);
-    };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
+  const goBack = () => {
+    if (navStack.length === 0) { goInicio(); return; }
+    const prev = navStack[navStack.length - 1];
+    setNavStack(s => s.slice(0, -1));
+    if (prev === "dashboard") { setTab("dashboard"); setDashKey(k => k + 1); }
+    else { setTab(prev); setTabKey(k => k + 1); }
+    setMenuOpen(false);
+  };
   const handleExport = () => {
     setExportando(true);
     setTimeout(() => { exportarExcel(data, colegioId); setExportando(false); }, 100);
@@ -2022,9 +2020,14 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: C.bg }}>
       {/* Header móvil */}
       <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
-        <div onClick={goInicio} style={{ cursor: "pointer" }}>
-          <div style={{ fontSize: 9, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>Colegio activo</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>{col?.nombre}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {tab !== "dashboard" && (
+            <button onClick={goBack} style={{ background: "transparent", border: "none", color: C.accent, fontSize: 24, cursor: "pointer", padding: "0 2px", lineHeight: 1 }}>‹</button>
+          )}
+          <div onClick={goInicio} style={{ cursor: "pointer" }}>
+            <div style={{ fontSize: 9, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>Colegio activo</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>{col?.nombre}</div>
+          </div>
         </div>
         <button onClick={() => setMenuOpen(o => !o)} style={{ background: menuOpen ? C.accentDim : "transparent", border: `1px solid ${menuOpen ? C.accent : C.border}`, borderRadius: 10, padding: "8px 12px", color: menuOpen ? C.accentL : C.dim, fontSize: 18, cursor: "pointer" }}>
           {menuOpen ? "✕" : "☰"}
