@@ -1108,13 +1108,13 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
       {popMasiva && (() => {
         const MasivaModal = () => {
         const [tabMasiva, setTabMasiva] = useState("notas");
-        const [tipoAct, setTipoAct] = useState("positiva");
+        const [tipoAct, setTipoAct] = useState({});
         const [descAct, setDescAct] = useState("");
         const [fechaAct, setFechaAct] = useState(new Date().toISOString().slice(0,10));
         const [horaAct, setHoraAct] = useState("");
         const saveActividades = () => {
           if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
-          const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct, descripcion: descAct, fecha: fechaAct, hora: horaAct }));
+          const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
           setData(d => ({ ...d, actividades: [...d.actividades, ...nuevas] }));
           setPopMasiva(false); setDescAct(""); setHoraAct("");
           alert(`✅ Se registraron ${nuevas.length} actividades.`);
@@ -1167,25 +1167,28 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           {tabMasiva === "actividades" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Sel label="Tipo de actividad *" value={tipoAct} onChange={e => setTipoAct(e.target.value)}>
-                <option value="positiva">✅ Positiva</option>
-                <option value="negativa">❌ Negativa</option>
-                <option value="participacion">🙋 Participación</option>
-                <option value="tarea">📚 Tarea</option>
-                <option value="comportamiento">⚠️ Comportamiento</option>
-                <option value="otro">📌 Otro</option>
-              </Sel>
               <Inp label="Fecha" type="date" value={fechaAct} onChange={e => setFechaAct(e.target.value)} />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Inp label="Descripción *" value={descAct} onChange={e => setDescAct(e.target.value)} placeholder="Ej: Participó activamente en clase" />
               <Inp label="Hora (opcional)" type="time" value={horaAct} onChange={e => setHoraAct(e.target.value)} />
             </div>
-            <div style={{ background: C.bg, borderRadius: 10, padding: "12px 16px", border: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>Se registrará para {alumnosMateria.length} alumno{alumnosMateria.length!==1?"s":""}</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 180, overflowY: "auto" }}>
+            <Inp label="Descripción *" value={descAct} onChange={e => setDescAct(e.target.value)} placeholder="Ej: Participó activamente en clase" />
+            <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+              <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>Tipo por alumno</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto" }}>
                 {alumnosMateria.map(al => (
-                  <div key={al.id} style={{ color: C.text, fontSize: 13, padding: "4px 0" }}>• {al.apellido}, {al.nombre}{al.curso ? ` — ${al.curso}` : ""}</div>
+                  <div key={al.id} style={{ display: "flex", alignItems: "center", gap: 10, background: C.bg, borderRadius: 10, padding: "10px 14px", border: `1px solid ${C.border}` }}>
+                    <div style={{ flex: 1, color: C.text, fontWeight: 600, fontSize: 14 }}>{al.apellido}, {al.nombre}
+                      {al.curso && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
+                    </div>
+                    <select value={tipoAct[al.id]||"positiva"} onChange={e => setTipoAct(t => ({...t, [al.id]: e.target.value}))}
+                      style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                      <option value="positiva">✅ Positiva</option>
+                      <option value="negativa">❌ Negativa</option>
+                      <option value="participacion">🙋 Participación</option>
+                      <option value="tarea">📚 Tarea</option>
+                      <option value="comportamiento">⚠️ Comportamiento</option>
+                      <option value="otro">📌 Otro</option>
+                    </select>
+                  </div>
                 ))}
               </div>
             </div>
