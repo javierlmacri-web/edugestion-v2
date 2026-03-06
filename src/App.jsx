@@ -2008,6 +2008,10 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
   };
   const goBack = () => { window.history.back(); };
   useEffect(() => {
+    // Push a base state so the first "back" goes to dashboard instead of closing
+    if (!window.location.hash) {
+      window.history.pushState(null, "", "#dashboard");
+    }
     const onHash = () => {
       const h = window.location.hash.replace("#", "") || "dashboard";
       if (h === "dashboard") { setTab("dashboard"); setDashKey(k => k + 1); }
