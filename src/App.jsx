@@ -711,6 +711,11 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const [formNota, setFormNota] = useState(emptyNota); const [formAct,  setFormAct]  = useState(emptyAct);
   const [formAsist, setFormAsist] = useState(emptyAsist);
   const notas      = data.notas.filter(n => n.alumnoId === alumnoId && n.materiaId === materiaId);
+  const [docsAlumno, setDocsAlumno] = useState([]);
+  useEffect(() => {
+    supabase.from("documentos").select("*").eq("alumno_id", alumnoId).order("created_at", { ascending: false })
+      .then(({ data: docs }) => setDocsAlumno(docs || []));
+  }, [alumnoId]);
   const acts       = data.actividades.filter(a => a.alumnoId === alumnoId && a.materiaId === materiaId);
   const asistencias = (data.asistencias || []).filter(a => a.alumnoId === alumnoId && a.materiaId === materiaId);
   const vals = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom = avg(vals);
@@ -751,7 +756,8 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const SUBTABS = [
     { id: "notas",       icon: "📝", label: `Notas (${notas.length})` },
     { id: "actividades", icon: "⚡", label: `Actividades (${acts.length})` },
-    { id: "asistencia",  icon: "📅", label: `Asistencia (${totalClases})` }, ];
+    { id: "asistencia",  icon: "📅", label: `Asistencia (${totalClases})` },
+    { id: "archivos",    icon: "📁", label: `Archivos` }, ];
   return (
     <div>
       {/* Header alumno */}
@@ -930,6 +936,41 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               ))}
             </div> )}
         </div> )}
+          {subTab === "archivos" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ fontSize: 13, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Documentos del alumno</div>
+              </div>
+              {docsAlumno.length === 0 ? (
+                <Empty icon="📁" msg="No hay archivos para este alumno." />
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+                  {docsAlumno.map(doc => {
+                    const isImg = doc.url?.match(/\.(jpg|jpeg|png|webp|gif)$/i);
+                    const tipoLabel = { examen: "📝 Examen", trabajo: "📋 Trabajo", documento: "📄 Documento", dni: "🪪 DNI" };
+                    return (
+                      <Box key={doc.id} style={{ padding: 0, overflow: "hidden" }}>
+                        {isImg ? (
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                            <img src={doc.url} alt={doc.nombre} style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
+                          </a>
+                        ) : (
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80, background: C.bg, textDecoration: "none" }}>
+                            <span style={{ fontSize: 32 }}>📄</span>
+                          </a>
+                        )}
+                        <div style={{ padding: "10px 12px" }}>
+                          <div style={{ color: C.text, fontSize: 12, fontWeight: 700, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.nombre}</div>
+                          <span style={{ background: C.accentDim, color: C.accentL, borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{tipoLabel[doc.tipo] || doc.tipo}</span>
+                          <div style={{ color: C.dim, fontSize: 11, marginTop: 4 }}>{doc.fecha}</div>
+                        </div>
+                      </Box>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
       {/* Pop Nota */}
       {popNota && (
         <Pop title={editNotaId ? "Editar Nota" : "Agregar Nota"} onClose={() => { setPopNota(false); setEditNotaId(null); }}>
