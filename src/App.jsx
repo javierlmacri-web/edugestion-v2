@@ -2207,12 +2207,19 @@ const Documentos = ({ data, setData, colegioId }) => {
     for (const file of Array.from(files)) {
       const analisis = await analizarArchivo(file);
       const alumnoEncontrado = alumnos.find(a => {
-        const nombre = analisis.nombre?.toLowerCase() || "";
-        return nombre && (
-          `${a.apellido} ${a.nombre}`.toLowerCase().includes(nombre) ||
-          nombre.includes(a.apellido?.toLowerCase()) ||
-          nombre.includes(a.nombre?.toLowerCase())
-        );
+        const detectado = (analisis.nombre || "").toLowerCase().trim();
+        if (!detectado) return false;
+        const apellido = (a.apellido || "").toLowerCase();
+        const nombre = (a.nombre || "").toLowerCase();
+        const fullAB = `${apellido} ${nombre}`;
+        const fullBA = `${nombre} ${apellido}`;
+        // Check if detected contains both nombre and apellido words
+        const palabrasDetectadas = detectado.split(/\s+/);
+        const tieneApellido = palabrasDetectadas.some(p => apellido.includes(p) || p.includes(apellido));
+        const tieneNombre = palabrasDetectadas.some(p => nombre.includes(p) || p.includes(nombre));
+        return (tieneApellido && tieneNombre) ||
+               detectado.includes(fullAB) || detectado.includes(fullBA) ||
+               fullAB.includes(detectado) || fullBA.includes(detectado);
       });
       queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "" });
     }
