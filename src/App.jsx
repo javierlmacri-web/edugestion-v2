@@ -2106,7 +2106,7 @@ const Reportes = ({ data, setData, onClose }) => {
 };
 
 
-const ADMIN_EMAIL = "javierimacri@gmail.com"; // Cambiar por tu email
+const ADMIN_EMAIL = "javier.l.macri@gmail.com"; // Cambiar por tu email
 
 const PanelFallas = ({ user, onClose }) => {
   const [fallas, setFallas] = useState([]);
@@ -2198,7 +2198,9 @@ const Documentos = ({ data, setData, colegioId }) => {
   const [confirmQueue, setConfirmQueue] = useState([]);
   const [procesando, setProcesando] = useState(false);
   const [filtroAlumno, setFiltroAlumno] = useState("");
+  const [filtroMateria, setFiltroMateria] = useState("");
   const alumnos = data.alumnos.filter(a => a.colegioId === colegioId);
+  const materias = data.materias.filter(m => m.colegioId === colegioId);
 
   useEffect(() => {
     supabase.from("documentos").select("*").eq("colegio_id", colegioId).order("created_at", { ascending: false })
@@ -2273,7 +2275,17 @@ const Documentos = ({ data, setData, colegioId }) => {
     setArchivos(a => a.filter(x => x.id !== doc.id));
   };
 
-  const docsFiltrados = archivos.filter(d => !filtroAlumno || d.alumno_id === filtroAlumno);
+  const getAlumnoMaterias = (alumnoId) => {
+    return data.inscripciones.filter(i => i.alumnoId === alumnoId).map(i => i.materiaId);
+  };
+  const docsFiltrados = archivos.filter(d => {
+    if (filtroAlumno && d.alumno_id !== filtroAlumno) return false;
+    if (filtroMateria) {
+      const alumnoMaterias = getAlumnoMaterias(d.alumno_id);
+      if (!alumnoMaterias.includes(filtroMateria)) return false;
+    }
+    return true;
+  });
 
   return (
     <div>
@@ -2323,12 +2335,22 @@ const Documentos = ({ data, setData, colegioId }) => {
         </Box>
       )}
 
-      {/* Filtro por alumno - solo si hay archivos */}
+      {/* Filtros - solo si hay archivos */}
       {archivos.length > 0 && (
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <span style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase" }}>Alumno:</span>
         <button onClick={() => setFiltroAlumno("")} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroAlumno ? C.accent : C.border}`, background: !filtroAlumno ? C.accentDim : "transparent", color: !filtroAlumno ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Todos</button>
         {alumnos.map(a => (
           <button key={a.id} onClick={() => setFiltroAlumno(a.id)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroAlumno===a.id ? C.accent : C.border}`, background: filtroAlumno===a.id ? C.accentDim : "transparent", color: filtroAlumno===a.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{a.apellido}, {a.nombre}</button>
+        ))}
+      </div>
+      )}
+      {archivos.length > 0 && materias.length > 0 && (
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <span style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase" }}>Materia:</span>
+        <button onClick={() => setFiltroMateria("")} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroMateria ? C.accent : C.border}`, background: !filtroMateria ? C.accentDim : "transparent", color: !filtroMateria ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Todas</button>
+        {materias.map(m => (
+          <button key={m.id} onClick={() => setFiltroMateria(m.id)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroMateria===m.id ? C.accent : C.border}`, background: filtroMateria===m.id ? C.accentDim : "transparent", color: filtroMateria===m.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{m.nombre}</button>
         ))}
       </div>
       )}
