@@ -2201,7 +2201,7 @@ const Documentos = ({ data, setData, colegioId }) => {
         if (!textoCompleto) return false;
         const apellido = (a.apellido || "").toLowerCase();
         const nombre = (a.nombre || "").toLowerCase();
-        const palabras = textoCompleto.split(/[\s
+                const palabras = textoCompleto.split(" ");
 
 ]+/);
         const tieneApellido = palabras.some(p => p.length > 2 && (apellido.includes(p) || p.includes(apellido)));
