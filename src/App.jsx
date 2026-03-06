@@ -1998,17 +1998,16 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout }) => {
   const goInicio = () => { setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false); history.pushState({ tab: "dashboard" }, ""); };
   const handleTab = (id) => {
     if (id === "dashboard") { goInicio(); }
-    else if (id === tab) { setTabKey(k => k + 1); setMenuOpen(false); history.pushState({ tab: id, key: tabKey + 1 }, ""); }
+    else if (id === tab) { setTabKey(k => k + 1); setMenuOpen(false); history.pushState({ tab: id }, ""); }
     else { setTab(id); setTabKey(k => k + 1); setMenuOpen(false); history.pushState({ tab: id }, ""); }
   };
   useEffect(() => {
-    history.pushState({ tab: "dashboard" }, "");
+    history.replaceState({ tab: "dashboard" }, "");
     const onPop = (e) => {
-      const t = e.state?.tab;
-      if (t) { setTab(t); setTabKey(k => k + 1); }
-      else { setTab("dashboard"); setDashKey(k => k + 1); }
+      const t = e.state?.tab || "dashboard";
+      if (t === "dashboard") { setTab("dashboard"); setDashKey(k => k + 1); }
+      else { setTab(t); setTabKey(k => k + 1); }
       setMenuOpen(false);
-      history.pushState(e.state || { tab: "dashboard" }, "");
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
