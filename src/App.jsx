@@ -2171,37 +2171,25 @@ const Documentos = ({ data, setData, colegioId }) => {
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64 = e.target.result.split(",")[1];
-        const isPdf = file.type === "application/pdf";
         try {
           const res = await fetch("/api/analyze", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "claude-sonnet-4-20250514",
-              max_tokens: 300,
-              messages: [{
-                role: "user",
-                content: [
-                  isPdf
-                    ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } }
-                    : { type: "image", source: { type: "base64", media_type: file.type, data: base64 } },
-                  { type: "text", text: `Analizá este documento. Respondé SOLO en JSON sin markdown así: {"nombre":"apellido nombre del alumno o persona encontrada","tipo":"examen|trabajo|documento|dni","descripcion":"descripción breve de qué es el documento en máximo 10 palabras"}. Si no encontrás nombre respondé nombre vacío.` }
-                ]
-              }]
-            })
+            body: JSON.stringify({ imageBase64: base64, mimeType: file.type })
           });
           const d = await res.json();
-          const text = d.content?.[0]?.text || "{}";
-          const clean = text.replace(/```json|```/g, "").trim();
-          console.log("IA respuesta completa:", JSON.stringify(d));
-          console.log("IA texto:", text);
-          resolve(JSON.parse(clean));
-        } catch(err) { console.log("IA parse error:", err.message, "| texto:", text); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
+          const fullText = (d.text || "").toLowerCase();
+          console.log("Vision texto:", fullText);
+          let tipo = "documento";
+          if (fullText.includes("parcial") || fullText.includes("examen")) tipo = "examen";
+          else if (fullText.includes("trabajo") || fullText.includes("tp")) tipo = "trabajo";
+          else if (fullText.includes("dni") || fullText.includes("documento nacional")) tipo = "dni";
+          resolve({ nombre: d.text || "", tipo, descripcion: tipo });
+        } catch(err) { console.log("Error:", err.message); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
       };
       reader.readAsDataURL(file);
     });
   };
-
   const subirArchivos = async (files) => {
     if (!files.length) return;
     setProcesando(true);
@@ -2209,19 +2197,16 @@ const Documentos = ({ data, setData, colegioId }) => {
     for (const file of Array.from(files)) {
       const analisis = await analizarArchivo(file);
       const alumnoEncontrado = alumnos.find(a => {
-        const detectado = (analisis.nombre || "").toLowerCase().trim();
-        if (!detectado) return false;
+        const textoCompleto = (analisis.nombre || "").toLowerCase();
+        if (!textoCompleto) return false;
         const apellido = (a.apellido || "").toLowerCase();
         const nombre = (a.nombre || "").toLowerCase();
-        const fullAB = `${apellido} ${nombre}`;
-        const fullBA = `${nombre} ${apellido}`;
-        // Check if detected contains both nombre and apellido words
-        const palabrasDetectadas = detectado.split(/\s+/);
-        const tieneApellido = palabrasDetectadas.some(p => apellido.includes(p) || p.includes(apellido));
-        const tieneNombre = palabrasDetectadas.some(p => nombre.includes(p) || p.includes(nombre));
-        return (tieneApellido && tieneNombre) ||
-               detectado.includes(fullAB) || detectado.includes(fullBA) ||
-               fullAB.includes(detectado) || fullBA.includes(detectado);
+        const palabras = textoCompleto.split(/[\s
+
+]+/);
+        const tieneApellido = palabras.some(p => p.length > 2 && (apellido.includes(p) || p.includes(apellido)));
+        const tieneNombre = palabras.some(p => p.length > 2 && (nombre.includes(p) || p.includes(nombre)));
+        return tieneApellido && tieneNombre;
       });
       queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "" });
     }
