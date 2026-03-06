@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react"; // update
-import { createClient } from "@supabase/supabase-js"; // update
+import { useState, useEffect, useCallback } from "react";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   "https://vqwosiwppdfsifwravsh.supabase.co",
@@ -2193,9 +2193,10 @@ const Documentos = ({ data, setData, colegioId }) => {
           const d = await res.json();
           const text = d.content?.[0]?.text || "{}";
           const clean = text.replace(/```json|```/g, "").trim();
-          console.log("IA respuesta:", text, "| Parsed:", clean);
+          console.log("IA respuesta completa:", JSON.stringify(d));
+          console.log("IA texto:", text);
           resolve(JSON.parse(clean));
-        } catch(err) { console.log("IA error:", err, text); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
+        } catch(err) { console.log("IA parse error:", err.message, "| texto:", text); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
       };
       reader.readAsDataURL(file);
     });
