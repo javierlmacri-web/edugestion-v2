@@ -2230,7 +2230,11 @@ const Documentos = ({ data, setData, colegioId }) => {
           if (lowerText.includes("parcial") || lowerText.includes("examen")) tipo = "examen";
           else if (lowerText.includes("trabajo") || lowerText.includes("tp")) tipo = "trabajo";
           else if (lowerText.includes("dni") || lowerText.includes("documento nacional")) tipo = "dni";
-          resolve({ nombre: cleanText, tipo, descripcion: tipo });
+          // Detect nota from text
+          let notaDetectada = "";
+          const notaMatch = cleanText.match(/[Nn][Oo][Tt][Aa]\.?\s*([0-9]+(?:[.,][0-9]+)?)/);
+          if (notaMatch) notaDetectada = notaMatch[1].replace(",", ".");
+          resolve({ nombre: cleanText, tipo, descripcion: tipo, nota: notaDetectada });
         } catch(err) { console.log("Error:", err.message); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
       };
       reader.readAsDataURL(file);
@@ -2261,7 +2265,7 @@ const Documentos = ({ data, setData, colegioId }) => {
         return tieneApellido && tieneNombre;
       });
       console.log("Alumno encontrado:", alumnoEncontrado?.apellido, alumnoEncontrado?.nombre, "| texto:", analisis.nombre?.slice(0,30));
-      queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "" });
+      queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "", notaDetectada: analisis.nota || "" });
     }
     setConfirmQueue(queue);
     setProcesando(false);
@@ -2286,6 +2290,12 @@ const Documentos = ({ data, setData, colegioId }) => {
 
       const doc = { id: uid(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: uploadData.url, storage_path: uploadData.publicId || "", fecha: new Date().toISOString().slice(0,10) };
       await supabase.from("documentos").insert(doc);
+      // Save nota if provided
+      if (item.notaDetectada && alumnoId) {
+        const nota = { id: uid(), alumnoId, materiaId: "", nota: item.notaDetectada, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
+        await supabase.from("notas").insert(nota);
+        setData(d => ({ ...d, notas: [...d.notas, nota] }));
+      }
       setArchivos(a => [doc, ...a]);
       setConfirmQueue(q => q.filter(x => x !== item));
     } catch(e) { alert("Error: " + e.message); }
@@ -2331,7 +2341,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                   <div style={{ flex: 1 }}>
                     <div style={{ color: C.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>📄 {item.file.name}</div>
                     {item.analisis.descripcion && <div style={{ color: C.muted, fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                       <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
                         style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
                         <option value="">— Sin alumno asignado —</option>
@@ -2345,6 +2355,13 @@ const Documentos = ({ data, setData, colegioId }) => {
                         <option value="dni">🪪 DNI/Documentación</option>
                       </select>
                     </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 12, color: C.dim, fontWeight: 700 }}>Nota:</span>
+                        <input type="number" min="0" max="10" step="0.1" placeholder="—"
+                          value={item.notaDetectada || ""}
+                          onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, notaDetectada: e.target.value} : x))}
+                          style={{ width: 60, background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px", color: C.accentL, fontSize: 14, fontWeight: 900, textAlign: "center", outline: "none" }} />
+                      </div>
                     {item.alumnoSugerido && <div style={{ color: C.accentL, fontSize: 12, marginTop: 6 }}>✨ IA sugirió: {item.alumnoSugerido.apellido}, {item.alumnoSugerido.nombre}</div>}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
