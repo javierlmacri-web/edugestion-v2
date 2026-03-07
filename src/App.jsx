@@ -724,7 +724,11 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
     for (const a of acts) {
       entries.push({ id: uid(), alumno_id: alumnoId, accion: "Actividad agregada (migrado)", detalle: `${a.tipo} — ${a.descripcion} — ${a.fecha}`, created_at: a.fecha ? new Date(a.fecha).toISOString() : new Date().toISOString() });
     }
-    if (entries.length > 0) await supabase.from("historial").insert(entries);
+    if (entries.length > 0) {
+      const { error: insErr } = await supabase.from("historial").insert(entries);
+      console.log("Insert error:", JSON.stringify(insErr));
+      console.log("Sample entry:", JSON.stringify(entries[0]));
+    }
     const { data: rows } = await supabase.from("historial").select("*").eq("alumno_id", alumnoId).order("created_at", { ascending: false });
     setHistorial(rows || []);
     setLoadingHistorial(false);
