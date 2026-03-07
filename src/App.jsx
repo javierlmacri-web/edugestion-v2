@@ -2199,6 +2199,7 @@ const Documentos = ({ data, setData, colegioId }) => {
   const [procesando, setProcesando] = useState(false);
   const [filtroAlumno, setFiltroAlumno] = useState("");
   const [filtroMateria, setFiltroMateria] = useState("");
+  const [showResumen, setShowResumen] = useState(false);
   const alumnos = data.alumnos.filter(a => a.colegioId === colegioId);
   const materias = data.materias.filter(m => m.colegioId === colegioId);
 
@@ -2224,6 +2225,7 @@ const Documentos = ({ data, setData, colegioId }) => {
           const rawText = d.text || "";
           const cleanText = rawText.split("").filter(c => c.charCodeAt(0) < 1000).join("").replace(/ +/g, " ").trim();
           console.log("Vision texto:", cleanText.slice(0, 100));
+          console.log("Claude detectó → nota:", d.nota, "| tipo:", d.tipo);
           const notaDetectada = d.nota || "";
           const tipo = d.tipo || "documento";
           resolve({ nombre: cleanText, tipo, descripcion: tipo, nota: notaDetectada });
@@ -2291,6 +2293,17 @@ const Documentos = ({ data, setData, colegioId }) => {
       setArchivos(a => [doc, ...a]);
       setConfirmQueue(q => q.filter(x => x !== item));
     } catch(e) { alert("Error: " + e.message); }
+    setSubiendo(false);
+  };
+
+  const confirmarTodo = async () => setShowResumen(true);
+
+  const ejecutarConfirmarTodo = async () => {
+    setShowResumen(false);
+    setSubiendo(true);
+    for (const item of [...confirmQueue]) {
+      await confirmarYSubir(item, item.alumnoId, item.tipo || item.analisis.descripcion || "documento");
+    }
     setSubiendo(false);
   };
 
@@ -2366,6 +2379,41 @@ const Documentos = ({ data, setData, colegioId }) => {
             ))}
           </div>
         </Box>
+        {/* Boton confirmar todo */}
+        {confirmQueue.length > 1 && (
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+            <button onClick={confirmarTodo}
+              style={{ background: C.accent, color: "#fff", border: "none", borderRadius: 10, padding: "12px 28px", fontWeight: 900, fontSize: 15, cursor: "pointer", boxShadow: `0 0 20px ${C.accent}66` }}>
+              ✅ Confirmar todo ({confirmQueue.length})
+            </button>
+          </div>
+        )}
+      )}
+
+      {/* Modal resumen confirmar todo */}
+      {showResumen && (
+        <div style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: C.card, border: `1px solid ${C.accent}44`, borderRadius: 16, padding: 28, maxWidth: 500, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: C.accentL, marginBottom: 16 }}>📋 Resumen — {confirmQueue.length} archivos</div>
+            {confirmQueue.map((item, i) => {
+              const alumno = alumnos.find(a => a.id === item.alumnoId);
+              return (
+                <div key={i} style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 10, marginBottom: 10 }}>
+                  <div style={{ color: C.text, fontWeight: 700, fontSize: 13 }}>📄 {item.file.name}</div>
+                  <div style={{ color: C.dim, fontSize: 12, marginTop: 4 }}>
+                    👤 {alumno ? `${alumno.apellido}, ${alumno.nombre}` : "Sin alumno"}
+                    &nbsp;·&nbsp; 📁 {item.tipo || item.analisis.descripcion || "documento"}
+                    {item.notaDetectada && <span>&nbsp;·&nbsp; 📊 Nota: <b style={{ color: C.accentL }}>{item.notaDetectada}</b></span>}
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ display: "flex", gap: 12, marginTop: 20, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowResumen(false)} style={{ padding: "10px 22px", borderRadius: 10, border: `1px solid ${C.border}`, background: "transparent", color: C.muted, fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+              <button onClick={ejecutarConfirmarTodo} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: C.accent, color: "#fff", fontWeight: 900, cursor: "pointer" }}>✅ Confirmar todo</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Filtros - solo si hay archivos */}
