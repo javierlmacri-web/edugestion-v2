@@ -2257,20 +2257,31 @@ const Documentos = ({ data, setData, colegioId }) => {
 
   const confirmarYSubir = async (item, alumnoId, tipo) => {
     setSubiendo(true);
-    const path = `${colegioId}/${alumnoId || "sin-alumno"}/${Date.now()}_${item.file.name}`;
-    const { error } = await supabase.storage.from("documentos").upload(path, item.file);
-    if (error) { alert("Error al subir archivo: " + error.message); setSubiendo(false); return; }
-    const { data: urlData } = supabase.storage.from("documentos").getPublicUrl(path);
-    const doc = { id: uid(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: urlData.publicUrl, storage_path: path, fecha: new Date().toISOString().slice(0,10) };
-    await supabase.from("documentos").insert(doc);
-    setArchivos(a => [doc, ...a]);
-    setConfirmQueue(q => q.filter(x => x !== item));
+    try {
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result.split(",")[1]);
+        reader.readAsDataURL(item.file);
+      });
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mimeType: item.file.type, fileName: item.file.name })
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadData.url) { alert("Error al subir: " + (uploadData.error || "desconocido")); setSubiendo(false); return; }
+
+      const doc = { id: uid(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: uploadData.url, storage_path: uploadData.publicId || "", fecha: new Date().toISOString().slice(0,10) };
+      await supabase.from("documentos").insert(doc);
+      setArchivos(a => [doc, ...a]);
+      setConfirmQueue(q => q.filter(x => x !== item));
+    } catch(e) { alert("Error: " + e.message); }
     setSubiendo(false);
   };
 
   const eliminarDoc = async (doc) => {
     if (!confirm("¿Eliminar este archivo?")) return;
-    await supabase.storage.from("documentos").remove([doc.storage_path]);
     await supabase.from("documentos").delete().eq("id", doc.id);
     setArchivos(a => a.filter(x => x.id !== doc.id));
   };
