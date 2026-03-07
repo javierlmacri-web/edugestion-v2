@@ -2222,21 +2222,10 @@ const Documentos = ({ data, setData, colegioId }) => {
           });
           const d = await res.json();
           const rawText = d.text || "";
-          // Clean non-latin characters for matching
-                    const cleanText = rawText.split("").filter(c => c.charCodeAt(0) < 1000).join("").replace(/ +/g, " ").trim();
+          const cleanText = rawText.split("").filter(c => c.charCodeAt(0) < 1000).join("").replace(/ +/g, " ").trim();
           console.log("Vision texto:", cleanText.slice(0, 100));
-          const lowerText = cleanText.toLowerCase();
-          let tipo = "documento";
-          if (lowerText.includes("parcial") || lowerText.includes("examen")) tipo = "examen";
-          else if (lowerText.includes("trabajo") || lowerText.includes("tp")) tipo = "trabajo";
-          else if (lowerText.includes("dni") || lowerText.includes("documento nacional")) tipo = "dni";
-          // Detect nota from text - handles "NOTA 7.5", "NOTA: 8", "Nota 10"
-          let notaDetectada = "";
-          const lines = cleanText.split("\n");
-          for (const line of lines) {
-            const m = line.match(/[Nn][Oo][Tt][Aa][:\s]+([0-9]+(?:[.,][0-9]+)?)/);
-            if (m) { notaDetectada = m[1].replace(",", "."); break; }
-          }
+          const notaDetectada = d.nota || "";
+          const tipo = d.tipo || "documento";
           resolve({ nombre: cleanText, tipo, descripcion: tipo, nota: notaDetectada });
         } catch(err) { console.log("Error:", err.message); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
       };
@@ -2358,12 +2347,13 @@ const Documentos = ({ data, setData, colegioId }) => {
                         <option value="dni">🪪 DNI/Documentación</option>
                       </select>
                     </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 12, color: C.dim, fontWeight: 700 }}>Nota:</span>
-                        <input type="number" min="0" max="10" step="0.1" placeholder="—"
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, background: item.notaDetectada ? C.green+"22" : C.accentDim, border: `1px solid ${item.notaDetectada ? C.green+"44" : C.accent+"44"}`, borderRadius: 10, padding: "6px 12px" }}>
+                        <span style={{ fontSize: 12, color: C.dim, fontWeight: 700 }}>📊 Nota:</span>
+                        <input type="number" min="0" max="10" step="0.1" placeholder="0-10"
                           value={item.notaDetectada || ""}
                           onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, notaDetectada: e.target.value} : x))}
-                          style={{ width: 60, background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px", color: C.accentL, fontSize: 14, fontWeight: 900, textAlign: "center", outline: "none" }} />
+                          style={{ width: 70, background: "transparent", border: "none", color: item.notaDetectada ? C.green : C.accentL, fontSize: 18, fontWeight: 900, textAlign: "center", outline: "none" }} />
+                        {item.notaDetectada ? <span style={{ fontSize: 11, color: C.green }}>✓ detectada</span> : <span style={{ fontSize: 11, color: C.muted }}>ingresá</span>}
                       </div>
                     {item.alumnoSugerido && <div style={{ color: C.accentL, fontSize: 12, marginTop: 6 }}>✨ IA sugirió: {item.alumnoSugerido.apellido}, {item.alumnoSugerido.nombre}</div>}
                   </div>
