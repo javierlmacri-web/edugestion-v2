@@ -29,24 +29,14 @@ export default async function handler(req, res) {
     else if (lower.includes("trabajo") || lower.includes(" tp ")) tipo = "trabajo";
     else if (lower.includes("tarea")) tipo = "tarea";
 
-    // Detect nota - busca "NOTA 8", "nota: 7", o número suelto entre 1-10
+    // Solo detecta nota si dice explicitamente NOTA/CALIFICACION/CALIF seguido de número
     let nota = "";
     const lines = fullText.split("\n").map(l => l.trim()).filter(Boolean);
     for (const line of lines) {
-      const m = line.match(/[Nn][Oo][Tt][Aa][^0-9]*([0-9]+(?:[.,][0-9]+)?)/);
+      const m = line.match(/(?:[Nn][Oo][Tt][Aa]|[Cc][Aa][Ll][Ii][Ff])[^0-9]*([0-9]+(?:[.,][0-9]+)?)/);
       if (m) { nota = m[1].replace(",", "."); break; }
     }
-    if (!nota) {
-      for (const line of lines) {
-        const m = line.match(/^([0-9]+(?:[.,][0-9]+)?)$/);
-        if (m) {
-          const val = parseFloat(m[1].replace(",", "."));
-          if (val >= 1 && val <= 10) { nota = String(val); break; }
-        }
-      }
-    }
 
-    console.log("Vision texto:", fullText.slice(0, 100));
     console.log("Detectado → nota:", nota, "tipo:", tipo);
     res.status(200).json({ text: fullText, nota, tipo });
 
