@@ -2265,7 +2265,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     setProcesando(false);
   };
 
-  const confirmarYSubir = async (item, alumnoId, tipo) => {
+  const confirmarYSubir = async (item, alumnoId, tipo, notaOverride) => {
     setSubiendo(true);
     try {
       const base64 = await new Promise((resolve) => {
@@ -2285,8 +2285,12 @@ const Documentos = ({ data, setData, colegioId }) => {
       const doc = { id: uid(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: uploadData.url, storage_path: uploadData.publicId || "", fecha: new Date().toISOString().slice(0,10) };
       await supabase.from("documentos").insert(doc);
       // Save nota if provided
-      if (item.notaDetectada && alumnoId) {
-        const nota = { id: uid(), alumnoId, materiaId: "", nota: item.notaDetectada, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
+      const notaFinal = notaOverride !== undefined ? notaOverride : item.notaDetectada;
+      if (notaFinal && alumnoId) {
+        // Find materia from alumno inscriptions
+        const inscripciones = data.inscripciones.filter(i => i.alumnoId === alumnoId);
+        const materiaId = inscripciones.length > 0 ? inscripciones[0].materiaId : "";
+        const nota = { id: uid(), alumnoId, materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
         await supabase.from("notas").insert(nota);
         setData(d => ({ ...d, notas: [...d.notas, nota] }));
       }
@@ -2302,7 +2306,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     setShowResumen(false);
     setSubiendo(true);
     for (const item of [...confirmQueue]) {
-      await confirmarYSubir(item, item.alumnoId, item.tipo || item.analisis.descripcion || "documento");
+      await confirmarYSubir(item, item.alumnoId, item.tipoSeleccionado || item.analisis.tipo || item.analisis.descripcion || "documento", item.notaDetectada);
     }
     setSubiendo(false);
   };
@@ -2352,7 +2356,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                         <option value="">— Sin alumno asignado —</option>
                         {alumnos.map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
                       </select>
-                      <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, analisis:{...x.analisis, tipo: e.target.value}} : x))}
+                      <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, tipoSeleccionado: e.target.value, analisis:{...x.analisis, tipo: e.target.value, descripcion: e.target.value}} : x))}
                         style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
                         <option value="examen">📝 Examen</option>
                         <option value="trabajo">📋 Trabajo práctico</option>
