@@ -20,7 +20,14 @@ const S = {
   ellip:  { whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }, };
 const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [], reportes: [] };
 
-const uid = () => Math.random().toString(36).slice(2, 10);
+const uid = () => Math.random().toString(36).slice
+
+const registrarHistorial = async (alumnoId, accion, detalle, eliminado = false) => {
+  try {
+    const entry = { id: uid(), alumno_id: alumnoId, accion, detalle, eliminado, created_at: new Date().toISOString() };
+    await supabase.from("historial").insert(entry);
+  } catch(e) { console.log("Error historial:", e.message); }
+};(2, 10);
 const fmt = (d) => { if (!d) return "—"; return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }); };
 
 const fmtT = (d) => new Date(d).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
@@ -751,11 +758,6 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
       await registrarHistorial(alumnoId, "Nota agregada", `${formNota.tipo} — ${formNota.descripcion || ""} — Nota: ${formNota.nota}`);
     }
     setPopNota(false); setEditNotaId(null); setFormNota(emptyNota); };
-  const registrarHistorial = async (alumnoId, accion, detalle, eliminado = false) => {
-    const entry = { id: uid(), alumno_id: alumnoId, accion, detalle, eliminado, created_at: new Date().toISOString() };
-    await supabase.from("historial").insert(entry);
-  };
-
   const delNota = async (id) => {
     if (!confirm("¿Eliminar nota?")) return;
     const nota = data.notas.find(n => n.id === id);
