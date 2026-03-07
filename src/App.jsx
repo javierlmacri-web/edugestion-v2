@@ -2469,22 +2469,36 @@ const Documentos = ({ data, setData, colegioId }) => {
       )}
 
       {/* Filtros - solo si hay archivos */}
-      {archivos.length > 0 && (
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase" }}>Alumno:</span>
-        <button onClick={() => setFiltroAlumno("")} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroAlumno ? C.accent : C.border}`, background: !filtroAlumno ? C.accentDim : "transparent", color: !filtroAlumno ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Todos</button>
-        {alumnos.map(a => (
-          <button key={a.id} onClick={() => setFiltroAlumno(a.id)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroAlumno===a.id ? C.accent : C.border}`, background: filtroAlumno===a.id ? C.accentDim : "transparent", color: filtroAlumno===a.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{a.apellido}, {a.nombre}</button>
-        ))}
+      {/* Filtro Materia - siempre visible */}
+      {materias.length > 0 && (
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Materia:</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {materias.map(m => (
+            <button key={m.id} onClick={() => { setFiltroMateria(filtroMateria===m.id ? "" : m.id); setFiltroAlumno(""); }}
+              style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroMateria===m.id ? C.accent : C.border}`, background: filtroMateria===m.id ? C.accentDim : "transparent", color: filtroMateria===m.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              {m.nombre}
+            </button>
+          ))}
+        </div>
       </div>
       )}
-      {archivos.length > 0 && materias.length > 0 && (
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase" }}>Materia:</span>
-        <button onClick={() => setFiltroMateria("")} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroMateria ? C.accent : C.border}`, background: !filtroMateria ? C.accentDim : "transparent", color: !filtroMateria ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Todas</button>
-        {materias.map(m => (
-          <button key={m.id} onClick={() => setFiltroMateria(m.id)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroMateria===m.id ? C.accent : C.border}`, background: filtroMateria===m.id ? C.accentDim : "transparent", color: filtroMateria===m.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{m.nombre}</button>
-        ))}
+      {/* Filtro Alumno - solo si hay materia seleccionada */}
+      {filtroMateria && (
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Alumno:</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button onClick={() => setFiltroAlumno("")}
+            style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroAlumno ? C.accent : C.border}`, background: !filtroAlumno ? C.accentDim : "transparent", color: !filtroAlumno ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            Todos
+          </button>
+          {alumnos.filter(a => data.inscripciones.some(i => i.alumnoId === a.id && i.materiaId === filtroMateria)).map(a => (
+            <button key={a.id} onClick={() => setFiltroAlumno(a.id)}
+              style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroAlumno===a.id ? C.accent : C.border}`, background: filtroAlumno===a.id ? C.accentDim : "transparent", color: filtroAlumno===a.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              {a.apellido}, {a.nombre}
+            </button>
+          ))}
+        </div>
       </div>
       )}
 
