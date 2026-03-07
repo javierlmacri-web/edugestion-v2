@@ -712,6 +712,23 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const [historial, setHistorial] = useState([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
 
+  const migrarHistorialExistente = async () => {
+    setLoadingHistorial(true);
+    const entries = [];
+    // Migrate existing notas
+    for (const n of notas) {
+      entries.push({ id: uid(), alumno_id: alumnoId, accion: "Nota agregada (migrado)", detalle: `${n.tipo || "nota"} — ${n.descripcion || ""} — Nota: ${n.nota}`, eliminado: false, created_at: n.fecha ? new Date(n.fecha).toISOString() : new Date().toISOString() });
+    }
+    // Migrate existing actividades
+    for (const a of acts) {
+      entries.push({ id: uid(), alumno_id: alumnoId, accion: "Actividad agregada (migrado)", detalle: `${a.tipo} — ${a.descripcion} — ${a.fecha}`, eliminado: false, created_at: a.fecha ? new Date(a.fecha).toISOString() : new Date().toISOString() });
+    }
+    if (entries.length > 0) await supabase.from("historial").insert(entries);
+    const { data: rows } = await supabase.from("historial").select("*").eq("alumno_id", alumnoId).order("created_at", { ascending: false });
+    setHistorial(rows || []);
+    setLoadingHistorial(false);
+  };
+
   const verHistorial = async () => {
     setShowHistorial(true);
     setLoadingHistorial(true);
@@ -862,7 +879,15 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
             </div>
             {loadingHistorial ? (
               <div style={{ color: C.muted, textAlign: "center", padding: 20 }}>Cargando...</div>
-            ) : historial.length === 0 ? (
+            ) : (
+            <>
+            {historial.filter(h => h.accion?.includes("migrado")).length === 0 && (notas.length > 0 || acts.length > 0) && (
+              <div style={{ marginBottom: 16, padding: "10px 14px", background: C.accentDim, borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: C.dim }}>Hay notas/actividades anteriores sin registrar</span>
+                <button onClick={migrarHistorialExistente} style={{ background: C.accent, color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Importar historial</button>
+              </div>
+            )}
+            {historial.length === 0 ? (
               <div style={{ color: C.muted, textAlign: "center", padding: 20 }}>Sin actividad registrada</div>
             ) : historial.map((h, i) => {
               const fecha = new Date(h.created_at);
@@ -883,6 +908,8 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                 </div>
               );
             })}
+            </>
+            )}
           </div>
         </div>
       )}
