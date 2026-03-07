@@ -718,11 +718,11 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
     const entries = [];
     // Migrate existing notas
     for (const n of notas) {
-      entries.push({ id: uid(), alumno_id: alumnoId, accion: "Nota agregada (migrado)", detalle: `${n.tipo || "nota"} — ${n.descripcion || ""} — Nota: ${n.nota}`, created_at: n.fecha ? new Date(n.fecha).toISOString() : new Date().toISOString() });
+      entries.push({ id: crypto.randomUUID(), alumno_id: alumnoId, accion: "Nota agregada (migrado)", detalle: `${n.tipo || "nota"} — ${n.descripcion || ""} — Nota: ${n.nota}`, created_at: n.fecha ? new Date(n.fecha).toISOString() : new Date().toISOString() });
     }
     // Migrate existing actividades
     for (const a of acts) {
-      entries.push({ id: uid(), alumno_id: alumnoId, accion: "Actividad agregada (migrado)", detalle: `${a.tipo} — ${a.descripcion} — ${a.fecha}`, created_at: a.fecha ? new Date(a.fecha).toISOString() : new Date().toISOString() });
+      entries.push({ id: crypto.randomUUID(), alumno_id: alumnoId, accion: "Actividad agregada (migrado)", detalle: `${a.tipo} — ${a.descripcion} — ${a.fecha}`, created_at: a.fecha ? new Date(a.fecha).toISOString() : new Date().toISOString() });
     }
     if (entries.length > 0) {
       const { error: insErr } = await supabase.from("historial").insert(entries);
