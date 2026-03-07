@@ -2379,15 +2379,15 @@ const Documentos = ({ data, setData, colegioId }) => {
             ))}
           </div>
         </Box>
-        {/* Boton confirmar todo */}
-        {confirmQueue.length > 1 && (
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
-            <button onClick={confirmarTodo}
-              style={{ background: C.accent, color: "#fff", border: "none", borderRadius: 10, padding: "12px 28px", fontWeight: 900, fontSize: 15, cursor: "pointer", boxShadow: `0 0 20px ${C.accent}66` }}>
-              ✅ Confirmar todo ({confirmQueue.length})
-            </button>
-          </div>
-        )}
+      )}
+      {/* Boton confirmar todo */}
+      {confirmQueue.length > 1 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+          <button onClick={confirmarTodo}
+            style={{ background: C.accent, color: "#fff", border: "none", borderRadius: 10, padding: "12px 28px", fontWeight: 900, fontSize: 15, cursor: "pointer", boxShadow: `0 0 20px ${C.accent}66` }}>
+            ✅ Confirmar todo ({confirmQueue.length})
+          </button>
+        </div>
       )}
 
       {/* Modal resumen confirmar todo */}
