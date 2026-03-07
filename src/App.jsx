@@ -2341,6 +2341,7 @@ const Documentos = ({ data, setData, colegioId }) => {
 
   const eliminarDoc = async (doc) => {
     if (!confirm("¿Eliminar este archivo?")) return;
+    // Eliminar de Cloudinary
     if (doc.storage_path) {
       try {
         const delRes = await fetch("/api/delete-file", {
@@ -2351,6 +2352,14 @@ const Documentos = ({ data, setData, colegioId }) => {
         const delData = await delRes.json();
         console.log("Cloudinary delete result:", delData);
       } catch(e) { console.log("Error eliminando de Cloudinary:", e.message); }
+    }
+    // Eliminar nota asociada si existe
+    if (doc.alumno_id && doc.nombre) {
+      const notaAsociada = data.notas.find(n => n.alumnoId === doc.alumno_id && n.descripcion === doc.nombre);
+      if (notaAsociada) {
+        await supabase.from("notas").delete().eq("id", notaAsociada.id);
+        setData(d => ({ ...d, notas: d.notas.filter(n => n.id !== notaAsociada.id) }));
+      }
     }
     await supabase.from("documentos").delete().eq("id", doc.id);
     setArchivos(a => a.filter(x => x.id !== doc.id));
