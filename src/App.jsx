@@ -2341,6 +2341,17 @@ const Documentos = ({ data, setData, colegioId }) => {
 
   const eliminarDoc = async (doc) => {
     if (!confirm("¿Eliminar este archivo?")) return;
+    if (doc.storage_path) {
+      try {
+        const delRes = await fetch("/api/delete-file", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicId: doc.storage_path })
+        });
+        const delData = await delRes.json();
+        console.log("Cloudinary delete result:", delData);
+      } catch(e) { console.log("Error eliminando de Cloudinary:", e.message); }
+    }
     await supabase.from("documentos").delete().eq("id", doc.id);
     setArchivos(a => a.filter(x => x.id !== doc.id));
   };
