@@ -701,6 +701,17 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const alumno = data.alumnos.find(a => a.id === alumnoId);
   const materia = data.materias.find(m => m.id === materiaId);
   const [subTab, setSubTab] = useState("notas"); const [popNota, setPopNota] = useState(false); const [popAct, setPopAct] = useState(false);
+  const [showHistorial, setShowHistorial] = useState(false);
+  const [historial, setHistorial] = useState([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+
+  const verHistorial = async () => {
+    setShowHistorial(true);
+    setLoadingHistorial(true);
+    const { data: rows } = await supabase.from("historial").select("*").eq("alumno_id", alumnoId).order("created_at", { ascending: false });
+    setHistorial(rows || []);
+    setLoadingHistorial(false);
+  };
   const [popAsist, setPopAsist] = useState(false); const [editNotaId, setEditNotaId] = useState(null);
   const emptyNota = { nota: "", tipo: "parcial", descripcion: "", fecha: new Date().toISOString().slice(0, 10) };
 
@@ -726,12 +737,25 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const justificados  = asistencias.filter(a => a.estado === "justificado").length;
   const pctAsist      = totalClases > 0 ? Math.round((presentes / totalClases) * 100) : null;
   const asistColor    = pctAsist === null ? C.muted : pctAsist >= 75 ? C.green : pctAsist >= 50 ? C.yellow : C.red;
-  const saveNota = () => {
+  const saveNota = async () => {
     const v = parseFloat(formNota.nota);
     if (isNaN(v) || v < 0 || v > 10) { alert("Nota debe ser entre 0 y 10"); return; }
-    if (editNotaId) setData(d => ({ ...d, notas: d.notas.map(n => n.id === editNotaId ? { ...n, ...formNota } : n) }));
-    else setData(d => ({ ...d, notas: [...d.notas, { id: uid(), alumnoId, materiaId, ...formNota }] }));
+    if (editNotaId) {
+      setData(d => ({ ...d, notas: d.notas.map(n => n.id === editNotaId ? { ...n, ...formNota } : n) }));
+      await supabase.from("notas").update(formNota).eq("id", editNotaId);
+      await registrarHistorial(alumnoId, "Nota editada", `${formNota.tipo} — ${formNota.descripcion || ""} — Nota: ${formNota.nota}`);
+    } else {
+      const nueva = { id: uid(), alumnoId, materiaId, ...formNota };
+      setData(d => ({ ...d, notas: [...d.notas, nueva] }));
+      await supabase.from("notas").insert(nueva);
+      await registrarHistorial(alumnoId, "Nota agregada", `${formNota.tipo} — ${formNota.descripcion || ""} — Nota: ${formNota.nota}`);
+    }
     setPopNota(false); setEditNotaId(null); setFormNota(emptyNota); };
+  const registrarHistorial = async (alumnoId, accion, detalle, eliminado = false) => {
+    const entry = { id: uid(), alumno_id: alumnoId, accion, detalle, eliminado, created_at: new Date().toISOString() };
+    await supabase.from("historial").insert(entry);
+  };
+
   const delNota = async (id) => {
     if (!confirm("¿Eliminar nota?")) return;
     const nota = data.notas.find(n => n.id === id);
@@ -758,6 +782,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
         }
       } catch(e) { console.log("Error eliminando imagen:", e.message); }
     }
+    await registrarHistorial(nota.alumnoId, "Nota eliminada", `${nota.tipo || "nota"} — ${nota.descripcion || ""} — Nota: ${nota.nota}`, true);
     await supabase.from("notas").delete().eq("id", id);
     setData(d => ({ ...d, notas: d.notas.filter(n => n.id !== id) }));
   };
@@ -768,7 +793,13 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
     if (!formAct.descripcion.trim()) return;
     setData(d => ({ ...d, actividades: [...d.actividades, { id: uid(), alumnoId, materiaId, ...formAct }] }));
     setPopAct(false); setFormAct(emptyAct); };
-  const delAct = (id) => { if (!confirm("¿Eliminar actividad?")) return; setData(d => ({ ...d, actividades: d.actividades.filter(a => a.id !== id) })); };
+  const delAct = async (id) => {
+    if (!confirm("¿Eliminar actividad?")) return;
+    const act = data.actividades.find(a => a.id === id);
+    if (act) await registrarHistorial(act.alumnoId, "Actividad eliminada", `${act.tipo} — ${act.descripcion} — ${act.fecha}`, true);
+    await supabase.from("actividades").delete().eq("id", id);
+    setData(d => ({ ...d, actividades: d.actividades.filter(a => a.id !== id) }));
+  };
 
   const saveAsist = () => {
     setData(d => ({ ...d, asistencias: [...(d.asistencias || []), { id: uid(), alumnoId, materiaId, ...formAsist }] }));
@@ -809,6 +840,51 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
             {t.icon} {t.label}
           </button>
         ))}</div>
+      {/* Boton historial */}
+      <div style={{ marginBottom: 20 }}>
+        <button onClick={verHistorial}
+          style={{ background: "transparent", border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 16px", color: C.muted, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}
+          onMouseEnter={e => { e.currentTarget.style.color = C.accentL; e.currentTarget.style.borderColor = C.accent; }}
+          onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.borderColor = C.border; }}>
+          🕓 Ver historial
+        </button>
+      </div>
+
+      {/* Modal historial */}
+      {showHistorial && (
+        <div style={{ position: "fixed", inset: 0, background: "#000b", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowHistorial(false)}>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 520, width: "100%", maxHeight: "80vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: C.accentL }}>🕓 Historial — {alumno?.apellido}, {alumno?.nombre}</div>
+              <button onClick={() => setShowHistorial(false)} style={{ background: "transparent", border: "none", color: C.muted, fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+            {loadingHistorial ? (
+              <div style={{ color: C.muted, textAlign: "center", padding: 20 }}>Cargando...</div>
+            ) : historial.length === 0 ? (
+              <div style={{ color: C.muted, textAlign: "center", padding: 20 }}>Sin actividad registrada</div>
+            ) : historial.map((h, i) => {
+              const fecha = new Date(h.created_at);
+              const dia = fecha.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+              const hora = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+              return (
+                <div key={i} style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12, marginBottom: 12, display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <div style={{ minWidth: 90, fontSize: 11, color: C.muted, paddingTop: 2, lineHeight: 1.6 }}>
+                    <div>{dia}</div>
+                    <div>{hora}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: h.eliminado ? "#ef4444" : C.text }}>
+                      {h.eliminado ? "🗑️" : "✅"} {h.accion}
+                    </div>
+                    <div style={{ fontSize: 12, color: h.eliminado ? "#ef444499" : C.dim, marginTop: 3 }}>{h.detalle}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── NOTAS ── */}
       {subTab === "notas" && (
         <div>
@@ -2321,6 +2397,7 @@ const Documentos = ({ data, setData, colegioId }) => {
         const nota = { id: uid(), alumnoId, materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
         await supabase.from("notas").insert(nota);
         setData(d => ({ ...d, notas: [...d.notas, nota] }));
+        await registrarHistorial(alumnoId, "Nota agregada", `${tipo} — ${item.file.name} — Nota: ${notaFinal}`);
       }
       setArchivos(a => [doc, ...a]);
       setConfirmQueue(q => q.filter(x => x !== item));
@@ -2361,6 +2438,7 @@ const Documentos = ({ data, setData, colegioId }) => {
         setData(d => ({ ...d, notas: d.notas.filter(n => n.id !== notaAsociada.id) }));
       }
     }
+    if (doc.alumno_id) await registrarHistorial(doc.alumno_id, "Archivo eliminado", `${doc.nombre} — ${doc.tipo || "documento"}`, true);
     await supabase.from("documentos").delete().eq("id", doc.id);
     setArchivos(a => a.filter(x => x.id !== doc.id));
   };
