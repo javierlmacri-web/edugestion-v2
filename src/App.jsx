@@ -714,6 +714,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
 
   const migrarHistorialExistente = async () => {
     setLoadingHistorial(true);
+    console.log("Migrando - notas:", notas.length, "acts:", acts.length, "alumnoId:", alumnoId);
     const entries = [];
     // Migrate existing notas
     for (const n of notas) {
