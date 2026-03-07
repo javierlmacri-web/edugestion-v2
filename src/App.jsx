@@ -2244,9 +2244,17 @@ const Documentos = ({ data, setData, colegioId }) => {
         if (!textoCompleto) return false;
         const apellido = (a.apellido || "").toLowerCase();
         const nombre = (a.nombre || "").toLowerCase();
-                const palabras = textoCompleto.split(" ");
-        const tieneApellido = palabras.some(p => p.length > 2 && (apellido.includes(p) || p.includes(apellido)));
-        const tieneNombre = palabras.some(p => p.length > 2 && (nombre.includes(p) || p.includes(nombre)));
+        const palabras = textoCompleto.split(" ").filter(p => p.length > 2);
+        const sim = (a, b) => {
+          if (!a || !b) return 0;
+          const longer = a.length > b.length ? a : b;
+          const shorter = a.length > b.length ? b : a;
+          let matches = 0;
+          for (let i = 0; i < shorter.length; i++) if (longer.includes(shorter[i])) matches++;
+          return matches / longer.length;
+        };
+        const tieneApellido = palabras.some(p => apellido.includes(p) || p.includes(apellido) || sim(p, apellido) > 0.75);
+        const tieneNombre = palabras.some(p => nombre.includes(p) || p.includes(nombre) || sim(p, nombre) > 0.75);
         return tieneApellido && tieneNombre;
       });
       queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "" });
