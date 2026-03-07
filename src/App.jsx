@@ -2253,10 +2253,11 @@ const Documentos = ({ data, setData, colegioId }) => {
           for (let i = 0; i < shorter.length; i++) if (longer.includes(shorter[i])) matches++;
           return matches / longer.length;
         };
-        const tieneApellido = palabras.some(p => apellido.includes(p) || p.includes(apellido) || sim(p, apellido) > 0.75);
-        const tieneNombre = palabras.some(p => nombre.includes(p) || p.includes(nombre) || sim(p, nombre) > 0.75);
+        const tieneApellido = palabras.some(p => apellido.includes(p) || p.includes(apellido) || sim(p, apellido) > 0.6);
+        const tieneNombre = palabras.some(p => nombre.includes(p) || p.includes(nombre) || sim(p, nombre) > 0.6);
         return tieneApellido && tieneNombre;
       });
+      console.log("Alumno encontrado:", alumnoEncontrado?.apellido, alumnoEncontrado?.nombre, "| texto:", analisis.nombre?.slice(0,30));
       queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "" });
     }
     setConfirmQueue(queue);
