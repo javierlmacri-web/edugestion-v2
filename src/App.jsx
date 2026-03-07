@@ -2247,7 +2247,7 @@ const Documentos = ({ data, setData, colegioId }) => {
         if (!textoCompleto) return false;
         const apellido = (a.apellido || "").toLowerCase();
         const nombre = (a.nombre || "").toLowerCase();
-        const palabras = textoCompleto.split(" ").filter(p => p.length > 2);
+        const palabras = textoCompleto.split(/[\s\n\r,]+/).filter(p => p.length > 2);
         const sim = (a, b) => {
           if (!a || !b) return 0;
           const longer = a.length > b.length ? a : b;
