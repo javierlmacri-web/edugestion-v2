@@ -36,37 +36,41 @@ export default async function handler(req, res) {
         max_tokens: 200,
         messages: [{
           role: "user",
-          content: `Analizá este texto extraído de un examen escolar escrito a mano. Respondé SOLO con JSON sin explicaciones.
+          content: `Analizá este texto de un examen escolar escrito a mano. Respondé SOLO con JSON válido, sin texto extra.
 
-Texto OCR:
+Texto:
 ${fullText.slice(0, 500)}
 
-Devolvé exactamente este JSON:
-{
-  "nota": "número entre 0 y 10 si encontrás una nota/calificación/puntaje, o vacío si no hay",
-  "tipo": "examen, parcial, trabajo, tp, tarea o documento"
-}
-
-La nota puede estar escrita de cualquier forma: sola en una línea, como "NOTA 8", "8/10", "Calificación: 7", etc. Si hay un número suelto entre 1 y 10 que parece ser la calificación final, usalo.`
+JSON requerido:
+{"nota":"numero del 0 al 10 o vacio","tipo":"examen o parcial o trabajo o documento"}`
         }]
       })
     });
 
     const claudeData = await claudeRes.json();
+    console.log("Claude status:", claudeRes.status);
+    console.log("Claude raw:", JSON.stringify(claudeData).slice(0, 300));
+
     let notaDetectada = "";
     let tipoDetectado = "documento";
 
-    try {
-      const text = claudeData.content?.[0]?.text || "{}";
-      const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
-      notaDetectada = parsed.nota || "";
-      tipoDetectado = parsed.tipo || "documento";
-    } catch(e) {}
+    if (claudeData.content?.[0]?.text) {
+      try {
+        const text = claudeData.content[0].text.replace(/```json|```/g, "").trim();
+        console.log("Claude text:", text);
+        const parsed = JSON.parse(text);
+        notaDetectada = String(parsed.nota || "").replace(/[^0-9.]/g, "");
+        tipoDetectado = parsed.tipo || "documento";
+      } catch(e) {
+        console.log("Parse error:", e.message);
+      }
+    }
 
+    console.log("Final → nota:", notaDetectada, "tipo:", tipoDetectado);
     res.status(200).json({ text: fullText, nota: notaDetectada, tipo: tipoDetectado });
 
   } catch (error) {
+    console.log("Error:", error.message);
     res.status(500).json({ error: error.message });
   }
 }
