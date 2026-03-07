@@ -2221,13 +2221,16 @@ const Documentos = ({ data, setData, colegioId }) => {
             body: JSON.stringify({ imageBase64: base64, mimeType: file.type })
           });
           const d = await res.json();
-          const fullText = (d.text || "").toLowerCase();
-          console.log("Vision texto:", fullText);
+          const rawText = d.text || "";
+          // Clean non-latin characters for matching
+                    const cleanText = rawText.split("").filter(c => c.charCodeAt(0) < 1000).join("").replace(/ +/g, " ").trim();
+          console.log("Vision texto:", cleanText.slice(0, 100));
+          const lowerText = cleanText.toLowerCase();
           let tipo = "documento";
-          if (fullText.includes("parcial") || fullText.includes("examen")) tipo = "examen";
-          else if (fullText.includes("trabajo") || fullText.includes("tp")) tipo = "trabajo";
-          else if (fullText.includes("dni") || fullText.includes("documento nacional")) tipo = "dni";
-          resolve({ nombre: d.text || "", tipo, descripcion: tipo });
+          if (lowerText.includes("parcial") || lowerText.includes("examen")) tipo = "examen";
+          else if (lowerText.includes("trabajo") || lowerText.includes("tp")) tipo = "trabajo";
+          else if (lowerText.includes("dni") || lowerText.includes("documento nacional")) tipo = "dni";
+          resolve({ nombre: cleanText, tipo, descripcion: tipo });
         } catch(err) { console.log("Error:", err.message); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
       };
       reader.readAsDataURL(file);
