@@ -2230,10 +2230,13 @@ const Documentos = ({ data, setData, colegioId }) => {
           if (lowerText.includes("parcial") || lowerText.includes("examen")) tipo = "examen";
           else if (lowerText.includes("trabajo") || lowerText.includes("tp")) tipo = "trabajo";
           else if (lowerText.includes("dni") || lowerText.includes("documento nacional")) tipo = "dni";
-          // Detect nota from text
+          // Detect nota from text - handles "NOTA 7.5", "NOTA: 8", "Nota 10"
           let notaDetectada = "";
-          const notaMatch = cleanText.match(/[Nn][Oo][Tt][Aa]\.?\s*([0-9]+(?:[.,][0-9]+)?)/);
-          if (notaMatch) notaDetectada = notaMatch[1].replace(",", ".");
+          const lines = cleanText.split("\n");
+          for (const line of lines) {
+            const m = line.match(/[Nn][Oo][Tt][Aa][:\s]+([0-9]+(?:[.,][0-9]+)?)/);
+            if (m) { notaDetectada = m[1].replace(",", "."); break; }
+          }
           resolve({ nombre: cleanText, tipo, descripcion: tipo, nota: notaDetectada });
         } catch(err) { console.log("Error:", err.message); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
       };
