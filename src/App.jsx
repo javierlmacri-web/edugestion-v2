@@ -734,16 +734,28 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
     setPopNota(false); setEditNotaId(null); setFormNota(emptyNota); };
   const delNota = async (id) => {
     if (!confirm("¿Eliminar nota?")) return;
-    // Check if there's an associated document image
-    const docAsociado = data.documentos ? data.documentos.find(d => d.descripcion === data.notas.find(n => n.id === id)?.descripcion && d.alumno_id === data.notas.find(n => n.id === id)?.alumnoId) : null;
-    if (docAsociado?.storage_path) {
+    const nota = data.notas.find(n => n.id === id);
+    // Buscar documento asociado en Supabase por nombre de archivo y alumno
+    if (nota?.descripcion && nota?.alumnoId) {
       try {
-        await fetch("/api/delete-file", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ publicId: docAsociado.storage_path })
-        });
-        await supabase.from("documentos").delete().eq("id", docAsociado.id);
+        const { data: docs } = await supabase.from("documentos")
+          .select("*")
+          .eq("alumno_id", nota.alumnoId)
+          .eq("nombre", nota.descripcion);
+        console.log("Docs asociados:", docs);
+        if (docs && docs.length > 0) {
+          const doc = docs[0];
+          if (doc.storage_path) {
+            const delRes = await fetch("/api/delete-file", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ publicId: doc.storage_path })
+            });
+            const delData = await delRes.json();
+            console.log("Cloudinary delete result:", delData);
+          }
+          await supabase.from("documentos").delete().eq("id", doc.id);
+        }
       } catch(e) { console.log("Error eliminando imagen:", e.message); }
     }
     await supabase.from("notas").delete().eq("id", id);
