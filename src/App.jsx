@@ -39,7 +39,9 @@ const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegio
 const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac"}; const out={}; for(const [k,v] of Object.entries(obj)){out[map[k]||k]=v;} return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
 const saveD = async () => {};
-const upsertRow = async (table, obj) => { try { const {error} = await supabase.from(TABLE_MAP[table]).upsert(toDB(obj),{onConflict:"id"}); if(error)console.error("upsert",table,error); } catch(e){console.error(e);} };
+const upsertRow = async (table, obj) => { 
+  if (!obj.id) { console.warn("upsertRow skip - no id", table, obj); return; }
+  try { const {error} = await supabase.from(TABLE_MAP[table]).upsert(toDB(obj),{onConflict:"id"}); if(error)console.error("upsert",table,error); } catch(e){console.error(e);} };
 const deleteRow = async (table, id) => { try { const {error} = await supabase.from(TABLE_MAP[table]).delete().eq("id",id); if(error)console.error("delete",table,error); } catch(e){console.error(e);} };
 
 const Inp = ({ label, ...p }) => (
