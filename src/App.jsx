@@ -2805,6 +2805,9 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
           </button>
         ))}
       </nav>
+      {/* Modals FUERA del nav sticky para evitar z-index bloqueado */}
+      {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
+      {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
     </div>
   );
 
