@@ -6,12 +6,13 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxd29zaXdwcGRmc2lmd3JhdnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mzg0MTEsImV4cCI6MjA4ODIxNDQxMX0.z5zeE7-mNHe7Ie6AalyYBCmnMWXqLR-wGoL5HLjMmhw"
 );
 const C = {
-  bg: "#080a12", card: "#0f1120", card2: "#141627", border: "#1e2235",
-  accent: "#7c6dfa", accentL: "#a89fff", accentDim: "#7c6dfa1a", accentGlow: "#7c6dfa50",
-  green: "#34d9c3", red: "#fb7185", yellow: "#fcd34d", blue: "#67b2ff",
-  text: "#eef0f8", muted: "#3d4260", dim: "#7880a0",
-  grad: "linear-gradient(135deg, #7c6dfa, #a855f7)",
-  gradCard: "linear-gradient(160deg, #0f1120 0%, #141627 100%)",
+  bg: "#060e0a", card: "#0c1a10", card2: "#111f15",
+  border: "#1a2e1e",
+  accent: "#22c55e", accentL: "#4ade80", accentDim: "#22c55e10", accentGlow: "#22c55e40",
+  green: "#34d399", red: "#ef4444", yellow: "#f97316", blue: "#60a5fa",
+  text: "#ecfdf5", muted: "#1a3a22", dim: "#4a7a55",
+  grad: "linear-gradient(135deg, #22c55e, #f97316)",
+  gradCard: "linear-gradient(160deg, #0c1a10 0%, #111f15 100%)",
 };
 const S = {
   row:    { display:"flex", alignItems:"center" },
@@ -142,7 +143,7 @@ const Login = ({ onLogin }) => {
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, position: "relative", overflow: "hidden", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
       {/* Ambient glow blobs */}
       <div style={{ position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)", width: 700, height: 500, background: `radial-gradient(ellipse, ${C.accent}12 0%, transparent 65%)`, pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: "0%", right: "-5%", width: 400, height: 400, background: `radial-gradient(ellipse, #a855f710 0%, transparent 65%)`, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "0%", right: "-5%", width: 400, height: 400, background: `radial-gradient(ellipse, #f9731610 0%, transparent 65%)`, pointerEvents: "none" }} />
       <div style={{ opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(20px)", transition: "all .6s cubic-bezier(.22,.68,0,1.2)", width: "100%", maxWidth: 420, zIndex: 1 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ width: 72, height: 72, background: C.accentDim, border: `2px solid ${C.accent}35`, borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, margin: "0 auto 20px", boxShadow: `0 0 40px ${C.accentGlow}` }}>🎓</div>
@@ -178,11 +179,11 @@ const Welcome = ({ onGo }) => {
         </h1>
         <p style={{ color: C.dim, fontSize: 16, margin: "0 0 52px", lineHeight: 1.7 }}>Sistema integral de gestión escolar.<br />Administrá alumnos, notas y actividades por materia y colegio.</p>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <button onClick={onGo} style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, border: "none", borderRadius: 20, padding: 3, cursor: "pointer", transition: "all .25s", boxShadow: `0 10px 40px ${C.accentGlow}`, width: 270 }}
+          <button onClick={onGo} style={{ background: C.grad, border: "none", borderRadius: 20, padding: 3, cursor: "pointer", transition: "all .25s", boxShadow: `0 10px 40px ${C.accentGlow}`, width: 270 }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 18px 50px ${C.accentGlow}`; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = `0 10px 40px ${C.accentGlow}`; }}>
-            <div style={{ background: "#0c0e16ee", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 52, height: 52, background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>🏫</div>
+            <div style={{ background: "#060e0aee", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 52, height: 52, background: C.grad, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>🏫</div>
               <div style={{ textAlign: "left" }}>
                 <div style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>Colegios</div>
                 <div style={{ color: C.accentL + "99", fontSize: 12, marginTop: 2 }}>Acceder al sistema</div>
@@ -989,7 +990,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>ASISTENCIA</div><div style={{ fontSize: 28, fontWeight: 900, color: asistColor }}>{pctAsist !== null ? `${pctAsist}%` : "—"}</div></div>
             </Box>
             {notas.length >= 1 && (() => {
-              const tipoColors = { parcial: "#6c63ff", final: "#f87171", trabajo: "#2dd4bf", oral: "#fbbf24", recuperatorio: "#f97316", otro: "#60a5fa" };
+              const tipoColors = { parcial: "#22c55e", final: "#f97316", trabajo: "#34d399", oral: "#fbbf24", recuperatorio: "#fb923c", otro: "#60a5fa" };
               const cuatri1 = notas.filter(n => { const m = new Date(n.fecha+"T12:00:00").getMonth()+1; return m>=3&&m<=6; });
               const cuatri2 = notas.filter(n => { const m = new Date(n.fecha+"T12:00:00").getMonth()+1; return m>=8&&m<=11; });
               const tiposPresentes = [...new Set(notas.map(n=>n.tipo).filter(Boolean))];
@@ -1373,7 +1374,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                     <input type="number" min="0" max="10" step="0.1" placeholder="—"
                       value={notasMasivas[al.id] || ""}
                       onChange={e => setNotasMasivas(n => ({ ...n, [al.id]: e.target.value }))}
-                      style={{ width: 70, background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
+                      style={{ width: 70, background: "#04100a", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
                       onFocus={e => e.target.style.borderColor = C.accent}
                       onBlur={e => e.target.style.borderColor = C.border} />
                   </div>
@@ -1402,7 +1403,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                       {al.curso && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
                     </div>
                     <select value={tipoAct[al.id]||"positiva"} onChange={e => setTipoAct(t => ({...t, [al.id]: e.target.value}))}
-                      style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                      style={{ background: "#04100a", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
                       <option value="positiva">✅ Positiva</option>
                       <option value="negativa">❌ Negativa</option>
                       <option value="participacion">🙋 Participación</option>
@@ -2004,7 +2005,7 @@ const Eventos = ({ data, setData, colegioId }) => {
             <Inp label="Participantes" value={form.participantes} onChange={e=>setForm(f=>({...f,participantes:e.target.value}))} placeholder="Ej: Directivos, docentes, padres..." />
             <div style={{display:"flex",flexDirection:"column",gap:5}}>
               <label style={{fontSize:11,color:C.dim,fontWeight:700,textTransform:"uppercase",letterSpacing:1.1}}>Descripcion / Lo sucedido</label>
-              <textarea value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Describí lo que ocurrio, acuerdos, temas..." rows={6} style={{background:"#090b12",border:"1px solid "+C.border,borderRadius:10,padding:"10px 14px",color:C.text,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.7}} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border} />
+              <textarea value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Describí lo que ocurrio, acuerdos, temas..." rows={6} style={{background:"#04100a",border:"1px solid "+C.border,borderRadius:10,padding:"10px 14px",color:C.text,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.7}} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border} />
             </div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <Btn v="ghost" onClick={()=>{setPop(false);setEditId(null);}}>Cancelar</Btn>
@@ -2211,7 +2212,7 @@ const Reportes = ({ data, setData, onClose }) => {
   const [form, setForm] = useState({ titulo: "", descripcion: "", prioridad: "media" });
   const reportes = [...(data.reportes||[])].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
   const prioColor = { alta: "#f87171", media: "#fbbf24", baja: "#2dd4bf" };
-  const estadoColor = { pendiente: "#fbbf24", "en revision": "#6c63ff", resuelto: "#2dd4bf" };
+  const estadoColor = { pendiente: "#f97316", "en revision": "#22c55e", resuelto: "#34d399" };
 
   const save = () => {
     if (!form.titulo.trim() || !form.descripcion.trim()) { alert("Completá título y descripción."); return; }
@@ -2536,7 +2537,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>📁 Archivos y Documentos</h2>
-        <label style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, color: "#fff", padding: "10px 18px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
+        <label style={{ background: C.grad, color: "#fff", padding: "10px 18px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
           {procesando ? "🔍 Analizando..." : "⬆️ Subir archivos"}
           <input type="file" multiple accept="image/*,.pdf" style={{ display: "none" }} onChange={e => subirArchivos(e.target.files)} disabled={procesando} />
         </label>
@@ -2555,12 +2556,12 @@ const Documentos = ({ data, setData, colegioId }) => {
                     {item.analisis.descripcion && <div style={{ color: C.muted, fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                       <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
-                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        style={{ background: "#04100a", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
                         <option value="">— Sin alumno asignado —</option>
                         {alumnos.map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
                       </select>
                       <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, tipoSeleccionado: e.target.value, analisis:{...x.analisis, tipo: e.target.value, descripcion: e.target.value}} : x))}
-                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        style={{ background: "#04100a", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
                         <option value="examen">📝 Examen</option>
                         <option value="trabajo">📋 Trabajo práctico</option>
                         <option value="documento">📄 Documento</option>
