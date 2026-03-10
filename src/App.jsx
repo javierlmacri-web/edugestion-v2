@@ -6,13 +6,12 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxd29zaXdwcGRmc2lmd3JhdnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mzg0MTEsImV4cCI6MjA4ODIxNDQxMX0.z5zeE7-mNHe7Ie6AalyYBCmnMWXqLR-wGoL5HLjMmhw"
 );
 const C = {
-  bg: "#060e0a", card: "#0c1a10", card2: "#111f15",
-  border: "#1a2e1e",
+  bg: "#0b0f1a", card: "#111827", card2: "#161d2e", border: "#1e2a3d",
   accent: "#22c55e", accentL: "#4ade80", accentDim: "#22c55e10", accentGlow: "#22c55e40",
   green: "#34d399", red: "#ef4444", yellow: "#f97316", blue: "#60a5fa",
-  text: "#ecfdf5", muted: "#1a3a22", dim: "#4a7a55",
+  text: "#e8edf5", muted: "#1e2d42", dim: "#4d6480",
   grad: "linear-gradient(135deg, #22c55e, #f97316)",
-  gradCard: "linear-gradient(160deg, #0c1a10 0%, #111f15 100%)",
+  gradCard: "linear-gradient(160deg, #111827 0%, #161d2e 100%)",
 };
 const S = {
   row:    { display:"flex", alignItems:"center" },
@@ -59,7 +58,7 @@ const deleteRow = async (table, id) => { try { const {error} = await supabase.fr
 const Inp = ({ label, ...p }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
     {label && <label style={{ fontSize: 10, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.4 }}>{label}</label>}
-    <input {...p} style={{ background: "#05070f", border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 16px", color: C.text, fontSize: 14, outline: "none", transition: "border-color .2s, box-shadow .2s", fontFamily: "inherit", ...p.style }}
+    <input {...p} style={{ background: "#070c18", border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 16px", color: C.text, fontSize: 14, outline: "none", transition: "border-color .2s, box-shadow .2s", fontFamily: "inherit", ...p.style }}
       onFocus={e => { e.target.style.borderColor = C.accent; e.target.style.boxShadow = `0 0 0 3px ${C.accentGlow}`; }}
       onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} />
   </div>
@@ -67,7 +66,7 @@ const Inp = ({ label, ...p }) => (
 const Sel = ({ label, children, ...p }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
     {label && <label style={{ fontSize: 10, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.4 }}>{label}</label>}
-    <select {...p} style={{ background: "#05070f", border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 16px", color: C.text, fontSize: 14, outline: "none", cursor: "pointer", fontFamily: "inherit", transition: "border-color .2s", ...p.style }}
+    <select {...p} style={{ background: "#070c18", border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 16px", color: C.text, fontSize: 14, outline: "none", cursor: "pointer", fontFamily: "inherit", transition: "border-color .2s", ...p.style }}
       onFocus={e => e.target.style.borderColor = C.accent} onBlur={e => e.target.style.borderColor = C.border}>{children}</select>
   </div>
 );
@@ -182,7 +181,7 @@ const Welcome = ({ onGo }) => {
           <button onClick={onGo} style={{ background: C.grad, border: "none", borderRadius: 20, padding: 3, cursor: "pointer", transition: "all .25s", boxShadow: `0 10px 40px ${C.accentGlow}`, width: 270 }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 18px 50px ${C.accentGlow}`; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = `0 10px 40px ${C.accentGlow}`; }}>
-            <div style={{ background: "#060e0aee", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ background: "#0b0f1aee", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{ width: 52, height: 52, background: C.grad, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>🏫</div>
               <div style={{ textAlign: "left" }}>
                 <div style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>Colegios</div>
@@ -1374,7 +1373,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                     <input type="number" min="0" max="10" step="0.1" placeholder="—"
                       value={notasMasivas[al.id] || ""}
                       onChange={e => setNotasMasivas(n => ({ ...n, [al.id]: e.target.value }))}
-                      style={{ width: 70, background: "#04100a", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
+                      style={{ width: 70, background: "#07101e", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
                       onFocus={e => e.target.style.borderColor = C.accent}
                       onBlur={e => e.target.style.borderColor = C.border} />
                   </div>
@@ -1403,7 +1402,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                       {al.curso && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
                     </div>
                     <select value={tipoAct[al.id]||"positiva"} onChange={e => setTipoAct(t => ({...t, [al.id]: e.target.value}))}
-                      style={{ background: "#04100a", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                      style={{ background: "#07101e", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
                       <option value="positiva">✅ Positiva</option>
                       <option value="negativa">❌ Negativa</option>
                       <option value="participacion">🙋 Participación</option>
@@ -2005,7 +2004,7 @@ const Eventos = ({ data, setData, colegioId }) => {
             <Inp label="Participantes" value={form.participantes} onChange={e=>setForm(f=>({...f,participantes:e.target.value}))} placeholder="Ej: Directivos, docentes, padres..." />
             <div style={{display:"flex",flexDirection:"column",gap:5}}>
               <label style={{fontSize:11,color:C.dim,fontWeight:700,textTransform:"uppercase",letterSpacing:1.1}}>Descripcion / Lo sucedido</label>
-              <textarea value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Describí lo que ocurrio, acuerdos, temas..." rows={6} style={{background:"#04100a",border:"1px solid "+C.border,borderRadius:10,padding:"10px 14px",color:C.text,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.7}} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border} />
+              <textarea value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Describí lo que ocurrio, acuerdos, temas..." rows={6} style={{background:"#07101e",border:"1px solid "+C.border,borderRadius:10,padding:"10px 14px",color:C.text,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.7}} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border} />
             </div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <Btn v="ghost" onClick={()=>{setPop(false);setEditId(null);}}>Cancelar</Btn>
@@ -2556,12 +2555,12 @@ const Documentos = ({ data, setData, colegioId }) => {
                     {item.analisis.descripcion && <div style={{ color: C.muted, fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                       <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
-                        style={{ background: "#04100a", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        style={{ background: "#07101e", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
                         <option value="">— Sin alumno asignado —</option>
                         {alumnos.map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
                       </select>
                       <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, tipoSeleccionado: e.target.value, analisis:{...x.analisis, tipo: e.target.value, descripcion: e.target.value}} : x))}
-                        style={{ background: "#04100a", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        style={{ background: "#07101e", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
                         <option value="examen">📝 Examen</option>
                         <option value="trabajo">📋 Trabajo práctico</option>
                         <option value="documento">📄 Documento</option>
