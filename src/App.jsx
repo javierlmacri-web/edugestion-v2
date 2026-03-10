@@ -737,7 +737,9 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
           ...eventos.map(e => ({ ...e, _src: "evento", _fecha: e.fecha || "" })),
           ...inasistencias.map(i => ({ ...i, _src: "inasistencia", _fecha: i.fecha || "" })),
           ...recentDocs.map(d => ({ ...d, _src: "documento", _fecha: d.createdAt || d.fecha || "" })),
-        ].sort((a, b) => new Date(b._fecha || 0) - new Date(a._fecha || 0)).slice(0, 10);
+          ...mats.map(m => ({ ...m, _src: "materia", _fecha: m.createdAt || "" })),
+          ...als.map(a => ({ ...a, _src: "alumno", _fecha: a.createdAt || "" })),
+        ].filter(x => x._fecha).sort((a, b) => new Date(b._fecha || 0) - new Date(a._fecha || 0)).slice(0, 10);
 
         if (feed.length === 0) return null;
         return (
@@ -846,6 +848,42 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                         <Tag color={C.yellow}>📁 doc</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (item._src === "materia") {
+                  return (
+                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("materias")}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.accent + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📚</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.nombre}</span>
+                          {item.descripcion && <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={C.accent}>nueva materia</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (item._src === "alumno") {
+                  return (
+                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("alumnos")}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.blue + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>👤</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.nombre} {item.apellido}</span>
+                          {item.curso && <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.curso}</div>}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={C.blue}>nuevo alumno</Tag>
                         <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
                       </div>
                     </div>
@@ -1631,7 +1669,7 @@ const Materias = ({ data, setData, colegioId }) => {
   const save = () => {
     if (!form.nombre.trim()) return;
     if (editId) setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? { ...m, ...form } : m) }));
-    else setData(d => ({ ...d, materias: [...d.materias, { id: uid(), colegioId, ...form }] }));
+    else setData(d => ({ ...d, materias: [...d.materias, { id: uid(), colegioId, createdAt: new Date().toISOString().slice(0,10), ...form }] }));
     setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "" }); };
   const del = (id) => { if (!confirm("¿Eliminar materia?")) return; setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) })); };
 
@@ -1829,7 +1867,7 @@ const Alumnos = ({ data, setData, colegioId }) => {
   const save = () => {
     if (!form.nombre.trim() || !form.apellido.trim()) return;
     if (editId) setData(d => ({ ...d, alumnos: d.alumnos.map(a => a.id === editId ? { ...a, ...form } : a) }));
-    else setData(d => ({ ...d, alumnos: [...d.alumnos, { id: uid(), colegioId, ...form }] }));
+    else setData(d => ({ ...d, alumnos: [...d.alumnos, { id: uid(), colegioId, createdAt: new Date().toISOString().slice(0,10), ...form }] }));
     setPop(false); setEditId(null);
     setForm({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); };
   const del = (id) => { if (!confirm("¿Eliminar alumno?")) return; setData(d => ({ ...d, alumnos: d.alumnos.filter(a => a.id !== id) })); };
