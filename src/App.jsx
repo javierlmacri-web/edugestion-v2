@@ -267,8 +267,9 @@ const TABS = [
   { id: "documentos", icon: "📁", label: "Archivos/Docs" }, ];
 const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
-  const [vista, setVista] = useState(null); // null | "materias" | "alumnos" | "notas" | "promedio" | "actividades"
+  const [vista, setVista] = useState(null);
   const [detalleMateria, setDetalleMateria] = useState(null); const [detalleAlumno, setDetalleAlumno] = useState(null); const [matFiltro, setMatFiltro] = useState(null);
+  const [recentDocs, setRecentDocs] = useState([]);
   const goInicio = () => { setVista(null); setDetalleMateria(null); setDetalleAlumno(null); setMatFiltro(null); };
 
   const col  = data.colegios.find(c => c.id === colegioId);
@@ -276,8 +277,19 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const mats = data.materias.filter(m => m.colegioId === colegioId);
   const notas = data.notas.filter(n => als.some(a => a.id === n.alumnoId));
   const acts  = data.actividades.filter(a => als.some(al => al.id === a.alumnoId));
-  const vals  = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom  = avg(vals);
+  const eventos = (data.eventos || []).filter(e => e.colegioId === colegioId);
+  const inasistencias = (data.inasistencias || []).filter(i => i.colegioId === colegioId);
+  const vals  = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom = avg(vals);
   const tipoActColor = { positiva: C.green, negativa: C.red, neutral: C.yellow, participacion: C.blue, observacion: C.dim };
+
+  // Cargar documentos recientes desde Supabase
+  useEffect(() => {
+    if (!colegioId) return;
+    const alumnoIds = als.map(a => a.id);
+    if (alumnoIds.length === 0) return;
+    supabase.from("documentos").select("*").in("alumno_id", alumnoIds).order("created_at", { ascending: false }).limit(20)
+      .then(({ data: docs }) => { if (docs) setRecentDocs(docs.map(d => fromDB(d))); });
+  }, [colegioId, als.length]);
 
   const SC = ({ label, value, color, onClick, sub }) => (
     <Box hi={!!onClick} onClick={onClick} style={{ textAlign: "center", cursor: onClick ? "pointer" : "default", position: "relative" }}>
@@ -717,49 +729,56 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                 </Box> );
             })}</div>
         </> )}
-      {/* Últimas actividades + notas recientes unificadas */}
-      {!busLower && (acts.length > 0 || notas.length > 0) && (() => {
-        // Combinar actividades y notas en un feed unificado, ordenado por fecha desc
-        const feedActs = acts.map(a => ({ ...a, _tipo: "actividad" }));
-        const feedNotas = notas.map(n => ({ ...n, _tipo: "nota" }));
-        const feed = [...feedActs, ...feedNotas]
-          .sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0))
-          .slice(0, 8);
+      {/* Feed unificado: actividades + notas + eventos + inasistencias + documentos */}
+      {!busLower && (() => {
+        const feed = [
+          ...acts.map(a => ({ ...a, _src: "actividad", _fecha: a.fecha || "" })),
+          ...notas.map(n => ({ ...n, _src: "nota", _fecha: n.fecha || "" })),
+          ...eventos.map(e => ({ ...e, _src: "evento", _fecha: e.fecha || "" })),
+          ...inasistencias.map(i => ({ ...i, _src: "inasistencia", _fecha: i.fecha || "" })),
+          ...recentDocs.map(d => ({ ...d, _src: "documento", _fecha: d.createdAt || d.fecha || "" })),
+        ].sort((a, b) => new Date(b._fecha || 0) - new Date(a._fecha || 0)).slice(0, 10);
+
         if (feed.length === 0) return null;
         return (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Últimas actividades y notas</h3>
+              <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Actividad reciente</h3>
               <button onClick={() => setVista("actividades")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>ver todas →</button>
             </div>
             <Box>
-              {feed.map(item => {
+              {feed.map((item, idx) => {
                 const al  = als.find(a => a.id === item.alumnoId);
                 const mat = mats.find(m => m.id === item.materiaId);
-                if (item._tipo === "actividad") {
+                const isLast = idx === feed.length - 1;
+                const rowStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: isLast ? "none" : `1px solid ${C.border}`, gap: 10 };
+
+                if (item._src === "actividad") {
                   const tc = tipoActColor[item.tipo] || C.dim;
                   return (
-                    <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}
-                      onClick={() => { setDetalleAlumno(item.alumnoId); setVista("actividades"); }}>
-                      <div>
-                        <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
-                        {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
-                        <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>
+                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => { setDetalleAlumno(item.alumnoId); setVista("actividades"); }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: tc + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>⚡</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
+                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
+                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>
+                        </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                         <Tag color={tc}>{item.tipo}</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item.fecha)}</span>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
                       </div>
                     </div>
                   );
-                } else {
-                  // Es una nota
+                }
+
+                if (item._src === "nota") {
                   const nc2 = nc(item.nota);
                   return (
-                    <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}
-                      onClick={() => { setDetalleAlumno(item.alumnoId); }}>
+                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.alumnoId)}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 34, height: 34, borderRadius: 9, background: nc2 + "18", border: `1.5px solid ${nc2}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: nc2, flexShrink: 0 }}>{item.nota}</div>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: nc2 + "18", border: `1.5px solid ${nc2}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: nc2, flexShrink: 0 }}>{item.nota}</div>
                         <div>
                           <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
                           {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
@@ -768,11 +787,71 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                         <Tag color={C.blue}>📝 {item.tipo}</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item.fecha)}</span>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
                       </div>
                     </div>
                   );
                 }
+
+                if (item._src === "evento") {
+                  const tipoEv = item.tipo === "plenaria" ? C.accent : C.yellow;
+                  return (
+                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("eventos")}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: tipoEv + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📅</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.titulo}</span>
+                          {item.hora && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{item.hora}hs</span>}
+                          {item.descripcion && <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={tipoEv}>{item.tipo}</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (item._src === "inasistencia") {
+                  return (
+                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("eventos")}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.red + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🗓️</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.docente || item.nombre || "Docente"}</span>
+                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>Inasistencia · {item.tipoInasist || item.tipo || "—"}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={C.red}>inasistencia</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (item._src === "documento") {
+                  const alDoc = als.find(a => a.id === item.alumnoId);
+                  const matDoc = mats.find(m => m.id === item.materiaId);
+                  return (
+                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("documentos")}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.yellow + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📁</div>
+                        <div>
+                          {alDoc && <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{alDoc.nombre} {alDoc.apellido}</span>}
+                          {matDoc && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{matDoc.nombre}</span>}
+                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.nombre || item.url || "Archivo subido"}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={C.yellow}>📁 doc</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
               })}
             </Box>
           </>
