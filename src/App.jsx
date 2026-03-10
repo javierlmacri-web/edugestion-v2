@@ -2845,13 +2845,14 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
           <SideBtn icon="🐛" label="Reportar falla" onClick={() => setShowReporte(true)} />
           {isAdmin && <SideBtn icon="📋" label="Ver fallas" onClick={() => setShowPanel(true)} />}
           <SideBtn icon="🚪" label="Cerrar sesión" onClick={onLogout} danger />
-          {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
-          {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
         </div>
       </aside>
       <main style={{ flex: 1, padding: "32px 36px", overflowY: "auto", background: C.bg }}>
         <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
+      {/* Modals renderizados FUERA del aside para evitar z-index bloqueado por position:sticky */}
+      {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
+      {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
     </div>
   );
 };
