@@ -1690,7 +1690,8 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
 const Materias = ({ data, setData, colegioId }) => {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "" });
   const [editId, setEditId] = useState(null);
-  const materias = data.materias.filter(m => m.colegioId === colegioId);
+  const materias = data.materias.filter(m => m.colegioId === colegioId)
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   if (materiaSeleccionada) {
     return <MateriaDetalle data={data} setData={setData} materiaId={materiaSeleccionada} colegioId={colegioId} onBack={() => setMateriaSeleccionada(null)} />;
   }
@@ -1701,9 +1702,15 @@ const Materias = ({ data, setData, colegioId }) => {
       setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? updated : m) }));
       await upsertRow("materias", updated);
     } else {
-      const nueva = { id: uid(), colegioId, createdAt: new Date().toISOString().slice(0,10), ...form };
+      const nueva = { id: uid(), colegioId, createdAt: new Date().toISOString(), ...form };
       setData(d => ({ ...d, materias: [...d.materias, nueva] }));
-      await upsertRow("materias", nueva);
+      const { error } = await supabase.from("materias").upsert({ id: nueva.id, colegio_id: colegioId, nombre: nueva.nombre, descripcion: nueva.descripcion || "" }, { onConflict: "id" });
+      if (error) {
+        console.error("Error guardando materia:", error);
+        alert("Error al guardar la materia: " + error.message);
+        setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== nueva.id) }));
+        return;
+      }
     }
     setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "" }); };
   const del = async (id) => {
@@ -1909,9 +1916,20 @@ const Alumnos = ({ data, setData, colegioId }) => {
       setData(d => ({ ...d, alumnos: d.alumnos.map(a => a.id === editId ? updated : a) }));
       await upsertRow("alumnos", updated);
     } else {
-      const nuevo = { id: uid(), colegioId, createdAt: new Date().toISOString().slice(0,10), ...form };
+      const nuevo = { id: uid(), colegioId, createdAt: new Date().toISOString(), ...form };
       setData(d => ({ ...d, alumnos: [...d.alumnos, nuevo] }));
-      await upsertRow("alumnos", nuevo);
+      const { error } = await supabase.from("alumnos").upsert({
+        id: nuevo.id, colegio_id: colegioId,
+        nombre: nuevo.nombre, apellido: nuevo.apellido,
+        dni: nuevo.dni || null, fecha_nac: nuevo.fechaNac || null,
+        curso: nuevo.curso || null, email: nuevo.email || null, telefono: nuevo.telefono || null
+      }, { onConflict: "id" });
+      if (error) {
+        console.error("Error guardando alumno:", error);
+        alert("Error al guardar el alumno: " + error.message);
+        setData(d => ({ ...d, alumnos: d.alumnos.filter(a => a.id !== nuevo.id) }));
+        return;
+      }
     }
     setPop(false); setEditId(null);
     setForm({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); };
