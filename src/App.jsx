@@ -301,6 +301,31 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
       .then(({ data: docs }) => { if (docs) setRecentDocs(docs.map(d => fromDB(d))); });
   }, [colegioId, als.length]);
 
+  // Cargar actividades y notas frescos desde Supabase al montar el Dashboard
+  useEffect(() => {
+    if (!colegioId) return;
+    const alumnoIds = als.map(a => a.id);
+    if (alumnoIds.length === 0) return;
+    supabase.from("actividades").select("*").in("alumno_id", alumnoIds)
+      .then(({ data: rows }) => {
+        if (!rows) return;
+        const frescas = rows.map(r => fromDB(r));
+        setData(d => {
+          const otras = d.actividades.filter(a => !alumnoIds.includes(a.alumnoId));
+          return { ...d, actividades: [...otras, ...frescas] };
+        });
+      });
+    supabase.from("notas").select("*").in("alumno_id", alumnoIds)
+      .then(({ data: rows }) => {
+        if (!rows) return;
+        const frescas = rows.map(r => fromDB(r));
+        setData(d => {
+          const otras = d.notas.filter(n => !alumnoIds.includes(n.alumnoId));
+          return { ...d, notas: [...otras, ...frescas] };
+        });
+      });
+  }, [colegioId]);
+
   const SC = ({ label, value, color, onClick, sub }) => (
     <Box hi={!!onClick} onClick={onClick} style={{ textAlign: "center", cursor: onClick ? "pointer" : "default", position: "relative" }}>
       <div style={{ fontSize: 32, fontWeight: 900, color }}>{value}</div>
