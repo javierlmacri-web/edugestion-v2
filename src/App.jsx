@@ -198,12 +198,22 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
 
   const openEdit = (c) => { setForm({ nombre: c.nombre, direccion: c.direccion || "", telefono: c.telefono || "", email: c.email || "" }); setEditId(c.id); setPop(true); };
 
-  const save = () => {
+  const save = async () => {
     if (!form.nombre.trim()) return;
-    if (editId) setData(d => ({ ...d, colegios: d.colegios.map(c => c.id === editId ? { ...c, ...form } : c) }));
-    else setData(d => ({ ...d, colegios: [...d.colegios, { id: uid(), ciclo: new Date().getFullYear().toString(), ...form }] }));
+    if (editId) {
+      const updated = { ...data.colegios.find(c => c.id === editId), ...form };
+      setData(d => ({ ...d, colegios: d.colegios.map(c => c.id === editId ? updated : c) }));
+      await upsertRow("colegios", updated);
+    } else {
+      const nuevo = { id: uid(), ciclo: new Date().getFullYear().toString(), ...form };
+      setData(d => ({ ...d, colegios: [...d.colegios, nuevo] }));
+      await upsertRow("colegios", nuevo);
+    }
     setPop(false); setEditId(null); };
-  const del = (id) => { if (!confirm("¿Eliminar colegio y todos sus datos?")) return; setData(d => ({ ...d, colegios: d.colegios.filter(c => c.id !== id), alumnos: d.alumnos.filter(a => a.colegioId !== id), materias: d.materias.filter(m => m.colegioId !== id) })); };
+  const del = async (id) => {
+    if (!confirm("¿Eliminar colegio y todos sus datos?")) return;
+    setData(d => ({ ...d, colegios: d.colegios.filter(c => c.id !== id), alumnos: d.alumnos.filter(a => a.colegioId !== id), materias: d.materias.filter(m => m.colegioId !== id) }));
+    await deleteRow("colegios", id); };
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
       <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "16px 32px", display: "flex", alignItems: "center", gap: 14 }}>
@@ -962,13 +972,14 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
     const v = parseFloat(formNota.nota);
     if (isNaN(v) || v < 0 || v > 10) { alert("Nota debe ser entre 0 y 10"); return; }
     if (editNotaId) {
-      setData(d => ({ ...d, notas: d.notas.map(n => n.id === editNotaId ? { ...n, ...formNota } : n) }));
-      await supabase.from("notas").update(formNota).eq("id", editNotaId);
+      const updated = { ...data.notas.find(n => n.id === editNotaId), ...formNota };
+      setData(d => ({ ...d, notas: d.notas.map(n => n.id === editNotaId ? updated : n) }));
+      await upsertRow("notas", updated);
       await registrarHistorial(alumnoId, "Nota editada", `${formNota.tipo} — ${formNota.descripcion || ""} — Nota: ${formNota.nota}`);
     } else {
       const nueva = { id: uid(), alumnoId, materiaId, ...formNota };
       setData(d => ({ ...d, notas: [...d.notas, nueva] }));
-      await supabase.from("notas").insert(nueva);
+      await upsertRow("notas", nueva);
       await registrarHistorial(alumnoId, "Nota agregada", `${formNota.tipo} — ${formNota.descripcion || ""} — Nota: ${formNota.nota}`);
     }
     setPopNota(false); setEditNotaId(null); setFormNota(emptyNota); };
@@ -1005,9 +1016,12 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
 
   const editNota = (n) => { setFormNota({ nota: n.nota, tipo: n.tipo, descripcion: n.descripcion || "", fecha: n.fecha }); setEditNotaId(n.id); setPopNota(true); };
 
-  const saveAct = () => {
+  const saveAct = async () => {
     if (!formAct.descripcion.trim()) return;
-    setData(d => ({ ...d, actividades: [...d.actividades, { id: uid(), alumnoId, materiaId, ...formAct }] }));
+    const nueva = { id: uid(), alumnoId, materiaId, ...formAct };
+    setData(d => ({ ...d, actividades: [...d.actividades, nueva] }));
+    await upsertRow("actividades", nueva);
+    await registrarHistorial(alumnoId, "Actividad agregada", `${formAct.tipo} — ${formAct.descripcion} — ${formAct.fecha}`);
     setPopAct(false); setFormAct(emptyAct); };
   const delAct = async (id) => {
     if (!confirm("¿Eliminar actividad?")) return;
@@ -1017,10 +1031,15 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
     setData(d => ({ ...d, actividades: d.actividades.filter(a => a.id !== id) }));
   };
 
-  const saveAsist = () => {
-    setData(d => ({ ...d, asistencias: [...(d.asistencias || []), { id: uid(), alumnoId, materiaId, ...formAsist }] }));
+  const saveAsist = async () => {
+    const nueva = { id: uid(), alumnoId, materiaId, ...formAsist };
+    setData(d => ({ ...d, asistencias: [...(d.asistencias || []), nueva] }));
+    await upsertRow("asistencias", nueva);
     setPopAsist(false); setFormAsist(emptyAsist); };
-  const delAsist = (id) => { if (!confirm("¿Eliminar registro?")) return; setData(d => ({ ...d, asistencias: (d.asistencias || []).filter(a => a.id !== id) })); };
+  const delAsist = async (id) => {
+    if (!confirm("¿Eliminar registro?")) return;
+    setData(d => ({ ...d, asistencias: (d.asistencias || []).filter(a => a.id !== id) }));
+    await deleteRow("asistencias", id); };
 
   const tipoActColor  = { positiva: C.green, negativa: C.red, neutral: C.yellow, participacion: C.blue, observacion: C.dim };
 
@@ -1382,24 +1401,32 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
     : [];
   const alumnosMateria = alumnosColegio.filter(a => inscriptos.includes(a.id));
   const disponibles = alumnosColegio.filter(a => !inscriptos.includes(a.id) && `${a.nombre} ${a.apellido} ${a.dni || ""}`.toLowerCase().includes(busqueda.toLowerCase()));
-  const agregarAlumno = (alumnoId) => {
-    setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), { id: uid(), materiaId, alumnoId }] })); };
-  const crearYAgregarAlumno = () => {
+  const agregarAlumno = async (alumnoId) => {
+    const insc = { id: uid(), materiaId, alumnoId };
+    setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), insc] }));
+    await upsertRow("inscripciones", insc); };
+  const crearYAgregarAlumno = async () => {
     if (!formNuevo.nombre.trim() || !formNuevo.apellido.trim()) return;
     const nuevoId = uid();
+    const nuevoAlumno = { id: nuevoId, colegioId, ...formNuevo };
+    const insc = { id: uid(), materiaId, alumnoId: nuevoId };
     setData(d => ({
       ...d,
-      alumnos: [...d.alumnos, { id: nuevoId, colegioId, ...formNuevo }],
-      inscripciones: [...(d.inscripciones || []), { id: uid(), materiaId, alumnoId: nuevoId }],
+      alumnos: [...d.alumnos, nuevoAlumno],
+      inscripciones: [...(d.inscripciones || []), insc],
     }));
+    await upsertRow("alumnos", nuevoAlumno);
+    await upsertRow("inscripciones", insc);
     setFormNuevo(emptyForm);
     setCreandoNuevo(false);
     setBusqueda(""); };
-  const quitarAlumno = (alumnoId) => {
+  const quitarAlumno = async (alumnoId) => {
     if (!confirm("¿Quitar este alumno de la materia?")) return;
+    const insc = (data.inscripciones || []).find(i => i.materiaId === materiaId && i.alumnoId === alumnoId);
     setData(d => ({ ...d, inscripciones: (d.inscripciones || []).filter(i => !(i.materiaId === materiaId && i.alumnoId === alumnoId)) }));
+    if (insc?.id) await deleteRow("inscripciones", insc.id);
   };
-  const saveMasiva = () => {
+  const saveMasiva = async () => {
     const nuevasNotas = [];
     for (const [alumnoId, nota] of Object.entries(notasMasivas)) {
       const v = parseFloat(nota);
@@ -1409,6 +1436,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
     }
     if (nuevasNotas.length === 0) { alert("No ingresaste ninguna nota válida."); return; }
     setData(d => ({ ...d, notas: [...d.notas, ...nuevasNotas] }));
+    for (const nota of nuevasNotas) { await upsertRow("notas", nota); }
     setPopMasiva(false); setNotasMasivas({}); setDescMasiva("");
     alert(`✅ Se guardaron ${nuevasNotas.length} notas.`);
   };
@@ -1666,12 +1694,22 @@ const Materias = ({ data, setData, colegioId }) => {
   if (materiaSeleccionada) {
     return <MateriaDetalle data={data} setData={setData} materiaId={materiaSeleccionada} colegioId={colegioId} onBack={() => setMateriaSeleccionada(null)} />;
   }
-  const save = () => {
+  const save = async () => {
     if (!form.nombre.trim()) return;
-    if (editId) setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? { ...m, ...form } : m) }));
-    else setData(d => ({ ...d, materias: [...d.materias, { id: uid(), colegioId, createdAt: new Date().toISOString().slice(0,10), ...form }] }));
+    if (editId) {
+      const updated = { ...data.materias.find(m => m.id === editId), ...form };
+      setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? updated : m) }));
+      await upsertRow("materias", updated);
+    } else {
+      const nueva = { id: uid(), colegioId, createdAt: new Date().toISOString().slice(0,10), ...form };
+      setData(d => ({ ...d, materias: [...d.materias, nueva] }));
+      await upsertRow("materias", nueva);
+    }
     setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "" }); };
-  const del = (id) => { if (!confirm("¿Eliminar materia?")) return; setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) })); };
+  const del = async (id) => {
+    if (!confirm("¿Eliminar materia?")) return;
+    setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) }));
+    await deleteRow("materias", id); };
 
   const edit = (m) => { setForm({ nombre: m.nombre, descripcion: m.descripcion || "" }); setEditId(m.id); setPop(true); };
   return (
@@ -1864,13 +1902,23 @@ const Alumnos = ({ data, setData, colegioId }) => {
   const alumnos = data.alumnos.filter(a => a.colegioId === colegioId);
   const cursos = [...new Set(alumnos.map(a => a.curso).filter(Boolean))].sort();
   const [filtroCurso, setFiltroCurso] = useState("");
-  const save = () => {
+  const save = async () => {
     if (!form.nombre.trim() || !form.apellido.trim()) return;
-    if (editId) setData(d => ({ ...d, alumnos: d.alumnos.map(a => a.id === editId ? { ...a, ...form } : a) }));
-    else setData(d => ({ ...d, alumnos: [...d.alumnos, { id: uid(), colegioId, createdAt: new Date().toISOString().slice(0,10), ...form }] }));
+    if (editId) {
+      const updated = { ...data.alumnos.find(a => a.id === editId), ...form };
+      setData(d => ({ ...d, alumnos: d.alumnos.map(a => a.id === editId ? updated : a) }));
+      await upsertRow("alumnos", updated);
+    } else {
+      const nuevo = { id: uid(), colegioId, createdAt: new Date().toISOString().slice(0,10), ...form };
+      setData(d => ({ ...d, alumnos: [...d.alumnos, nuevo] }));
+      await upsertRow("alumnos", nuevo);
+    }
     setPop(false); setEditId(null);
     setForm({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); };
-  const del = (id) => { if (!confirm("¿Eliminar alumno?")) return; setData(d => ({ ...d, alumnos: d.alumnos.filter(a => a.id !== id) })); };
+  const del = async (id) => {
+    if (!confirm("¿Eliminar alumno?")) return;
+    setData(d => ({ ...d, alumnos: d.alumnos.filter(a => a.id !== id) }));
+    await deleteRow("alumnos", id); };
 
   const edit = (a) => {
     setForm({ nombre: a.nombre, apellido: a.apellido, dni: a.dni || "", fechaNac: a.fechaNac || "", curso: a.curso || "", email: a.email || "", telefono: a.telefono || "" });
@@ -2001,21 +2049,39 @@ const Eventos = ({ data, setData, colegioId }) => {
 
   const openEdit = ev => { setForm({titulo:ev.titulo,fecha:ev.fecha,hora:ev.hora||"",participantes:ev.participantes||"",descripcion:ev.descripcion||"",tipo:ev.tipo}); setEditId(ev.id); setPop(true); };
 
-  const save = () => {
+  const save = async () => {
     if (!form.titulo.trim()) return;
-    if (editId) setData(d => ({...d, eventos: (d.eventos||[]).map(e => e.id===editId ? {...e,...form} : e)}));
-    else        setData(d => ({...d, eventos: [...(d.eventos||[]), {id:uid(), colegioId, ...form}]}));
+    if (editId) {
+      const updated = { ...(data.eventos||[]).find(e => e.id===editId), ...form };
+      setData(d => ({...d, eventos: (d.eventos||[]).map(e => e.id===editId ? updated : e)}));
+      await upsertRow("eventos", updated);
+    } else {
+      const nuevo = { id: uid(), colegioId, ...form };
+      setData(d => ({...d, eventos: [...(d.eventos||[]), nuevo]}));
+      await upsertRow("eventos", nuevo);
+    }
     setPop(false); setEditId(null); setForm(emptyForm); };
-  const del = id => {
+  const del = async id => {
     if (!confirm("Eliminar evento?")) return;
     setData(d => ({...d, eventos: (d.eventos||[]).filter(e => e.id!==id)}));
+    await deleteRow("eventos", id);
     if (verId===id) setVerId(null); };
-  const saveInasist = () => {
+  const saveInasist = async () => {
     if (!formInasist.persona.trim()) return;
-    if (editInasistId) setData(d => ({...d, inasistencias: (d.inasistencias||[]).map(i => i.id===editInasistId ? {...i,...formInasist} : i)}));
-    else               setData(d => ({...d, inasistencias: [...(d.inasistencias||[]), {id:uid(), colegioId, ...formInasist}]}));
+    if (editInasistId) {
+      const updated = { ...(data.inasistencias||[]).find(i => i.id===editInasistId), ...formInasist };
+      setData(d => ({...d, inasistencias: (d.inasistencias||[]).map(i => i.id===editInasistId ? updated : i)}));
+      await upsertRow("inasistencias", updated);
+    } else {
+      const nuevo = { id: uid(), colegioId, ...formInasist };
+      setData(d => ({...d, inasistencias: [...(d.inasistencias||[]), nuevo]}));
+      await upsertRow("inasistencias", nuevo);
+    }
     setPopInasist(false); setEditInasistId(null); setFormInasist(emptyInasist); };
-  const delInasist    = id => { if (!confirm("Eliminar pedido?")) return; setData(d => ({...d, inasistencias: (d.inasistencias||[]).filter(i => i.id!==id)})); };
+  const delInasist = async id => {
+    if (!confirm("Eliminar pedido?")) return;
+    setData(d => ({...d, inasistencias: (d.inasistencias||[]).filter(i => i.id!==id)}));
+    await deleteRow("inasistencias", id); };
 
   const editInasistFn = i  => { setFormInasist({persona:i.persona,fecha:i.fecha,tipoInasist:i.tipoInasist,descripcion:i.descripcion||"",estado:i.estado||"pendiente"}); setEditInasistId(i.id); setPopInasist(true); };
 
