@@ -6,10 +6,13 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxd29zaXdwcGRmc2lmd3JhdnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mzg0MTEsImV4cCI6MjA4ODIxNDQxMX0.z5zeE7-mNHe7Ie6AalyYBCmnMWXqLR-wGoL5HLjMmhw"
 );
 const C = {
-  bg: "#0c0e16", card: "#151821", card2: "#1a1d2b", border: "#242736",
-  accent: "#6c63ff", accentL: "#9b95ff", accentDim: "#6c63ff1a", accentGlow: "#6c63ff40",
-  green: "#2dd4bf", red: "#f87171", yellow: "#fbbf24", blue: "#60a5fa",
-  text: "#e2e8f0", muted: "#4a5068", dim: "#8892a4", };
+  bg: "#080a12", card: "#0f1120", card2: "#141627", border: "#1e2235",
+  accent: "#7c6dfa", accentL: "#a89fff", accentDim: "#7c6dfa1a", accentGlow: "#7c6dfa50",
+  green: "#34d9c3", red: "#fb7185", yellow: "#fcd34d", blue: "#67b2ff",
+  text: "#eef0f8", muted: "#3d4260", dim: "#7880a0",
+  grad: "linear-gradient(135deg, #7c6dfa, #a855f7)",
+  gradCard: "linear-gradient(160deg, #0f1120 0%, #141627 100%)",
+};
 const S = {
   row:    { display:"flex", alignItems:"center" },
   rowSB:  { display:"flex", justifyContent:"space-between", alignItems:"center" },
@@ -20,14 +23,14 @@ const S = {
   ellip:  { whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }, };
 const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [], reportes: [] };
 
-const uid = () => Math.random().toString(36).slice
+const uid = () => crypto.randomUUID();
 
 const registrarHistorial = async (alumnoId, accion, detalle, eliminado = false) => {
   try {
     const entry = { id: uid(), alumno_id: alumnoId, accion, detalle, eliminado, created_at: new Date().toISOString() };
     await supabase.from("historial").insert(entry);
   } catch(e) { console.log("Error historial:", e.message); }
-};(2, 10);
+};
 const fmt = (d) => { if (!d) return "—"; return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }); };
 
 const fmtT = (d) => new Date(d).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
@@ -53,57 +56,78 @@ const upsertRow = async (table, obj) => {
 const deleteRow = async (table, id) => { try { const {error} = await supabase.from(TABLE_MAP[table]).delete().eq("id",id); if(error)console.error("delete",table,error); } catch(e){console.error(e);} };
 
 const Inp = ({ label, ...p }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-    {label && <label style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
-    <input {...p} style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 14, outline: "none", transition: "border .2s", ...p.style }}
-      onFocus={e => e.target.style.borderColor = C.accent} onBlur={e => e.target.style.borderColor = C.border} />
-  </div> );
+  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    {label && <label style={{ fontSize: 10, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.4 }}>{label}</label>}
+    <input {...p} style={{ background: "#05070f", border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 16px", color: C.text, fontSize: 14, outline: "none", transition: "border-color .2s, box-shadow .2s", fontFamily: "inherit", ...p.style }}
+      onFocus={e => { e.target.style.borderColor = C.accent; e.target.style.boxShadow = `0 0 0 3px ${C.accentGlow}`; }}
+      onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} />
+  </div>
+);
 const Sel = ({ label, children, ...p }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-    {label && <label style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
-    <select {...p} style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 14, outline: "none", cursor: "pointer", ...p.style }}>{children}</select>
-  </div> );
+  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    {label && <label style={{ fontSize: 10, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.4 }}>{label}</label>}
+    <select {...p} style={{ background: "#05070f", border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 16px", color: C.text, fontSize: 14, outline: "none", cursor: "pointer", fontFamily: "inherit", transition: "border-color .2s", ...p.style }}
+      onFocus={e => e.target.style.borderColor = C.accent} onBlur={e => e.target.style.borderColor = C.border}>{children}</select>
+  </div>
+);
 const Btn = ({ children, v = "primary", sm, ...p }) => {
-  const base = { borderRadius: 10, fontWeight: 700, cursor: "pointer", transition: "all .2s", border: "none", fontSize: sm ? 12 : 14, padding: sm ? "6px 13px" : "10px 20px", display: "inline-flex", alignItems: "center", gap: 6 };
-
-  const vs = { primary: { background: C.accent, color: "#fff", boxShadow: `0 0 18px ${C.accentGlow}` }, danger: { background: C.red + "18", color: C.red, border: `1px solid ${C.red}33` }, ghost: { background: "transparent", color: C.dim, border: `1px solid ${C.border}` }, success: { background: C.green + "18", color: C.green, border: `1px solid ${C.green}33` } };
-  return <button style={{ ...base, ...vs[v] }} {...p}>{children}</button>; };
+  const base = { borderRadius: 11, fontWeight: 700, cursor: "pointer", transition: "all .18s", border: "none", fontSize: sm ? 12 : 14, padding: sm ? "6px 13px" : "10px 22px", display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "inherit", letterSpacing: 0.2 };
+  const vs = {
+    primary: { background: C.grad, color: "#fff", boxShadow: `0 4px 20px ${C.accentGlow}` },
+    danger:  { background: C.red + "15", color: C.red, border: `1.5px solid ${C.red}30` },
+    ghost:   { background: "transparent", color: C.dim, border: `1.5px solid ${C.border}` },
+    success: { background: C.green + "15", color: C.green, border: `1.5px solid ${C.green}30` },
+  };
+  return <button style={{ ...base, ...vs[v] }} {...p}>{children}</button>;
+};
 const Box = ({ children, style, onClick, hi }) => {
   const [h, setH] = useState(false);
-  return <div onClick={onClick} onMouseEnter={() => hi && setH(true)} onMouseLeave={() => hi && setH(false)}
-    style={{ background: h ? C.card2 : C.card, border: `1px solid ${h ? C.accent + "55" : C.border}`, borderRadius: 16, padding: 20, cursor: onClick ? "pointer" : undefined, transition: "all .18s", ...style }}>{children}</div>;
+  return (
+    <div onClick={onClick} onMouseEnter={() => hi && setH(true)} onMouseLeave={() => hi && setH(false)}
+      style={{ background: h ? C.card2 : C.card, border: `1.5px solid ${h ? C.accent + "60" : C.border}`, borderRadius: 18, padding: 20, cursor: onClick ? "pointer" : undefined, transition: "all .2s", boxShadow: h ? `0 8px 32px ${C.accentGlow}` : "none", ...style }}>
+      {children}
+    </div>
+  );
 };
 const Pop = ({ title, onClose, children, wide }) => (
-  <div style={{ position: "fixed", inset: 0, background: "#000000aa", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20, backdropFilter: "blur(8px)" }}>
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 28, width: "100%", maxWidth: wide ? 680 : 500, maxHeight: "92vh", overflowY: "auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
-        <h3 style={{ color: C.text, margin: 0, fontSize: 17, fontWeight: 800 }}>{title}</h3>
-        <Btn v="ghost" sm onClick={onClose}>✕</Btn></div>
-      {children}</div>
-  </div> );
+  <div style={{ position: "fixed", inset: 0, background: "#000000bb", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20, backdropFilter: "blur(12px)" }}>
+    <div style={{ background: C.card, border: `1.5px solid ${C.border}`, borderRadius: 22, padding: 30, width: "100%", maxWidth: wide ? 700 : 520, maxHeight: "92vh", overflowY: "auto", boxShadow: `0 24px 80px #00000088` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <h3 style={{ color: C.text, margin: 0, fontSize: 17, fontWeight: 900, letterSpacing: -0.3 }}>{title}</h3>
+        <button onClick={onClose} style={{ background: C.card2, border: `1.5px solid ${C.border}`, borderRadius: 9, width: 32, height: 32, color: C.dim, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>✕</button>
+      </div>
+      {children}
+    </div>
+  </div>
+);
 const Tag = ({ children, color = C.accent }) => (
-  <span style={{ background: color + "1a", color, border: `1px solid ${color}2e`, borderRadius: 6, padding: "2px 9px", fontSize: 11, fontWeight: 700, display: "inline-block" }}>{children}</span>
+  <span style={{ background: color + "18", color, border: `1px solid ${color}30`, borderRadius: 7, padding: "3px 10px", fontSize: 11, fontWeight: 700, display: "inline-block", letterSpacing: 0.3 }}>{children}</span>
 );
 const Empty = ({ icon, msg }) => (
-  <div style={{ textAlign: "center", padding: "48px 20px", color: C.muted }}>
-    <div style={{ fontSize: 42, marginBottom: 12 }}>{icon}</div>
-    <p style={{ margin: 0, fontSize: 14 }}>{msg}</p> </div> );  const Breadcrumb = ({ items }) => ( <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 22, flexWrap: "wrap" }}>
+  <div style={{ textAlign: "center", padding: "60px 20px", color: C.muted }}>
+    <div style={{ fontSize: 44, marginBottom: 14, opacity: 0.5 }}>{icon}</div>
+    <p style={{ margin: 0, fontSize: 14, color: C.dim }}>{msg}</p>
+  </div>
+);
+const Breadcrumb = ({ items }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
     {items.map((it, i) => (
       <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {i > 0 && <span style={{ color: C.muted, fontSize: 13 }}>›</span>}
+        {i > 0 && <span style={{ color: C.muted, fontSize: 12 }}>›</span>}
         {it.onClick
-          ? <button onClick={it.onClick} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0 }}>{it.label}</button>
+          ? <button onClick={it.onClick} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0, fontFamily: "inherit" }}>{it.label}</button>
           : <span style={{ color: i === items.length - 1 ? C.text : C.dim, fontSize: 13, fontWeight: i === items.length - 1 ? 700 : 400 }}>{it.label}</span>}
       </span>
     ))}
-  </div> );
+  </div>
+);
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [show, setShow] = useState(false);
-  useEffect(() => { setTimeout(() => setShow(true), 80); }, []);
+  useEffect(() => { setTimeout(() => setShow(true), 60); }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) { setError("Ingresá email y contraseña."); return; }
@@ -115,19 +139,23 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, position: "relative" }}>
-      <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", width: 600, height: 600, background: `radial-gradient(circle, ${C.accent}0e 0%, transparent 70%)`, pointerEvents: "none" }} />
-      <div style={{ opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(24px)", transition: "all .7s ease", width: "100%", maxWidth: 420, zIndex: 1 }}>
-        <div style={{ textAlign: "center", marginBottom: 36 }}>
-          <div style={{ width: 80, height: 80, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 38, margin: "0 auto 20px" }}>🎓</div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: C.text, margin: "0 0 8px", letterSpacing: -1 }}>EduGestión</h1>
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, position: "relative", overflow: "hidden", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      {/* Ambient glow blobs */}
+      <div style={{ position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)", width: 700, height: 500, background: `radial-gradient(ellipse, ${C.accent}12 0%, transparent 65%)`, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "0%", right: "-5%", width: 400, height: 400, background: `radial-gradient(ellipse, #a855f710 0%, transparent 65%)`, pointerEvents: "none" }} />
+      <div style={{ opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(20px)", transition: "all .6s cubic-bezier(.22,.68,0,1.2)", width: "100%", maxWidth: 420, zIndex: 1 }}>
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <div style={{ width: 72, height: 72, background: C.accentDim, border: `2px solid ${C.accent}35`, borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, margin: "0 auto 20px", boxShadow: `0 0 40px ${C.accentGlow}` }}>🎓</div>
+          <h1 style={{ fontSize: 30, fontWeight: 900, color: C.text, margin: "0 0 8px", letterSpacing: -1.2 }}>EduGestión</h1>
           <p style={{ color: C.dim, fontSize: 14, margin: 0 }}>Ingresá con tu cuenta para continuar</p>
         </div>
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 28, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ background: C.card, border: `1.5px solid ${C.border}`, borderRadius: 22, padding: 30, display: "flex", flexDirection: "column", gap: 16, boxShadow: "0 20px 60px #00000060" }}>
           <Inp label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" onKeyDown={e => e.key === "Enter" && handleLogin()} />
           <Inp label="Contraseña" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleLogin()} />
-          {error && <div style={{ background: C.red + "18", border: `1px solid ${C.red}33`, borderRadius: 10, padding: "10px 14px", color: C.red, fontSize: 13 }}>{error}</div>}
-          <button onClick={handleLogin} disabled={loading} style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, border: "none", borderRadius: 12, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: loading ? "wait" : "pointer", marginTop: 4, transition: "all .2s", opacity: loading ? 0.7 : 1 }}>
+          {error && (
+            <div style={{ background: C.red + "12", border: `1.5px solid ${C.red}30`, borderRadius: 11, padding: "10px 14px", color: C.red, fontSize: 13 }}>⚠️ {error}</div>
+          )}
+          <button onClick={handleLogin} disabled={loading} style={{ background: C.grad, border: "none", borderRadius: 13, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: loading ? "wait" : "pointer", marginTop: 6, transition: "all .2s", opacity: loading ? 0.7 : 1, boxShadow: `0 6px 24px ${C.accentGlow}`, fontFamily: "inherit", letterSpacing: 0.3 }}>
             {loading ? "Ingresando..." : "Ingresar →"}
           </button>
         </div>
@@ -1302,10 +1330,14 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
         const [descAct, setDescAct] = useState("");
         const [fechaAct, setFechaAct] = useState(new Date().toISOString().slice(0,10));
         const [horaAct, setHoraAct] = useState("");
-        const saveActividades = () => {
+        const saveActividades = async () => {
           if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
           const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
           setData(d => ({ ...d, actividades: [...d.actividades, ...nuevas] }));
+          // Persist each activity to Supabase
+          for (const act of nuevas) {
+            await upsertRow("actividades", act);
+          }
           setPopMasiva(false); setDescAct(""); setHoraAct("");
           alert(`✅ Se registraron ${nuevas.length} actividades.`);
         };
@@ -2433,19 +2465,16 @@ const Documentos = ({ data, setData, colegioId }) => {
       const doc = { id: crypto.randomUUID(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: uploadData.url, storage_path: uploadData.publicId || "", fecha: new Date().toISOString().slice(0,10) };
       const { error: docErr } = await supabase.from("documentos").insert(doc);
       console.log("doc insert result:", docErr ? JSON.stringify(docErr) : "OK", "doc.id:", doc.id);
-      // Save nota if provided
+      // Save nota if provided — usar camelCase para que setData/upsertRow lo convierta correctamente
       const notaFinal = notaOverride !== undefined ? notaOverride : item.notaDetectada;
       if (notaFinal && alumnoId) {
         const inscripciones = data.inscripciones.filter(i => i.alumnoId === alumnoId);
         const materiaId = inscripciones.length > 0 ? inscripciones[0].materiaId : "";
-        const nota = { id: crypto.randomUUID(), alumno_id: alumnoId, materia_id: materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
+        const nota = { id: crypto.randomUUID(), alumnoId, materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
         console.log("Saving nota:", JSON.stringify(nota));
-        const { error: notaErr } = await supabase.from("notas").insert(nota);
-        if (notaErr) console.error("nota insert error:", notaErr);
-        else {
-          setData(d => ({ ...d, notas: [...d.notas, nota] }));
-          await registrarHistorial(alumnoId, "Nota agregada", `${tipo} — ${item.file.name} — Nota: ${notaFinal}`);
-        }
+        setData(d => ({ ...d, notas: [...d.notas, nota] }));
+        await upsertRow("notas", nota);
+        await registrarHistorial(alumnoId, "Nota agregada", `${tipo} — ${item.file.name} — Nota: ${notaFinal}`);
       }
       setArchivos(a => [doc, ...a]);
       setConfirmQueue(q => q.filter(x => x !== item));
@@ -2780,60 +2809,47 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   );
 
   // ── DESKTOP LAYOUT ─────────────────────────────────────────────────────────
+  const SideBtn = ({ icon, label, active, onClick, color, danger }) => {
+    const [h, setH] = useState(false);
+    const activeColor = color || C.accentL;
+    return (
+      <button onClick={onClick} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
+        style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 14px", borderRadius: 11, border: active ? `1.5px solid ${C.accent}40` : "none", cursor: "pointer", fontSize: 13.5, fontWeight: active ? 700 : 500, transition: "all .15s", background: active ? C.accentDim : h ? C.card2 : "transparent", color: active ? activeColor : h ? (danger ? C.red : C.text) : C.dim, width: "100%", textAlign: "left", fontFamily: "inherit" }}>
+        <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>{icon}</span>{label}
+      </button>
+    );
+  };
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: C.bg }}>
-      <aside style={{ width: 220, background: C.card, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
-        <div style={{ padding: "18px 16px 14px", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }} onClick={goInicio}>
-          <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>Colegio activo</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: C.text, lineHeight: 1.3 }}>{col?.nombre}</div>
+      <aside style={{ width: 228, background: C.card, borderRight: `1.5px solid ${C.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
+        {/* Logo/School header */}
+        <div style={{ padding: "20px 16px 16px", borderBottom: `1.5px solid ${C.border}`, cursor: "pointer" }} onClick={goInicio}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 36, height: 36, background: C.accentDim, border: `1.5px solid ${C.accent}35`, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>🎓</div>
+            <div>
+              <div style={{ fontSize: 9, color: C.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.4, marginBottom: 3 }}>Colegio activo</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: C.text, lineHeight: 1.3, maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{col?.nombre}</div>
+            </div>
+          </div>
         </div>
-        <nav style={{ flex: 1, padding: "12px 9px", display: "flex", flexDirection: "column", gap: 3 }}>
+        {/* Main nav */}
+        <nav style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
           {TABS.map(t => (
-            <button key={t.id} onClick={() => handleTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: tab === t.id ? 700 : 500, transition: "all .15s", background: tab === t.id ? C.accentDim : "transparent", color: tab === t.id ? C.accentL : C.dim }}>
-              <span style={{ fontSize: 16 }}>{t.icon}</span>{t.label}
-            </button>
+            <SideBtn key={t.id} icon={t.icon} label={t.label} active={tab === t.id} onClick={() => handleTab(t.id)} />
           ))}
         </nav>
-        <div style={{ padding: "10px 9px", borderTop: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 6 }}>
-          <button onClick={handleExport} disabled={exportando}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: `1px solid #22c55e33`, cursor: exportando ? "wait" : "pointer", fontSize: 13, fontWeight: 700, background: "#22c55e12", color: "#22c55e", transition: "all .15s" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#22c55e22"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#22c55e12"; }}>
-            <span style={{ fontSize: 15 }}>{exportando ? "⏳" : "📊"}</span>
-            {exportando ? "Generando..." : "Exportar Excel"}
-          </button>
-          <button onClick={onSalir}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
-            onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
-            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
-            ← Cambiar colegio
-          </button>
-          <button onClick={() => setShowReporte(true)}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
-            onMouseEnter={e => { e.currentTarget.style.color = C.yellow; }}
-            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
-            🐛 Reportar falla
-          </button>
-          {isAdmin && (
-          <button onClick={() => setShowPanel(true)}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
-            onMouseEnter={e => { e.currentTarget.style.color = C.accent; }}
-            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
-            📋 Ver fallas
-          </button>
-          )}
-          <button onClick={onLogout}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
-            onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
-            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
-            🚪 Cerrar sesión
-          </button>
+        {/* Bottom actions */}
+        <div style={{ padding: "8px 8px 12px", borderTop: `1.5px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 2 }}>
+          <SideBtn icon={exportando ? "⏳" : "📊"} label={exportando ? "Generando..." : "Exportar Excel"} onClick={handleExport} color="#4ade80" />
+          <SideBtn icon="←" label="Cambiar colegio" onClick={onSalir} danger />
+          <SideBtn icon="🐛" label="Reportar falla" onClick={() => setShowReporte(true)} />
+          {isAdmin && <SideBtn icon="📋" label="Ver fallas" onClick={() => setShowPanel(true)} />}
+          <SideBtn icon="🚪" label="Cerrar sesión" onClick={onLogout} danger />
           {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
           {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
         </div>
       </aside>
-      <main style={{ flex: 1, padding: 32, overflowY: "auto" }}>
+      <main style={{ flex: 1, padding: "32px 36px", overflowY: "auto", background: C.bg }}>
         <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
     </div>
