@@ -2747,6 +2747,16 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
               style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: "transparent", color: C.muted }}>
               ← Cambiar colegio
             </button>
+            <button onClick={() => { setShowReporte(true); setMenuOpen(false); }}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: "transparent", color: C.muted }}>
+              🐛 Reportar falla
+            </button>
+            {isAdmin && (
+            <button onClick={() => { setShowPanel(true); setMenuOpen(false); }}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: "transparent", color: C.muted }}>
+              📋 Ver fallas
+            </button>
+            )}
           </div>
         </div>
       )}
