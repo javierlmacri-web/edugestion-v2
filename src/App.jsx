@@ -383,6 +383,23 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
             })}
           </div> )}
       </div> ); }
+  // Recarga notas desde Supabase cuando se abre la vista de notas
+  useEffect(() => {
+    if (vista !== "notas") return;
+    const alumnoIds = als.map(a => a.id);
+    if (alumnoIds.length === 0) return;
+    supabase.from("notas").select("*").in("alumno_id", alumnoIds)
+      .then(({ data: rows, error }) => {
+        if (error) { console.error("reload notas:", error); return; }
+        if (!rows) return;
+        const frescas = rows.map(r => fromDB(r));
+        setData(d => {
+          const otras = d.notas.filter(n => !alumnoIds.includes(n.alumnoId));
+          return { ...d, notas: [...otras, ...frescas] };
+        });
+      });
+  }, [vista]);
+
   if (vista === "notas") {
     return (
       <div>
@@ -464,6 +481,24 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
             })}
           </div> )}
       </div> ); }
+  // Recarga actividades desde Supabase cada vez que se abre la vista
+  useEffect(() => {
+    if (vista !== "actividades") return;
+    const alumnoIds = als.map(a => a.id);
+    if (alumnoIds.length === 0) return;
+    supabase.from("actividades").select("*").in("alumno_id", alumnoIds)
+      .then(({ data: rows, error }) => {
+        if (error) { console.error("reload actividades:", error); return; }
+        if (!rows) return;
+        const frescas = rows.map(r => fromDB(r));
+        setData(d => {
+          // Merge: reemplaza todas las actividades de estos alumnos con las de Supabase
+          const otras = d.actividades.filter(a => !alumnoIds.includes(a.alumnoId));
+          return { ...d, actividades: [...otras, ...frescas] };
+        });
+      });
+  }, [vista]);
+
   if (vista === "actividades") {
     const materiasConActs = mats.filter(m => acts.some(a => a.materiaId === m.id));
     const actsSinMateria  = acts.filter(a => !a.materiaId || !mats.find(m => m.id === a.materiaId));
