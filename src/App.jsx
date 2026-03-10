@@ -34,7 +34,7 @@ const fmtT = (d) => new Date(d).toLocaleTimeString("es-AR", { hour: "2-digit", m
 const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : null;
 const nc = (n) => { if (n === null || n === undefined) return C.muted; const v = parseFloat(n); return v >= 7 ? C.green : v >= 5 ? C.yellow : C.red; };
 
-const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias"};
+const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial"};
 const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",created_at:null}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
 const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac"}; const out={}; for(const [k,v] of Object.entries(obj)){out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
@@ -42,10 +42,12 @@ const saveD = async () => {};
 const upsertRow = async (table, obj) => { 
   try {
     const converted = toDB(obj);
-    console.log("upsertRow", table, "id:", converted.id, "keys:", Object.keys(converted));
-    if (!converted.id) { console.warn("upsertRow SKIP no id", table); return; }
+    if (!converted.id || typeof converted.id !== "string" || converted.id.length < 3) {
+      console.warn("upsertRow SKIP no id", table);
+      return;
+    }
     const {error} = await supabase.from(TABLE_MAP[table]).upsert(converted, {onConflict:"id"});
-    if(error) console.error("upsert",table,error);
+    if(error) console.error("upsert",table, JSON.stringify(error), JSON.stringify(converted).slice(0,200));
   } catch(e){console.error(e);}
 };
 const deleteRow = async (table, id) => { try { const {error} = await supabase.from(TABLE_MAP[table]).delete().eq("id",id); if(error)console.error("delete",table,error); } catch(e){console.error(e);} };
@@ -2429,17 +2431,21 @@ const Documentos = ({ data, setData, colegioId }) => {
       if (!uploadData.url) { alert("Error al subir: " + (uploadData.error || "desconocido")); setSubiendo(false); return; }
 
       const doc = { id: uid(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: uploadData.url, storage_path: uploadData.publicId || "", fecha: new Date().toISOString().slice(0,10) };
-      await supabase.from("documentos").insert(doc);
+      const { error: docErr } = await supabase.from("documentos").insert(doc);
+      console.log("doc insert result:", docErr ? JSON.stringify(docErr) : "OK", "doc.id:", doc.id);
       // Save nota if provided
       const notaFinal = notaOverride !== undefined ? notaOverride : item.notaDetectada;
       if (notaFinal && alumnoId) {
-        // Find materia from alumno inscriptions
         const inscripciones = data.inscripciones.filter(i => i.alumnoId === alumnoId);
         const materiaId = inscripciones.length > 0 ? inscripciones[0].materiaId : "";
-        const nota = { id: uid(), alumnoId, materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
-        await supabase.from("notas").insert(nota);
-        setData(d => ({ ...d, notas: [...d.notas, nota] }));
-        await registrarHistorial(alumnoId, "Nota agregada", `${tipo} — ${item.file.name} — Nota: ${notaFinal}`);
+        const nota = { id: crypto.randomUUID(), alumnoId, materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
+        console.log("Saving nota:", JSON.stringify(nota));
+        const { error: notaErr } = await supabase.from("notas").insert(nota);
+        if (notaErr) console.error("nota insert error:", notaErr);
+        else {
+          setData(d => ({ ...d, notas: [...d.notas, nota] }));
+          await registrarHistorial(alumnoId, "Nota agregada", `${tipo} — ${item.file.name} — Nota: ${notaFinal}`);
+        }
       }
       setArchivos(a => [doc, ...a]);
       setConfirmQueue(q => q.filter(x => x !== item));
