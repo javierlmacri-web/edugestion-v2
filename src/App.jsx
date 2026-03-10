@@ -2683,7 +2683,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     setProcesando(false);
   };
 
-  const confirmarYSubir = async (item, alumnoId, tipo, notaOverride) => {
+  const confirmarYSubir = async (item, alumnoId, tipo, notaOverride, materiaIdParam) => {
     setSubiendo(true);
     try {
       const base64 = await new Promise((resolve) => {
@@ -2703,11 +2703,14 @@ const Documentos = ({ data, setData, colegioId }) => {
       const doc = { id: crypto.randomUUID(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: uploadData.url, storage_path: uploadData.publicId || "", fecha: new Date().toISOString().slice(0,10) };
       const { error: docErr } = await supabase.from("documentos").insert(doc);
       console.log("doc insert result:", docErr ? JSON.stringify(docErr) : "OK", "doc.id:", doc.id);
-      // Save nota if provided — usar camelCase para que setData/upsertRow lo convierta correctamente
+      // Save nota — usar materia seleccionada por usuario, o fallback a primera inscripción
       const notaFinal = notaOverride !== undefined ? notaOverride : item.notaDetectada;
       if (notaFinal && alumnoId) {
-        const inscripciones = data.inscripciones.filter(i => i.alumnoId === alumnoId);
-        const materiaId = inscripciones.length > 0 ? inscripciones[0].materiaId : "";
+        let materiaId = materiaIdParam || item.materiaId || "";
+        if (!materiaId) {
+          const inscripciones = data.inscripciones.filter(i => i.alumnoId === alumnoId);
+          materiaId = inscripciones.length > 0 ? inscripciones[0].materiaId : "";
+        }
         const nota = { id: crypto.randomUUID(), alumnoId, materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
         console.log("Saving nota:", JSON.stringify(nota));
         setData(d => ({ ...d, notas: [...d.notas, nota] }));
@@ -2726,7 +2729,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     setShowResumen(false);
     setSubiendo(true);
     for (const item of [...confirmQueue]) {
-      await confirmarYSubir(item, item.alumnoId, item.tipoSeleccionado || item.analisis.tipo || item.analisis.descripcion || "documento", item.notaDetectada);
+      await confirmarYSubir(item, item.alumnoId, item.tipoSeleccionado || item.analisis.tipo || item.analisis.descripcion || "documento", item.notaDetectada, item.materiaId);
     }
     setSubiendo(false);
   };
@@ -2792,6 +2795,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                     <div style={{ color: C.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>📄 {item.file.name}</div>
                     {item.analisis.descripcion && <div style={{ color: C.muted, fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                      {/* Fila 1: Alumno + Tipo */}
                       <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
                         style={{ background: "#07101e", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
                         <option value="">— Sin alumno asignado —</option>
@@ -2805,6 +2809,17 @@ const Documentos = ({ data, setData, colegioId }) => {
                         <option value="dni">🪪 DNI/Documentación</option>
                       </select>
                     </div>
+                    {/* Fila 2: Materia - destacada */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                      <span style={{ fontSize: 12, color: C.dim, fontWeight: 700, whiteSpace: "nowrap" }}>📚 Materia:</span>
+                      <select value={item.materiaId || ""}
+                        onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, materiaId: e.target.value} : x))}
+                        style={{ background: "#07101e", border: `1.5px solid ${item.materiaId ? C.accent+"88" : C.yellow+"66"}`, borderRadius: 8, padding: "7px 12px", color: item.materiaId ? C.text : C.yellow, fontSize: 13, outline: "none", minWidth: 180, fontWeight: item.materiaId ? 400 : 700 }}>
+                        <option value="">⚠️ Seleccionar materia...</option>
+                        {data.materias.filter(m => m.colegioId === colegioId).map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+                      </select>
+                      {!item.materiaId && <span style={{ fontSize: 11, color: C.yellow, fontWeight: 700 }}>Recomendado</span>}
+                    </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, background: item.notaDetectada ? C.green+"22" : C.accentDim, border: `1px solid ${item.notaDetectada ? C.green+"44" : C.accent+"44"}`, borderRadius: 10, padding: "6px 12px" }}>
                         <span style={{ fontSize: 12, color: C.dim, fontWeight: 700 }}>📊 Nota:</span>
                         <input type="number" min="0" max="10" step="0.1" placeholder="0-10"
@@ -2816,7 +2831,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                     {item.alumnoSugerido && <div style={{ color: C.accentL, fontSize: 12, marginTop: 6 }}>✨ IA sugirió: {item.alumnoSugerido.apellido}, {item.alumnoSugerido.nombre}</div>}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <Btn onClick={() => confirmarYSubir(item, item.alumnoId, item.analisis.tipo||"documento")} disabled={subiendo}>✓ Confirmar</Btn>
+                    <Btn onClick={() => confirmarYSubir(item, item.alumnoId, item.analisis.tipo||"documento", undefined, item.materiaId)} disabled={subiendo}>✓ Confirmar</Btn>
                     <Btn v="ghost" onClick={() => setConfirmQueue(q => q.filter((_,j) => j!==i))}>✕</Btn>
                   </div>
                 </div>
