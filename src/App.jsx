@@ -717,30 +717,67 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                 </Box> );
             })}</div>
         </> )}
-      {/* Últimas actividades */}
-      {!busLower && acts.length > 0 && (
-        <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Últimas actividades</h3>
-            <button onClick={() => setVista("actividades")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>ver todas →</button>
-          </div>
-          <Box>
-            {acts.slice(-6).reverse().map(act => {
-              const al  = als.find(a => a.id === act.alumnoId);
-              const mat = mats.find(m => m.id === act.materiaId); const tc  = tipoActColor[act.tipo] || C.dim;
-              return (
-                <div key={act.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}
-                  onClick={() => { setDetalleAlumno(act.alumnoId); setVista("actividades"); }}>
-                  <div>
-                    <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
-                    {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
-                    <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{act.descripcion}</div> </div> <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Tag color={tc}>{act.tipo}</Tag>
-                    <span style={{ color: C.muted, fontSize: 11 }}>{fmt(act.fecha)}</span></div>
-                </div> );
-            })}
-          </Box>
-        </> )}
+      {/* Últimas actividades + notas recientes unificadas */}
+      {!busLower && (acts.length > 0 || notas.length > 0) && (() => {
+        // Combinar actividades y notas en un feed unificado, ordenado por fecha desc
+        const feedActs = acts.map(a => ({ ...a, _tipo: "actividad" }));
+        const feedNotas = notas.map(n => ({ ...n, _tipo: "nota" }));
+        const feed = [...feedActs, ...feedNotas]
+          .sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0))
+          .slice(0, 8);
+        if (feed.length === 0) return null;
+        return (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Últimas actividades y notas</h3>
+              <button onClick={() => setVista("actividades")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>ver todas →</button>
+            </div>
+            <Box>
+              {feed.map(item => {
+                const al  = als.find(a => a.id === item.alumnoId);
+                const mat = mats.find(m => m.id === item.materiaId);
+                if (item._tipo === "actividad") {
+                  const tc = tipoActColor[item.tipo] || C.dim;
+                  return (
+                    <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}
+                      onClick={() => { setDetalleAlumno(item.alumnoId); setVista("actividades"); }}>
+                      <div>
+                        <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
+                        {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
+                        <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={tc}>{item.tipo}</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item.fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  // Es una nota
+                  const nc2 = nc(item.nota);
+                  return (
+                    <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}
+                      onClick={() => { setDetalleAlumno(item.alumnoId); }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 9, background: nc2 + "18", border: `1.5px solid ${nc2}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: nc2, flexShrink: 0 }}>{item.nota}</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
+                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
+                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion || item.tipo}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={C.blue}>📝 {item.tipo}</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item.fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
+            </Box>
+          </>
+        );
+      })()}
     </div> ); };
 const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const alumno = data.alumnos.find(a => a.id === alumnoId);
