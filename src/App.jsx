@@ -2430,7 +2430,7 @@ const Documentos = ({ data, setData, colegioId }) => {
       const uploadData = await uploadRes.json();
       if (!uploadData.url) { alert("Error al subir: " + (uploadData.error || "desconocido")); setSubiendo(false); return; }
 
-      const doc = { id: uid(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: uploadData.url, storage_path: uploadData.publicId || "", fecha: new Date().toISOString().slice(0,10) };
+      const doc = { id: crypto.randomUUID(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: uploadData.url, storage_path: uploadData.publicId || "", fecha: new Date().toISOString().slice(0,10) };
       const { error: docErr } = await supabase.from("documentos").insert(doc);
       console.log("doc insert result:", docErr ? JSON.stringify(docErr) : "OK", "doc.id:", doc.id);
       // Save nota if provided
@@ -2438,7 +2438,7 @@ const Documentos = ({ data, setData, colegioId }) => {
       if (notaFinal && alumnoId) {
         const inscripciones = data.inscripciones.filter(i => i.alumnoId === alumnoId);
         const materiaId = inscripciones.length > 0 ? inscripciones[0].materiaId : "";
-        const nota = { id: crypto.randomUUID(), alumnoId, materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
+        const nota = { id: crypto.randomUUID(), alumno_id: alumnoId, materia_id: materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
         console.log("Saving nota:", JSON.stringify(nota));
         const { error: notaErr } = await supabase.from("notas").insert(nota);
         if (notaErr) console.error("nota insert error:", notaErr);
