@@ -290,6 +290,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
   const [agendaFiltroEstado, setAgendaFiltroEstado] = useState("");
   const agendaEmptyForm = { titulo:"", tipo:"examen", materiaId:"", alumnoId:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", archivoUrl:"", archivoNombre:"", estado:"pendiente" };
   const [agendaForm, setAgendaForm] = useState(agendaEmptyForm);
+  const [materiaAbierta, setMateriaAbierta] = useState(null);
   const goInicio = () => { setVista(null); setDetalleMateria(null); setDetalleAlumno(null); setMatFiltro(null); };
 
   const col  = data.colegios.find(c => c.id === colegioId);
@@ -451,55 +452,82 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Notas por Materia" }]} />
         <h2 style={{ color: C.text, margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>📝 Notas generales por Materia</h2>
         {mats.length === 0 ? <Empty icon="📝" msg="No hay materias registradas." /> : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {mats.map(m => {
-              const ins = (data.inscripciones || []).filter(i => i.materiaId === m.id).map(i => i.alumnoId);
+              const ins    = (data.inscripciones || []).filter(i => i.materiaId === m.id).map(i => i.alumnoId);
               const alsMat = als.filter(a => ins.includes(a.id));
-              const mNotas = notas.filter(n => n.materiaId === m.id).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-              const mv = mNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const mProm = avg(mv);
+              const mNotas = notas.filter(n => n.materiaId === m.id);
+              const mv     = mNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+              const mProm  = avg(mv);
+              const abierta = materiaAbierta === m.id;
               return (
                 <Box key={m.id}>
-                  {/* Cabecera materia */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+                  {/* Fila resumen — click para abrir/cerrar */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                    onClick={() => setMateriaAbierta(abierta ? null : m.id)}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 38, height: 38, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📚</div>
+                      <div style={{ width: 38, height: 38, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📚</div>
                       <div>
                         <div style={{ color: C.text, fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
-                        <div style={{ color: C.muted, fontSize: 12 }}>{alsMat.length} alumnos · {mNotas.length} notas</div> </div> </div> <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <div style={{ color: C.muted, fontSize: 12 }}>{alsMat.length} alumnos · {mNotas.length} notas</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: 28, fontWeight: 900, color: nc(mProm) }}>{mProm ?? "—"}</div>
-                        <div style={{ fontSize: 11, color: C.muted }}>promedio</div></div>
-                      <Btn v="ghost" sm onClick={() => setDetalleMateria(m.id)}>Ver materia →</Btn>
-                    </div></div>
-                  {/* Alumnos con sus notas en esta materia */}
-                  {alsMat.length === 0 ? (
-                    <div style={{ color: C.muted, fontSize: 13, padding: "8px 0" }}>Sin alumnos inscriptos.</div> ) : ( <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {alsMat.map(al => {
-                        const alMatNotas = mNotas.filter(n => n.alumnoId === al.id);
-                        const alVals = alMatNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
-                        const alProm = avg(alVals);
-                        return (
-                          <div key={al.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
-                            onClick={() => setDetalleAlumno(al.id)}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                            <div style={{ color: C.text, fontSize: 14, fontWeight: 600 }}>{al.apellido}, {al.nombre}</div> <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                              {/* mini chips de notas */}
-                              <div style={{ display: "flex", gap: 4 }}>
-                                {alMatNotas.slice(0, 5).map(n => (
-                                  <div key={n.id} title={`${n.tipo}: ${n.nota}`} style={{ width: 30, height: 30, borderRadius: 8, background: nc(n.nota) + "18", border: `1px solid ${nc(n.nota)}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: nc(n.nota) }}>{n.nota}</div>
-                                ))}</div>
-                              <div style={{ textAlign: "right", minWidth: 44 }}>
-                                <div style={{ fontSize: 20, fontWeight: 900, color: nc(alProm) }}>{alProm ?? "—"}</div>
-                                <div style={{ fontSize: 10, color: C.muted }}>prom.</div></div>
-                            </div>
-                          </div> );
-                      })}
-                    </div> )}
-                </Box> );
+                        <div style={{ fontSize: 26, fontWeight: 900, color: nc(mProm) }}>{mProm ?? "—"}</div>
+                        <div style={{ fontSize: 11, color: C.muted }}>promedio</div>
+                      </div>
+                      <div style={{ color: C.accentL, fontSize: 18, transition: "transform .2s", transform: abierta ? "rotate(90deg)" : "rotate(0deg)" }}>›</div>
+                    </div>
+                  </div>
+
+                  {/* Detalle expandido */}
+                  {abierta && (
+                    <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+                      {alsMat.length === 0
+                        ? <div style={{ color: C.muted, fontSize: 13 }}>Sin alumnos inscriptos.</div>
+                        : <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            {alsMat.map(al => {
+                              const alNotas = mNotas.filter(n => n.alumnoId === al.id).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+                              const alVals  = alNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+                              const alProm  = avg(alVals);
+                              return (
+                                <div key={al.id}
+                                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
+                                  onClick={() => setDetalleAlumno(al.id)}
+                                  onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
+                                  onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
+                                  <div style={{ color: C.text, fontSize: 14, fontWeight: 600 }}>{al.apellido}, {al.nombre}</div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                    <div style={{ display: "flex", gap: 4 }}>
+                                      {alNotas.slice(0, 5).map(n => (
+                                        <div key={n.id} title={`${n.tipo}: ${n.nota}`}
+                                          style={{ width: 30, height: 30, borderRadius: 8, background: nc(n.nota) + "18", border: `1px solid ${nc(n.nota)}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: nc(n.nota) }}>{n.nota}</div>
+                                      ))}
+                                    </div>
+                                    <div style={{ textAlign: "right", minWidth: 44 }}>
+                                      <div style={{ fontSize: 20, fontWeight: 900, color: nc(alProm) }}>{alProm ?? "—"}</div>
+                                      <div style={{ fontSize: 10, color: C.muted }}>prom.</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                      }
+                      <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+                        <Btn v="ghost" sm onClick={() => setDetalleMateria(m.id)}>Ver materia completa →</Btn>
+                      </div>
+                    </div>
+                  )}
+                </Box>
+              );
             })}
-          </div> )}
-      </div> ); }
+          </div>
+        )}
+      </div>
+    );
+  }
   if (vista === "promedio") {
     return (
       <div>
