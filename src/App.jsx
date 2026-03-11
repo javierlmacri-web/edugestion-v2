@@ -407,7 +407,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
         ]} />
         <AlumnoPerfilGlobal data={data} setData={setData} alumnoId={detalleAlumno} colegioId={colegioId} onBack={() => setDetalleAlumno(null)} />
       </div>
-    </div> );
+    );
+  }
   if (detalleMateria) {
     return (
       <div>
@@ -418,7 +419,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
         ]} />
         <MateriaDetalle data={data} setData={setData} materiaId={detalleMateria} colegioId={colegioId} onBack={() => setDetalleMateria(null)} />
       </div>
-    </div> );
+    );
+  }
   if (vista === "materias") {
     return (
       <div>
@@ -444,7 +446,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
             })}
           </div> )}
       </div>
-    </div> );
+    );
+  }
   if (vista === "alumnos") {
     return (
       <div>
@@ -474,7 +477,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
             })}
           </div> )}
       </div>
-    </div> );
+    );
+  }
   if (vista === "notas") {
     return (
       <div>
@@ -583,7 +587,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
             })}
           </div> )}
       </div>
-    </div> );
+    );
+  }
   if (vista === "historial-feed") {
     const feedCompleto = [
       ...acts.map(a => ({ ...a, _src: "actividad", _fecha: a.fecha || "" })),
@@ -1892,7 +1897,8 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
         ]} />
         <AlumnoDetalle data={data} setData={setData} alumnoId={alumnoSeleccionado} materiaId={materiaId} onBack={() => setAlumnoSeleccionado(null)} />
       </div>
-    </div> );
+    );
+  }
   const saveActividades = async () => {
     if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
     const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
@@ -2563,7 +2569,8 @@ const Eventos = ({ data, setData, colegioId }) => {
           {ev.descripcion ? <div style={{color:C.text,fontSize:14,lineHeight:1.8,background:C.card2,borderRadius:10,padding:"16px 18px",whiteSpace:"pre-wrap"}}>{ev.descripcion}</div> : <div style={{color:C.muted,fontSize:13,fontStyle:"italic"}}>Sin descripcion registrada.</div>}
         </div>
       </Box>
-    </div> );
+    );
+  }
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
@@ -3664,7 +3671,8 @@ export default function App() {
 
   if (loading) return (
     <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", color: C.muted, fontSize: 16 }}>Cargando...</div>
-  );
+    );
+  }
   return (
     <ErrorBoundary>
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
