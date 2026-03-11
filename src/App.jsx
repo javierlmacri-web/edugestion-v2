@@ -2570,7 +2570,6 @@ const Eventos = ({ data, setData, colegioId }) => {
         </div>
       </Box>
     );
-  }
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
@@ -3672,7 +3671,6 @@ export default function App() {
   if (loading) return (
     <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", color: C.muted, fontSize: 16 }}>Cargando...</div>
     );
-  }
   return (
     <ErrorBoundary>
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
