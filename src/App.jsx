@@ -407,7 +407,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
         ]} />
         <AlumnoPerfilGlobal data={data} setData={setData} alumnoId={detalleAlumno} colegioId={colegioId} onBack={() => setDetalleAlumno(null)} />
       </div>
-    </div> ); }
+    </div> );
   if (detalleMateria) {
     return (
       <div>
@@ -418,7 +418,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
         ]} />
         <MateriaDetalle data={data} setData={setData} materiaId={detalleMateria} colegioId={colegioId} onBack={() => setDetalleMateria(null)} />
       </div>
-    </div> ); }
+    </div> );
   if (vista === "materias") {
     return (
       <div>
@@ -444,7 +444,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
             })}
           </div> )}
       </div>
-    </div> ); }
+    </div> );
   if (vista === "alumnos") {
     return (
       <div>
@@ -474,7 +474,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
             })}
           </div> )}
       </div>
-    </div> ); }
+    </div> );
   if (vista === "notas") {
     return (
       <div>
@@ -583,7 +583,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
             })}
           </div> )}
       </div>
-    </div> ); }
+    </div> );
   if (vista === "historial-feed") {
     const feedCompleto = [
       ...acts.map(a => ({ ...a, _src: "actividad", _fecha: a.fecha || "" })),
@@ -1892,7 +1892,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
         ]} />
         <AlumnoDetalle data={data} setData={setData} alumnoId={alumnoSeleccionado} materiaId={materiaId} onBack={() => setAlumnoSeleccionado(null)} />
       </div>
-    </div> ); }
+    </div> );
   const saveActividades = async () => {
     if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
     const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
