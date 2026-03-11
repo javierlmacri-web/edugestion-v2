@@ -293,7 +293,7 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
     </div>
-    </div> ); };
+  ); };
 const TABS = [
   { id: "dashboard", icon: "🏠", label: "Inicio" },
   { id: "materias",  icon: "📚", label: "Materias" },
@@ -1266,7 +1266,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
         );
       })()}
     </div>
-    </div> ); };
+  ); };
 const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const alumno = data.alumnos.find(a => a.id === alumnoId);
   const materia = data.materias.find(m => m.id === materiaId);
@@ -1817,7 +1817,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               <Btn onClick={saveAsist}>💾 Registrar</Btn></div></div>
         </Pop> )}
     </div>
-    </div> ); };
+  ); };
 const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
   const materia = data.materias.find(m => m.id === materiaId);
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null); const [popAgregarAlumno, setPopAgregarAlumno] = useState(false); const [busqueda, setBusqueda] = useState("");
@@ -2124,7 +2124,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
             </> )}
         </Pop> )}
     </div>
-    </div> ); };
+  ); };
 const Materias = ({ data, setData, colegioId }) => {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "" });
   const [editId, setEditId] = useState(null);
@@ -2200,7 +2200,7 @@ const Materias = ({ data, setData, colegioId }) => {
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
     </div>
-    </div> ); };
+  ); };
 const imprimirBoletin = (data, alumnoId, colegioId) => {
   const alumno = data.alumnos.find(a => a.id === alumnoId);
   const colegio = data.colegios.find(c => c.id === colegioId);
@@ -2342,7 +2342,7 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
               onBack={onBack} /> )}
         </> )}
     </div>
-    </div> ); };
+  ); };
 const Alumnos = ({ data, setData, colegioId }) => {
   const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); const [editId, setEditId] = useState(null);
   const [filtro, setFiltro] = useState(""); const [alumnoViendo, setAlumnoViendo] = useState(null);
@@ -2467,7 +2467,7 @@ const Alumnos = ({ data, setData, colegioId }) => {
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
     </div>
-    </div> ); };
+  ); };
 const TIPOS_INASIST = [
   { id: "enfermedad",    label: "Enfermedad",           icon: "🤒", color: "#f87171" },
   { id: "particular",   label: "Razones particulares",  icon: "👤", color: "#60a5fa" },
@@ -2713,7 +2713,7 @@ const Eventos = ({ data, setData, colegioId }) => {
               <Btn onClick={saveInasist}>💾 Guardar pedido</Btn></div></div>
         </Pop> )}
     </div>
-    </div> ); };
+  ); };
 const exportarExcel = (data, colegioId) => {
   const col    = data.colegios.find(c => c.id === colegioId);
   const als    = data.alumnos.filter(a => a.colegioId === colegioId);
