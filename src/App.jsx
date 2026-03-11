@@ -857,7 +857,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                 <Sel label="Tipo *" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo:e.target.value }))}>
                   {TIPOS.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
                 </Sel>
-                <Inp label="Fecha *" type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha:e.target.value }))} />
+                <Inp label="Fecha de entrega *" type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha:e.target.value }))} />
               </div>
               <Sel label="Materia (opcional)" value={form.materiaId} onChange={e => setForm(f => ({ ...f, materiaId:e.target.value }))}>
                 <option value="">— Sin materia específica —</option>
@@ -1289,6 +1289,10 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
       .then(({ data: docs }) => setDocsAlumno(docs || []));
   }, [alumnoId]);
   const acts       = data.actividades.filter(a => a.alumnoId === alumnoId && a.materiaId === materiaId);
+  // Eventos de agenda: los asignados a este alumno específico, O los de esta materia sin alumno específico
+  const agendaItems = (data.agenda || []).filter(e =>
+    (e.alumnoId === alumnoId) || (!e.alumnoId && e.materiaId === materiaId)
+  ).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const asistencias = (data.asistencias || []).filter(a => a.alumnoId === alumnoId && a.materiaId === materiaId);
   const vals = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom = avg(vals);
   const totalClases   = asistencias.length;
@@ -1401,7 +1405,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
 
   const SUBTABS = [
     { id: "notas",       icon: "📝", label: `Notas (${notas.length})` },
-    { id: "actividades", icon: "⚡", label: `Actividades (${acts.length})` },
+    { id: "actividades", icon: "⚡", label: `Actividades (${acts.length + agendaItems.length})` },
     { id: "asistencia",  icon: "📅", label: `Asistencia (${totalClases})` },
     { id: "archivos",    icon: "📁", label: `Archivos` }, ];
   return (
@@ -1576,7 +1580,53 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
             <Btn onClick={() => { setFormAct(emptyAct); setPopAct(true); }}>+ Registrar Actividad</Btn>
           </div>
-          {acts.length === 0 ? <Empty icon="⚡" msg="No hay actividades registradas para este alumno en esta materia." /> : (
+
+          {/* Exámenes y TPs de Agenda asignados a este alumno/materia */}
+          {agendaItems.length > 0 && (() => {
+            const TIPOS_AG = { examen:"📝", tp:"📋", rendir:"🎯", otro:"📌" };
+            const LABEL_AG = { examen:"Examen", tp:"Trabajo Práctico", rendir:"Examen para Rendir", otro:"Otro" };
+            const EST_COLOR = { pendiente: C.yellow, entregado: C.blue, calificado: C.green };
+            const today = new Date().toISOString().slice(0,10);
+            return (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, color: C.yellow, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>📅 Exámenes y TPs programados</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {agendaItems.map(ev => {
+                    const dias = Math.ceil((new Date(ev.fecha + "T12:00:00") - new Date()) / 86400000);
+                    const urgente = dias >= 0 && dias <= 3;
+                    const vencido = dias < 0;
+                    const estColor = EST_COLOR[ev.estado] || C.dim;
+                    return (
+                      <Box key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", border: `1.5px solid ${urgente ? C.red + "55" : C.border}` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ width: 38, height: 38, borderRadius: 11, background: C.yellow + "18", border: `1px solid ${C.yellow}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+                            {TIPOS_AG[ev.tipo] || "📌"}
+                          </div>
+                          <div>
+                            <div style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{ev.titulo}</div>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4, flexWrap: "wrap" }}>
+                              <Tag color={C.yellow}>{LABEL_AG[ev.tipo] || ev.tipo}</Tag>
+                              <span style={{ color: C.muted, fontSize: 12 }}>📅 {fmt(ev.fecha)}</span>
+                              {urgente && !vencido && <span style={{ color: C.red, fontSize: 11, fontWeight: 700 }}>{dias === 0 ? "¡Hoy!" : `¡${dias}d!`}</span>}
+                              {vencido  && <span style={{ color: C.dim, fontSize: 11 }}>Vencido</span>}
+                            </div>
+                            {ev.descripcion && <div style={{ color: C.dim, fontSize: 12, marginTop: 3 }}>{ev.descripcion}</div>}
+                            {ev.archivoUrl && <a href={ev.archivoUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 4, color: C.accentL, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>📎 {ev.archivoNombre || "Ver archivo"}</a>}
+                          </div>
+                        </div>
+                        <Tag color={estColor}>{ev.estado}</Tag>
+                      </Box>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Actividades de conducta/participación */}
+          {acts.length > 0 && <div style={{ fontSize: 11, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>⚡ Actividades registradas</div>}
+          {acts.length === 0 && agendaItems.length === 0 ? <Empty icon="⚡" msg="No hay actividades registradas para este alumno en esta materia." /> : (
+            acts.length === 0 ? null :
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {acts.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).map(act => {
                 const tc = tipoActColor[act.tipo] || C.dim;
@@ -1590,7 +1640,8 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                       <Btn v="danger" sm onClick={() => delAct(act.id)}>🗑️</Btn></div>
                   </Box> );
               })}
-            </div> )}
+            </div>
+          )}
         </div> )}
       {/* ── ASISTENCIA ── */}
       {subTab === "asistencia" && (
