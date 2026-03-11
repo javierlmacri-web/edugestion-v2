@@ -273,11 +273,12 @@ const TABS = [
   { id: "dashboard", icon: "🏠", label: "Inicio" },
   { id: "materias",  icon: "📚", label: "Materias" },
   { id: "alumnos",   icon: "👤", label: "Alumnos" },
-  { id: "eventos",   icon: "📅", label: "Eventos del Colegio" },
+  { id: "agenda",    icon: "📅", label: "Agenda" },
+  { id: "eventos",   icon: "🗓️", label: "Eventos del Colegio" },
   { id: "documentos", icon: "📁", label: "Archivos/Docs" }, ];
-const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
+const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
-  const [vista, setVista] = useState(null);
+  const [vista, setVista] = useState(initialVista || null);
   const [detalleMateria, setDetalleMateria] = useState(null); const [detalleAlumno, setDetalleAlumno] = useState(null); const [matFiltro, setMatFiltro] = useState(null);
   const [recentDocs, setRecentDocs] = useState([]);
   // Estados de Agenda (deben estar al nivel del componente, no dentro de if)
@@ -3148,18 +3149,23 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const isMobile = useIsMobile();
   const col = data.colegios.find(c => c.id === colegioId);
   const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos };
-  const View = views[tab];
+  const View = views[tab] || Dashboard;
   const [tabKey, setTabKey] = useState(0);
+  const [dashVista, setDashVista] = useState(null);
   const goInicio = () => {
-    setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false);
+    setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false); setDashVista(null);
     window.history.pushState({ tab: "dashboard" }, "", "#");
     localStorage.setItem("lastTab", "dashboard");
   };
   const handleTab = (id) => {
     if (id === "dashboard") { goInicio(); }
+    else if (id === "agenda") {
+      setTab("dashboard"); setDashKey(k => k + 1); setDashVista("agenda"); setMenuOpen(false);
+      localStorage.setItem("lastTab", "dashboard");
+    }
     else if (id === tab) { setTabKey(k => k + 1); setMenuOpen(false); }
     else {
-      setTab(id); setTabKey(k => k + 1); setMenuOpen(false);
+      setTab(id); setTabKey(k => k + 1); setMenuOpen(false); setDashVista(null);
       window.history.pushState({ tab: id }, "", "#" + id);
       localStorage.setItem("lastTab", id);
     }
@@ -3180,6 +3186,9 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
     setExportando(true);
     setTimeout(() => { exportarExcel(data, colegioId); setExportando(false); }, 100);
   };
+
+  // Tab activo para el sidebar/nav — agenda se muestra activo cuando el dashboard está en vista agenda
+  const activeTab = (tab === "dashboard" && dashVista === "agenda") ? "agenda" : tab;
 
   // ── MOBILE LAYOUT ──────────────────────────────────────────────────────────
   if (isMobile) return (
@@ -3205,7 +3214,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
         <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4, zIndex: 99 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? C.accentDim : "transparent", color: tab === t.id ? C.accentL : C.dim, textAlign: "left" }}>
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: activeTab === t.id ? 700 : 500, background: activeTab === t.id ? C.accentDim : "transparent", color: activeTab === t.id ? C.accentL : C.dim, textAlign: "left" }}>
               <span style={{ fontSize: 20 }}>{t.icon}</span>{t.label}
             </button>
           ))}
@@ -3234,16 +3243,16 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
 
       {/* Contenido principal móvil */}
       <main style={{ flex: 1, padding: "16px 14px", overflowY: "auto" }}>
-        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
+        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} initialVista={dashVista} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
 
       {/* Tab bar inferior móvil */}
       <nav style={{ background: C.card, borderTop: `1px solid ${C.border}`, display: "flex", position: "sticky", bottom: 0, zIndex: 100 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => handleTab(t.id)}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px", border: "none", cursor: "pointer", background: "transparent", color: tab === t.id ? C.accentL : C.dim, borderTop: `2px solid ${tab === t.id ? C.accent : "transparent"}` }}>
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px", border: "none", cursor: "pointer", background: "transparent", color: activeTab === t.id ? C.accentL : C.dim, borderTop: `2px solid ${activeTab === t.id ? C.accent : "transparent"}` }}>
             <span style={{ fontSize: 20 }}>{t.icon}</span>
-            <span style={{ fontSize: 10, fontWeight: tab === t.id ? 700 : 500 }}>{t.label}</span>
+            <span style={{ fontSize: 10, fontWeight: activeTab === t.id ? 700 : 500 }}>{t.label}</span>
           </button>
         ))}
       </nav>
@@ -3280,7 +3289,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
         {/* Main nav */}
         <nav style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
           {TABS.map(t => (
-            <SideBtn key={t.id} icon={t.icon} label={t.label} active={tab === t.id} onClick={() => handleTab(t.id)} />
+            <SideBtn key={t.id} icon={t.icon} label={t.label} active={activeTab === t.id} onClick={() => handleTab(t.id)} />
           ))}
         </nav>
         {/* Bottom actions */}
@@ -3293,7 +3302,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
         </div>
       </aside>
       <main style={{ flex: 1, padding: "32px 36px", overflowY: "auto", background: C.bg }}>
-        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
+        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} initialVista={dashVista} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
       {/* Modals renderizados FUERA del aside para evitar z-index bloqueado por position:sticky */}
       {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
