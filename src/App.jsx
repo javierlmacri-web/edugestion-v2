@@ -455,7 +455,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
             {mats.map(m => {
               const ins = (data.inscripciones || []).filter(i => i.materiaId === m.id).map(i => i.alumnoId);
               const alsMat = als.filter(a => ins.includes(a.id));
-              const mNotas = notas.filter(n => n.materiaId === m.id);
+              const mNotas = notas.filter(n => n.materiaId === m.id).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
               const mv = mNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const mProm = avg(mv);
               return (
                 <Box key={m.id}>
@@ -486,7 +486,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                             <div style={{ color: C.text, fontSize: 14, fontWeight: 600 }}>{al.apellido}, {al.nombre}</div> <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                               {/* mini chips de notas */}
                               <div style={{ display: "flex", gap: 4 }}>
-                                {alMatNotas.slice(-5).map(n => (
+                                {alMatNotas.slice(0, 5).map(n => (
                                   <div key={n.id} title={`${n.tipo}: ${n.nota}`} style={{ width: 30, height: 30, borderRadius: 8, background: nc(n.nota) + "18", border: `1px solid ${nc(n.nota)}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: nc(n.nota) }}>{n.nota}</div>
                                 ))}</div>
                               <div style={{ textAlign: "right", minWidth: 44 }}>
