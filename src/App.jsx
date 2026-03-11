@@ -1,6 +1,29 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
+// ── ERROR BOUNDARY ──────────────────────────────────────────────────────────
+import React from "react";
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(err) { return { hasError: true, error: err }; }
+  componentDidCatch(err, info) { console.error("🔴 App Error:", err, info); }
+  render() {
+    if (this.state.hasError) {
+      return React.createElement("div", {
+        style: { background: "#0b0f1a", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "monospace" }
+      }, React.createElement("div", {
+        style: { background: "#1a0505", border: "1px solid #ef4444", borderRadius: 12, padding: 24, maxWidth: 700, width: "100%" }
+      }, React.createElement("div", { style: { color: "#ef4444", fontWeight: 800, fontSize: 18, marginBottom: 12 } }, "🔴 Error en EduGestión"),
+         React.createElement("pre", { style: { color: "#fca5a5", fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-all", margin: 0 } },
+           String(this.state.error) + "\n\n" + (this.state.error?.stack || ""))
+      ));
+    }
+    return this.props.children;
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 const supabase = createClient(
   "https://vqwosiwppdfsifwravsh.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxd29zaXdwcGRmc2lmd3JhdnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mzg0MTEsImV4cCI6MjA4ODIxNDQxMX0.z5zeE7-mNHe7Ie6AalyYBCmnMWXqLR-wGoL5HLjMmhw"
@@ -191,6 +214,7 @@ const Welcome = ({ onGo }) => {
           </button></div>
         <p style={{ color: C.muted, fontSize: 12, marginTop: 44 }}>💾 Datos guardados automáticamente en tu dispositivo</p>
       </div>
+    </div>
     </div> ); };
 const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
   const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", direccion: "", telefono: "", email: "" }); const [editId, setEditId] = useState(null);
@@ -268,6 +292,7 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
               <Btn v="ghost" onClick={() => { setPop(false); setEditId(null); }}>Cancelar</Btn>
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
+    </div>
     </div> ); };
 const TABS = [
   { id: "dashboard", icon: "🏠", label: "Inicio" },
@@ -381,7 +406,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
           { label: `${al?.apellido}, ${al?.nombre}` },
         ]} />
         <AlumnoPerfilGlobal data={data} setData={setData} alumnoId={detalleAlumno} colegioId={colegioId} onBack={() => setDetalleAlumno(null)} />
-      </div> ); }
+      </div>
+    </div> ); }
   if (detalleMateria) {
     return (
       <div>
@@ -391,7 +417,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
           { label: mats.find(m => m.id === detalleMateria)?.nombre },
         ]} />
         <MateriaDetalle data={data} setData={setData} materiaId={detalleMateria} colegioId={colegioId} onBack={() => setDetalleMateria(null)} />
-      </div> ); }
+      </div>
+    </div> ); }
   if (vista === "materias") {
     return (
       <div>
@@ -416,7 +443,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                 </Box> );
             })}
           </div> )}
-      </div> ); }
+      </div>
+    </div> ); }
   if (vista === "alumnos") {
     return (
       <div>
@@ -445,7 +473,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                 </Box> );
             })}
           </div> )}
-      </div> ); }
+      </div>
+    </div> ); }
   if (vista === "notas") {
     return (
       <div>
@@ -553,7 +582,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                 </Box> );
             })}
           </div> )}
-      </div> ); }
+      </div>
+    </div> ); }
   if (vista === "historial-feed") {
     const feedCompleto = [
       ...acts.map(a => ({ ...a, _src: "actividad", _fecha: a.fecha || "" })),
@@ -1235,6 +1265,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
           </>
         );
       })()}
+    </div>
     </div> ); };
 const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const alumno = data.alumnos.find(a => a.id === alumnoId);
@@ -1785,6 +1816,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               <Btn v="ghost" onClick={() => setPopAsist(false)}>Cancelar</Btn>
               <Btn onClick={saveAsist}>💾 Registrar</Btn></div></div>
         </Pop> )}
+    </div>
     </div> ); };
 const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
   const materia = data.materias.find(m => m.id === materiaId);
@@ -1859,7 +1891,8 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           { label: `${al?.nombre} ${al?.apellido}` },
         ]} />
         <AlumnoDetalle data={data} setData={setData} alumnoId={alumnoSeleccionado} materiaId={materiaId} onBack={() => setAlumnoSeleccionado(null)} />
-      </div> ); }
+      </div>
+    </div> ); }
   const saveActividades = async () => {
     if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
     const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
@@ -2090,6 +2123,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
               </div>
             </> )}
         </Pop> )}
+    </div>
     </div> ); };
 const Materias = ({ data, setData, colegioId }) => {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "" });
@@ -2165,6 +2199,7 @@ const Materias = ({ data, setData, colegioId }) => {
               <Btn v="ghost" onClick={() => { setPop(false); setEditId(null); }}>Cancelar</Btn>
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
+    </div>
     </div> ); };
 const imprimirBoletin = (data, alumnoId, colegioId) => {
   const alumno = data.alumnos.find(a => a.id === alumnoId);
@@ -2306,6 +2341,7 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
               materiaId={materiaActiva}
               onBack={onBack} /> )}
         </> )}
+    </div>
     </div> ); };
 const Alumnos = ({ data, setData, colegioId }) => {
   const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); const [editId, setEditId] = useState(null);
@@ -2430,6 +2466,7 @@ const Alumnos = ({ data, setData, colegioId }) => {
               <Btn v="ghost" onClick={() => { setPop(false); setEditId(null); }}>Cancelar</Btn>
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
+    </div>
     </div> ); };
 const TIPOS_INASIST = [
   { id: "enfermedad",    label: "Enfermedad",           icon: "🤒", color: "#f87171" },
@@ -2675,6 +2712,7 @@ const Eventos = ({ data, setData, colegioId }) => {
               <Btn v="ghost" onClick={()=>{setPopInasist(false);setEditInasistId(null);}}>Cancelar</Btn>
               <Btn onClick={saveInasist}>💾 Guardar pedido</Btn></div></div>
         </Pop> )}
+    </div>
     </div> ); };
 const exportarExcel = (data, colegioId) => {
   const col    = data.colegios.find(c => c.id === colegioId);
@@ -3628,9 +3666,11 @@ export default function App() {
     <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", color: C.muted, fontSize: 16 }}>Cargando...</div>
   );
   return (
+    <ErrorBoundary>
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
       {screen === "login" && <Login onLogin={u => { setUser(u); setScreen("welcome"); }} />}
       {screen === "welcome" && <Welcome onGo={() => { setScreen("colegios"); window.history.pushState({ screen: "colegios" }, "", "#colegios"); }} />}
       {screen === "colegios" && <ColegioSelector data={data} setData={setData} onSelect={id => { setColegioId(id); setScreen("app"); localStorage.setItem("lastColegioId", id); window.history.pushState({ screen: "app" }, "", "#app"); }} onBack={() => setScreen("welcome")} />}
       {screen === "app" && colegioId && <AppInterna data={data} setData={setData} colegioId={colegioId} user={user} onSalir={() => { setColegioId(null); setScreen("colegios"); localStorage.removeItem("lastColegioId"); localStorage.removeItem("lastTab"); }} onLogout={handleLogout} />}
-    </div> ); }
+    </div>
+    </ErrorBoundary> ); }
