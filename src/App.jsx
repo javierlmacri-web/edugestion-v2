@@ -38,7 +38,7 @@ const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).
 const nc = (n) => { if (n === null || n === undefined) return C.muted; const v = parseFloat(n); return v >= 7 ? C.green : v >= 5 ? C.yellow : C.red; };
 
 const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial"};
-const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",created_at:null}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
+const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",created_at:"createdAt"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===undefined)out[k]=v;else if(m!==null)out[m]=v;} return out; };
 const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue;out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
 const saveD = async () => {};
@@ -292,43 +292,66 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const vals  = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom = avg(vals);
   const tipoActColor = { positiva: C.green, negativa: C.red, neutral: C.yellow, participacion: C.blue, observacion: C.dim };
 
-  // Cargar documentos recientes desde Supabase
+
+  const [reloadTick, setReloadTick] = useState(0);
+
+  // Efecto principal: carga datos frescos desde Supabase
+  // Se ejecuta al montar Y cada vez que als.length cambia (cuando cargan los alumnos)
   useEffect(() => {
     if (!colegioId) return;
-    const alumnoIds = als.map(a => a.id);
-    if (alumnoIds.length === 0) return;
-    supabase.from("documentos").select("*").in("alumno_id", alumnoIds).order("created_at", { ascending: false }).limit(20)
-      .then(({ data: docs }) => { if (docs) setRecentDocs(docs.map(d => fromDB(d))); });
-  }, [colegioId, als.length]);
 
-  // Cargar actividades y notas frescos desde Supabase - depende de als.length para re-ejecutar cuando cargan los alumnos
-  useEffect(() => {
-    if (!colegioId || als.length === 0) return;
-    const alumnoIds = als.map(a => a.id);
-    supabase.from("actividades").select("*").in("alumno_id", alumnoIds)
-      .then(({ data: rows, error }) => {
-        if (error) { console.error("reload actividades:", error); return; }
-        const deSupabase = (rows || []).map(r => fromDB(r));
-        setData(d => {
-          // Union: tomar las de Supabase + las que están en memoria y NO están en Supabase aún
-          const idsSupabase = new Set(deSupabase.map(a => a.id));
-          const soloEnMemoria = d.actividades.filter(a => alumnoIds.includes(a.alumnoId) && !idsSupabase.has(a.id));
-          const otras = d.actividades.filter(a => !alumnoIds.includes(a.alumnoId));
-          return { ...d, actividades: [...otras, ...deSupabase, ...soloEnMemoria] };
-        });
+    // Materias: no depende de alumnos
+    supabase.from("materias").select("*").eq("colegio_id", colegioId)
+      .then(({ data: rows }) => {
+        if (!rows) return;
+        const frescas = rows.map(r => fromDB(r));
+        setData(d => ({ ...d, materias: [...d.materias.filter(m => m.colegioId !== colegioId), ...frescas] }));
       });
-    supabase.from("notas").select("*").in("alumno_id", alumnoIds)
-      .then(({ data: rows, error }) => {
-        if (error) { console.error("reload notas:", error); return; }
-        const deSupabase = (rows || []).map(r => fromDB(r));
-        setData(d => {
-          const idsSupabase = new Set(deSupabase.map(n => n.id));
-          const soloEnMemoria = d.notas.filter(n => alumnoIds.includes(n.alumnoId) && !idsSupabase.has(n.id));
-          const otras = d.notas.filter(n => !alumnoIds.includes(n.alumnoId));
-          return { ...d, notas: [...otras, ...deSupabase, ...soloEnMemoria] };
+
+    // Actividades y notas: necesitan alumnoIds
+    const fetchActsNotas = (alumnoIds) => {
+      if (!alumnoIds.length) return;
+      supabase.from("actividades").select("*").in("alumno_id", alumnoIds)
+        .then(({ data: rows, error }) => {
+          if (error || !rows) { console.error("reload actividades:", error); return; }
+          const deSupabase = rows.map(r => fromDB(r));
+          setData(d => {
+            const idsDB = new Set(deSupabase.map(a => a.id));
+            const enMemoria = d.actividades.filter(a => alumnoIds.includes(a.alumnoId) && !idsDB.has(a.id));
+            const otras = d.actividades.filter(a => !alumnoIds.includes(a.alumnoId));
+            return { ...d, actividades: [...otras, ...deSupabase, ...enMemoria] };
+          });
         });
-      });
-  }, [colegioId, als.length]);
+      supabase.from("notas").select("*").in("alumno_id", alumnoIds)
+        .then(({ data: rows, error }) => {
+          if (error || !rows) { console.error("reload notas:", error); return; }
+          const deSupabase = rows.map(r => fromDB(r));
+          setData(d => {
+            const idsDB = new Set(deSupabase.map(n => n.id));
+            const enMemoria = d.notas.filter(n => alumnoIds.includes(n.alumnoId) && !idsDB.has(n.id));
+            const otras = d.notas.filter(n => !alumnoIds.includes(n.alumnoId));
+            return { ...d, notas: [...otras, ...deSupabase, ...enMemoria] };
+          });
+        });
+      supabase.from("documentos").select("*").in("alumno_id", alumnoIds).order("created_at", { ascending: false }).limit(20)
+        .then(({ data: docs }) => { if (docs) setRecentDocs(docs.map(d => fromDB(d))); });
+    };
+
+    // Si ya tenemos alumnos cargados, buscar ahora
+    const alumnoIds = data.alumnos.filter(a => a.colegioId === colegioId).map(a => a.id);
+    fetchActsNotas(alumnoIds);
+
+    // Si todavía no hay alumnos, cargarlos y luego buscar
+    if (alumnoIds.length === 0) {
+      supabase.from("alumnos").select("*").eq("colegio_id", colegioId)
+        .then(({ data: rows }) => {
+          if (!rows || rows.length === 0) return;
+          const frescos = rows.map(r => fromDB(r));
+          setData(d => ({ ...d, alumnos: [...d.alumnos.filter(a => a.colegioId !== colegioId), ...frescos] }));
+          fetchActsNotas(frescos.map(a => a.id));
+        });
+    }
+  }, [colegioId, reloadTick]);
 
   const SC = ({ label, value, color, onClick, sub }) => (
     <Box hi={!!onClick} onClick={onClick} style={{ textAlign: "center", cursor: onClick ? "pointer" : "default", position: "relative" }}>
