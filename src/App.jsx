@@ -3190,6 +3190,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     setArchivos(a => a.map(x => x.id === editDoc.id ? { ...x, ...editForm } : x));
     setEditDoc(null);
   };
+  const getAlumnoMaterias = (alumnoId) => {
     return data.inscripciones.filter(i => i.alumnoId === alumnoId).map(i => i.materiaId);
   };
   const docsFiltrados = archivos.filter(d => {
