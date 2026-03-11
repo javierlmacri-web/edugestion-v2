@@ -308,19 +308,24 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
     supabase.from("actividades").select("*").in("alumno_id", alumnoIds)
       .then(({ data: rows, error }) => {
         if (error) { console.error("reload actividades:", error); return; }
-        const frescas = (rows || []).map(r => fromDB(r));
+        const deSupabase = (rows || []).map(r => fromDB(r));
         setData(d => {
+          // Union: tomar las de Supabase + las que están en memoria y NO están en Supabase aún
+          const idsSupabase = new Set(deSupabase.map(a => a.id));
+          const soloEnMemoria = d.actividades.filter(a => alumnoIds.includes(a.alumnoId) && !idsSupabase.has(a.id));
           const otras = d.actividades.filter(a => !alumnoIds.includes(a.alumnoId));
-          return { ...d, actividades: [...otras, ...frescas] };
+          return { ...d, actividades: [...otras, ...deSupabase, ...soloEnMemoria] };
         });
       });
     supabase.from("notas").select("*").in("alumno_id", alumnoIds)
       .then(({ data: rows, error }) => {
         if (error) { console.error("reload notas:", error); return; }
-        const frescas = (rows || []).map(r => fromDB(r));
+        const deSupabase = (rows || []).map(r => fromDB(r));
         setData(d => {
+          const idsSupabase = new Set(deSupabase.map(n => n.id));
+          const soloEnMemoria = d.notas.filter(n => alumnoIds.includes(n.alumnoId) && !idsSupabase.has(n.id));
           const otras = d.notas.filter(n => !alumnoIds.includes(n.alumnoId));
-          return { ...d, notas: [...otras, ...frescas] };
+          return { ...d, notas: [...otras, ...deSupabase, ...soloEnMemoria] };
         });
       });
   }, [colegioId, als.length]);
@@ -1044,7 +1049,29 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
     if (!formAct.descripcion.trim()) return;
     const nueva = { id: uid(), alumnoId, materiaId, ...formAct };
     setData(d => ({ ...d, actividades: [...d.actividades, nueva] }));
-    await upsertRow("actividades", nueva);
+    // Guardar en Supabase con solo las columnas seguras (hora puede no existir en la tabla)
+    const { error } = await supabase.from("actividades").upsert({
+      id: nueva.id,
+      alumno_id: alumnoId,
+      materia_id: materiaId,
+      tipo: nueva.tipo,
+      descripcion: nueva.descripcion,
+      fecha: nueva.fecha,
+    }, { onConflict: "id" });
+    if (error) {
+      console.error("Error guardando actividad:", error);
+      // Intentar con hora también por si la columna existe
+      const { error: error2 } = await supabase.from("actividades").upsert({
+        id: nueva.id, alumno_id: alumnoId, materia_id: materiaId,
+        tipo: nueva.tipo, descripcion: nueva.descripcion, fecha: nueva.fecha, hora: nueva.hora,
+      }, { onConflict: "id" });
+      if (error2) {
+        console.error("Error guardando actividad (con hora):", error2);
+        alert("Error al guardar la actividad: " + error2.message);
+        setData(d => ({ ...d, actividades: d.actividades.filter(a => a.id !== nueva.id) }));
+        return;
+      }
+    }
     await registrarHistorial(alumnoId, "Actividad agregada", `${formAct.tipo} — ${formAct.descripcion} — ${formAct.fecha}`);
     setPopAct(false); setFormAct(emptyAct); };
   const delAct = async (id) => {
@@ -1540,12 +1567,24 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
           const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
           setData(d => ({ ...d, actividades: [...d.actividades, ...nuevas] }));
-          // Persist each activity to Supabase
+          let errCount = 0;
           for (const act of nuevas) {
-            await upsertRow("actividades", act);
+            const { error } = await supabase.from("actividades").upsert({
+              id: act.id, alumno_id: act.alumnoId, materia_id: act.materiaId,
+              tipo: act.tipo, descripcion: act.descripcion, fecha: act.fecha,
+            }, { onConflict: "id" });
+            if (error) {
+              // retry con hora
+              const { error: e2 } = await supabase.from("actividades").upsert({
+                id: act.id, alumno_id: act.alumnoId, materia_id: act.materiaId,
+                tipo: act.tipo, descripcion: act.descripcion, fecha: act.fecha, hora: act.hora,
+              }, { onConflict: "id" });
+              if (e2) { console.error("saveActividades error:", e2); errCount++; }
+            }
           }
           setPopMasiva(false); setDescAct(""); setHoraAct("");
-          alert(`✅ Se registraron ${nuevas.length} actividades.`);
+          if (errCount > 0) alert(`⚠️ Se guardaron ${nuevas.length - errCount}/${nuevas.length} actividades. ${errCount} fallaron.`);
+          else alert(`✅ Se registraron ${nuevas.length} actividades.`);
         };
         return (
         <Pop title={`📋 Carga masiva — ${materia?.nombre}`} onClose={() => { setPopMasiva(false); setNotasMasivas({}); }} wide>
