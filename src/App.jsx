@@ -280,6 +280,15 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [vista, setVista] = useState(null);
   const [detalleMateria, setDetalleMateria] = useState(null); const [detalleAlumno, setDetalleAlumno] = useState(null); const [matFiltro, setMatFiltro] = useState(null);
   const [recentDocs, setRecentDocs] = useState([]);
+  // Estados de Agenda (deben estar al nivel del componente, no dentro de if)
+  const [agendaPopOpen,      setAgendaPopOpen]      = useState(false);
+  const [agendaEditId,       setAgendaEditId]       = useState(null);
+  const [agendaAdjFile,      setAgendaAdjFile]      = useState(null);
+  const [agendaUploading,    setAgendaUploading]    = useState(false);
+  const [agendaFiltroMat,    setAgendaFiltroMat]    = useState("");
+  const [agendaFiltroEstado, setAgendaFiltroEstado] = useState("");
+  const agendaEmptyForm = { titulo:"", tipo:"examen", materiaId:"", alumnoId:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", archivoUrl:"", archivoNombre:"", estado:"pendiente" };
+  const [agendaForm, setAgendaForm] = useState(agendaEmptyForm);
   const goInicio = () => { setVista(null); setDetalleMateria(null); setDetalleAlumno(null); setMatFiltro(null); };
 
   const col  = data.colegios.find(c => c.id === colegioId);
@@ -529,14 +538,21 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
       { id: "calificado", label: "Calificado", color: C.green  },
     ];
     const agendaAll = (data.agenda || []).filter(e => e.colegioId === colegioId);
-    const [popOpen,      setPopOpen]      = React.useState(false);
-    const [editId,       setEditId]       = React.useState(null);
-    const [adjFile,      setAdjFile]      = React.useState(null);
-    const [uploading,    setUploading]    = React.useState(false);
-    const [filtroMat,    setFiltroMat]    = React.useState("");
-    const [filtroEstado, setFiltroEstado] = React.useState("");
-    const emptyForm = { titulo:"", tipo:"examen", materiaId:"", alumnoId:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", archivoUrl:"", archivoNombre:"", estado:"pendiente" };
-    const [form, setForm] = React.useState(emptyForm);
+    const popOpen      = agendaPopOpen;
+    const setPopOpen   = setAgendaPopOpen;
+    const editId       = agendaEditId;
+    const setEditId    = setAgendaEditId;
+    const adjFile      = agendaAdjFile;
+    const setAdjFile   = setAgendaAdjFile;
+    const uploading    = agendaUploading;
+    const setUploading = setAgendaUploading;
+    const filtroMat    = agendaFiltroMat;
+    const setFiltroMat = setAgendaFiltroMat;
+    const filtroEstado = agendaFiltroEstado;
+    const setFiltroEstado = setAgendaFiltroEstado;
+    const emptyForm    = agendaEmptyForm;
+    const form         = agendaForm;
+    const setForm      = setAgendaForm;
     const today = new Date().toISOString().slice(0,10);
     const lista = agendaAll
       .filter(e => (!filtroMat || e.materiaId === filtroMat) && (!filtroEstado || e.estado === filtroEstado))
