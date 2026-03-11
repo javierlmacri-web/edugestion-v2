@@ -1798,6 +1798,11 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
   const [tipoMasivo, setTipoMasivo] = useState("parcial");
   const [fechaMasiva, setFechaMasiva] = useState(new Date().toISOString().slice(0,10));
   const [descMasiva, setDescMasiva] = useState("");
+  const [tabMasiva, setTabMasiva] = useState("notas");
+  const [tipoAct, setTipoAct] = useState({});
+  const [descAct, setDescAct] = useState("");
+  const [fechaAct, setFechaAct] = useState(new Date().toISOString().slice(0,10));
+  const [horaAct, setHoraAct] = useState("");
   const alumnosColegio = data.alumnos.filter(a => a.colegioId === colegioId);
   const inscriptos = data.inscripciones
     ? data.inscripciones.filter(i => i.materiaId === materiaId).map(i => i.alumnoId)
@@ -1855,6 +1860,22 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
         ]} />
         <AlumnoDetalle data={data} setData={setData} alumnoId={alumnoSeleccionado} materiaId={materiaId} onBack={() => setAlumnoSeleccionado(null)} />
       </div> ); }
+  const saveActividades = async () => {
+    if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
+    const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
+    setData(d => ({ ...d, actividades: [...d.actividades, ...nuevas] }));
+    let errCount = 0;
+    for (const act of nuevas) {
+      const { error } = await supabase.from("actividades").upsert({ id: act.id, alumno_id: act.alumnoId, materia_id: act.materiaId, tipo: act.tipo, descripcion: act.descripcion, fecha: act.fecha }, { onConflict: "id" });
+      if (error) {
+        const { error: e2 } = await supabase.from("actividades").upsert({ id: act.id, alumno_id: act.alumnoId, materia_id: act.materiaId, tipo: act.tipo, descripcion: act.descripcion, fecha: act.fecha, hora: act.hora }, { onConflict: "id" });
+        if (e2) { errCount++; }
+      }
+    }
+    setPopMasiva(false); setDescAct(""); setHoraAct("");
+    if (errCount > 0) alert(`⚠️ Se guardaron ${nuevas.length - errCount}/${nuevas.length} actividades.`);
+    else alert(`✅ Se registraron ${nuevas.length} actividades.`);
+  };
   return (
     <div>
       <Breadcrumb items={[{ label: "Materias", onClick: onBack }, { label: materia?.nombre }]} />
@@ -1908,37 +1929,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           })}
         </div> )}
       {/* Pop carga masiva */}
-      {popMasiva && (() => {
-        const MasivaModal = () => {
-        const [tabMasiva, setTabMasiva] = useState("notas");
-        const [tipoAct, setTipoAct] = useState({});
-        const [descAct, setDescAct] = useState("");
-        const [fechaAct, setFechaAct] = useState(new Date().toISOString().slice(0,10));
-        const [horaAct, setHoraAct] = useState("");
-        const saveActividades = async () => {
-          if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
-          const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
-          setData(d => ({ ...d, actividades: [...d.actividades, ...nuevas] }));
-          let errCount = 0;
-          for (const act of nuevas) {
-            const { error } = await supabase.from("actividades").upsert({
-              id: act.id, alumno_id: act.alumnoId, materia_id: act.materiaId,
-              tipo: act.tipo, descripcion: act.descripcion, fecha: act.fecha,
-            }, { onConflict: "id" });
-            if (error) {
-              // retry con hora
-              const { error: e2 } = await supabase.from("actividades").upsert({
-                id: act.id, alumno_id: act.alumnoId, materia_id: act.materiaId,
-                tipo: act.tipo, descripcion: act.descripcion, fecha: act.fecha, hora: act.hora,
-              }, { onConflict: "id" });
-              if (e2) { console.error("saveActividades error:", e2); errCount++; }
-            }
-          }
-          setPopMasiva(false); setDescAct(""); setHoraAct("");
-          if (errCount > 0) alert(`⚠️ Se guardaron ${nuevas.length - errCount}/${nuevas.length} actividades. ${errCount} fallaron.`);
-          else alert(`✅ Se registraron ${nuevas.length} actividades.`);
-        };
-        return (
+      {popMasiva && (
         <Pop title={`📋 Carga masiva — ${materia?.nombre}`} onClose={() => { setPopMasiva(false); setNotasMasivas({}); }} wide>
           <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
             {[{id:"notas",label:"📝 Notas"},{id:"actividades",label:"⚡ Actividades"}].map(t => (
@@ -2018,9 +2009,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           </div>
           )}
         </Pop>
-        );
-        }; return <MasivaModal />;
-      })()}
+      )}
       {/* Pop agregar alumno */}
       {popAgregarAlumno && (
         <Pop title={creandoNuevo ? `➕ Nuevo alumno en ${materia?.nombre}` : `Agregar alumno a ${materia?.nombre}`} onClose={() => { setPopAgregarAlumno(false); setCreandoNuevo(false); setBusqueda(""); setFormNuevo(emptyForm); }} wide>
@@ -3409,6 +3398,17 @@ const Documentos = ({ data, setData, colegioId }) => {
   );
 }; 
 
+const SideBtn = ({ icon, label, active, onClick, color, danger }) => {
+  const activeColor = color || C.accentL;
+  const [h, setH] = useState(false);
+  return (
+    <button onClick={onClick} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
+      style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 14px", borderRadius: 11, border: active ? `1.5px solid ${C.accent}40` : "none", cursor: "pointer", fontSize: 13.5, fontWeight: active ? 700 : 500, transition: "all .15s", background: active ? C.accentDim : h ? C.card2 : "transparent", color: active ? activeColor : h ? (danger ? C.red : C.text) : C.dim, width: "100%", textAlign: "left", fontFamily: "inherit" }}>
+      <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>{icon}</span>{label}
+    </button>
+  );
+};
+
 const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [tab, setTab] = useState(() => localStorage.getItem("lastTab") || "dashboard");
   const [showReporte, setShowReporte] = useState(false);
@@ -3534,16 +3534,6 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   );
 
   // ── DESKTOP LAYOUT ─────────────────────────────────────────────────────────
-  const SideBtn = ({ icon, label, active, onClick, color, danger }) => {
-    const [h, setH] = useState(false);
-    const activeColor = color || C.accentL;
-    return (
-      <button onClick={onClick} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-        style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 14px", borderRadius: 11, border: active ? `1.5px solid ${C.accent}40` : "none", cursor: "pointer", fontSize: 13.5, fontWeight: active ? 700 : 500, transition: "all .15s", background: active ? C.accentDim : h ? C.card2 : "transparent", color: active ? activeColor : h ? (danger ? C.red : C.text) : C.dim, width: "100%", textAlign: "left", fontFamily: "inherit" }}>
-        <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>{icon}</span>{label}
-      </button>
-    );
-  };
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: C.bg }}>
       <aside style={{ width: 228, background: C.card, borderRight: `1.5px solid ${C.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
