@@ -21,7 +21,7 @@ const S = {
   grid2:  { display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 },
   upper:  { fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1.1 },
   ellip:  { whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }, };
-const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [], reportes: [] };
+const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [], reportes: [], agenda: [] };
 
 const uid = () => crypto.randomUUID();
 
@@ -37,8 +37,8 @@ const fmtT = (d) => new Date(d).toLocaleTimeString("es-AR", { hour: "2-digit", m
 const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : null;
 const nc = (n) => { if (n === null || n === undefined) return C.muted; const v = parseFloat(n); return v >= 7 ? C.green : v >= 5 ? C.yellow : C.red; };
 
-const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial"};
-const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",created_at:"createdAt"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===undefined)out[k]=v;else if(m!==null)out[m]=v;} return out; };
+const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial",agenda:"agenda"};
+const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",created_at:"createdAt",archivo_url:"archivoUrl",archivo_nombre:"archivoNombre"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===undefined)out[k]=v;else if(m!==null)out[m]=v;} return out; };
 const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue;out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
 const saveD = async () => {};
@@ -516,105 +516,192 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
             })}
           </div> )}
       </div> ); }
-  if (vista === "actividades") {
-    const materiasConActs = mats.filter(m => acts.some(a => a.materiaId === m.id));
-    const actsSinMateria  = acts.filter(a => !a.materiaId || !mats.find(m => m.id === a.materiaId));
-    const materiasVista   = matFiltro ? mats.filter(m => m.id === matFiltro) : materiasConActs;
-    const conteo = (tipo, lista) => lista.filter(a => a.tipo === tipo).length;
+  if (vista === "agenda") {
+    const TIPOS = [
+      { id: "examen",  label: "Examen",             icon: "📝", color: C.red    },
+      { id: "tp",      label: "Trabajo Práctico",   icon: "📋", color: C.blue   },
+      { id: "rendir",  label: "Examen para Rendir", icon: "🎯", color: C.yellow },
+      { id: "otro",    label: "Otro",               icon: "📌", color: C.dim    },
+    ];
+    const ESTADOS = [
+      { id: "pendiente",  label: "Pendiente",  color: C.yellow },
+      { id: "entregado",  label: "Entregado",  color: C.blue   },
+      { id: "calificado", label: "Calificado", color: C.green  },
+    ];
+    const agendaAll = (data.agenda || []).filter(e => e.colegioId === colegioId);
+    const [popOpen,      setPopOpen]      = React.useState(false);
+    const [editId,       setEditId]       = React.useState(null);
+    const [adjFile,      setAdjFile]      = React.useState(null);
+    const [uploading,    setUploading]    = React.useState(false);
+    const [filtroMat,    setFiltroMat]    = React.useState("");
+    const [filtroEstado, setFiltroEstado] = React.useState("");
+    const emptyForm = { titulo:"", tipo:"examen", materiaId:"", alumnoId:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", archivoUrl:"", archivoNombre:"", estado:"pendiente" };
+    const [form, setForm] = React.useState(emptyForm);
+    const today = new Date().toISOString().slice(0,10);
+    const lista = agendaAll
+      .filter(e => (!filtroMat || e.materiaId === filtroMat) && (!filtroEstado || e.estado === filtroEstado))
+      .sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+    const proximos = lista.filter(e => e.fecha >= today);
+    const pasados  = lista.filter(e => e.fecha < today).reverse();
+    const abrirNuevo  = () => { setForm(emptyForm); setEditId(null); setAdjFile(null); setPopOpen(true); };
+    const abrirEditar = (ev) => {
+      setForm({ titulo:ev.titulo||"", tipo:ev.tipo||"examen", materiaId:ev.materiaId||"", alumnoId:ev.alumnoId||"", fecha:ev.fecha||today, descripcion:ev.descripcion||"", archivoUrl:ev.archivoUrl||"", archivoNombre:ev.archivoNombre||"", estado:ev.estado||"pendiente" });
+      setEditId(ev.id); setAdjFile(null); setPopOpen(true);
+    };
+    const cerrar = () => { setPopOpen(false); setEditId(null); setAdjFile(null); };
+    const guardar = async () => {
+      if (!form.titulo.trim() || !form.fecha) { alert("Título y fecha son obligatorios."); return; }
+      setUploading(true);
+      let archivoUrl = form.archivoUrl, archivoNombre = form.archivoNombre;
+      if (adjFile) {
+        try {
+          const b64 = await new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result.split(",")[1]); r.readAsDataURL(adjFile); });
+          const up = await fetch("/api/upload", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: b64, mimeType: adjFile.type, fileName: adjFile.name }) }).then(r => r.json());
+          if (up.url) { archivoUrl = up.url; archivoNombre = adjFile.name; }
+          else console.error("upload:", up.error);
+        } catch(e) { console.error("upload:", e); }
+      }
+      const row = { colegio_id: colegioId, titulo: form.titulo.trim(), tipo: form.tipo, materia_id: form.materiaId||null, alumno_id: form.alumnoId||null, fecha: form.fecha, descripcion: form.descripcion||"", archivo_url: archivoUrl||"", archivo_nombre: archivoNombre||"", estado: form.estado };
+      if (editId) {
+        const { error } = await supabase.from("agenda").update(row).eq("id", editId);
+        if (error) { alert("Error: " + error.message); setUploading(false); return; }
+        setData(d => ({ ...d, agenda: (d.agenda||[]).map(x => x.id === editId ? { ...x, ...form, archivoUrl, archivoNombre, colegioId } : x) }));
+      } else {
+        const id = uid();
+        const { error } = await supabase.from("agenda").insert({ id, ...row });
+        if (error) { alert("Error: " + error.message); setUploading(false); return; }
+        setData(d => ({ ...d, agenda: [...(d.agenda||[]), { id, colegioId, ...form, archivoUrl, archivoNombre }] }));
+      }
+      setUploading(false); cerrar();
+    };
+    const eliminar = async (id) => {
+      if (!confirm("¿Eliminar este evento?")) return;
+      await supabase.from("agenda").delete().eq("id", id);
+      setData(d => ({ ...d, agenda: (d.agenda||[]).filter(x => x.id !== id) }));
+    };
+    const cambiarEstado = async (id, estado) => {
+      await supabase.from("agenda").update({ estado }).eq("id", id);
+      setData(d => ({ ...d, agenda: (d.agenda||[]).map(x => x.id === id ? { ...x, estado } : x) }));
+    };
+    const AgendaCard = ({ ev }) => {
+      const mat  = mats.find(m => m.id === ev.materiaId);
+      const al   = als.find(a => a.id === ev.alumnoId);
+      const tipo = TIPOS.find(t => t.id === ev.tipo) || TIPOS[3];
+      const est  = ESTADOS.find(s => s.id === ev.estado) || ESTADOS[0];
+      const dias = Math.ceil((new Date(ev.fecha + "T12:00:00") - new Date()) / 86400000);
+      const urgente = dias >= 0 && dias <= 3;
+      const vencido = dias < 0;
+      return (
+        <div style={{ display:"flex", alignItems:"center", gap:14, padding:"15px 18px", background:C.card, border:`1.5px solid ${urgente ? C.red+"55" : C.border}`, borderRadius:14 }}>
+          <div style={{ width:46, height:46, borderRadius:13, background:tipo.color+"18", border:`1px solid ${tipo.color}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{tipo.icon}</div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+              <span style={{ color:C.text, fontWeight:700, fontSize:15 }}>{ev.titulo}</span>
+              {urgente && <span style={{ background:C.red+"22", color:C.red, border:`1px solid ${C.red}44`, borderRadius:6, padding:"1px 8px", fontSize:11, fontWeight:700 }}>{dias===0?"¡Hoy!":`¡${dias}d!`}</span>}
+              {vencido  && <span style={{ background:C.dim+"22", color:C.dim, borderRadius:6, padding:"1px 8px", fontSize:11 }}>Vencido</span>}
+            </div>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
+              <Tag color={tipo.color}>{tipo.label}</Tag>
+              {mat && <Tag color={C.accent}>{mat.nombre}</Tag>}
+              {al  && <Tag color={C.blue}>{al.apellido}, {al.nombre}</Tag>}
+              <span style={{ color:C.muted, fontSize:12 }}>📅 {fmt(ev.fecha)}</span>
+            </div>
+            {ev.descripcion && <div style={{ color:C.dim, fontSize:12, marginTop:5 }}>{ev.descripcion}</div>}
+            {ev.archivoUrl  && <a href={ev.archivoUrl} target="_blank" rel="noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:6, color:C.accentL, fontSize:12, fontWeight:600, textDecoration:"none" }}>📎 {ev.archivoNombre||"Ver archivo"}</a>}
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
+            <select value={ev.estado} onChange={e => cambiarEstado(ev.id, e.target.value)}
+              style={{ background:est.color+"18", border:`1px solid ${est.color}44`, borderRadius:8, padding:"5px 10px", color:est.color, fontSize:12, fontWeight:700, cursor:"pointer", outline:"none" }}>
+              {ESTADOS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+            <div style={{ display:"flex", gap:6 }}>
+              <Btn v="ghost" sm onClick={() => abrirEditar(ev)}>✏️</Btn>
+              <Btn v="danger" sm onClick={() => eliminar(ev.id)}>🗑️</Btn>
+            </div>
+          </div>
+        </div>
+      );
+    };
     return (
       <div>
-        <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Actividades" }]} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>⚡ Actividades por Materia</h2>
-          <div style={{ fontSize: 13, color: C.muted }}>{acts.length} actividades registradas</div>
+        <Breadcrumb items={[{ label:"Inicio", onClick:goInicio }, { label:"Agenda" }]} />
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:12 }}>
+          <h2 style={{ color:C.text, margin:0, fontSize:20, fontWeight:800 }}>📅 Agenda — Exámenes y TPs</h2>
+          <Btn onClick={abrirNuevo}>+ Programar</Btn>
         </div>
-        {acts.length === 0 ? <Empty icon="⚡" msg="No hay actividades registradas." /> : (
-          <>
-            {/* Filtro rápido por materia */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 22 }}>
-              <button onClick={() => setMatFiltro(null)}
-                style={{ padding: "7px 14px", borderRadius: 20, border: `1px solid ${!matFiltro ? C.accent : C.border}`, background: !matFiltro ? C.accentDim : "transparent", color: !matFiltro ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                Todas las materias
-              </button>
-              {materiasConActs.map(m => (
-                <button key={m.id} onClick={() => setMatFiltro(m.id)}
-                  style={{ padding: "7px 14px", borderRadius: 20, border: `1px solid ${matFiltro === m.id ? C.accent : C.border}`, background: matFiltro === m.id ? C.accentDim : "transparent", color: matFiltro === m.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                  {m.nombre} ({acts.filter(a => a.materiaId === m.id).length})
-                </button>
-              ))}</div>
-            {/* Bloque por materia */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              {materiasVista.map(m => {
-                const actsM = acts.filter(a => a.materiaId === m.id).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-                if (actsM.length === 0) return null;
-                return (
-                  <Box key={m.id}>
-                    {/* Cabecera materia */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <div style={{ width: 38, height: 38, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📚</div>
-                        <div>
-                          <div style={{ color: C.text, fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
-                          <div style={{ color: C.muted, fontSize: 12 }}>{actsM.length} actividades</div> </div> </div> {/* Contadores de tipo */} <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {conteo("positiva", actsM)   > 0 && <Tag color={C.green}>✅ {conteo("positiva", actsM)}</Tag>}
-                        {conteo("negativa", actsM)   > 0 && <Tag color={C.red}>❌ {conteo("negativa", actsM)}</Tag>}
-                        {conteo("participacion", actsM) > 0 && <Tag color={C.blue}>🙋 {conteo("participacion", actsM)}</Tag>}
-                        {conteo("tardanza", actsM)   > 0 && <Tag color={C.yellow}>🕐 {conteo("tardanza", actsM)}</Tag>}
-                        {conteo("observacion", actsM)> 0 && <Tag color={C.dim}>📌 {conteo("observacion", actsM)}</Tag>}
-                      </div></div>
-                    {/* Lista actividades de esa materia */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                      {actsM.map(act => {
-                        const al = als.find(a => a.id === act.alumnoId);
-                        const tc = tipoActColor[act.tipo] || C.dim;
-                        return (
-                          <div key={act.id}
-                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
-                            onClick={() => setDetalleAlumno(act.alumnoId)}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                              <div style={{ width: 4, height: 40, background: tc, borderRadius: 3, flexShrink: 0 }} />
-                              <div>
-                                <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
-                                <div style={{ color: C.dim, fontSize: 12, marginTop: 2 }}>{act.descripcion}</div>
-                                <div style={{ color: C.muted, fontSize: 11, marginTop: 1 }}>📅 {fmt(act.fecha)}{act.hora ? ` · 🕐 ${act.hora}` : ""}</div>
-                              </div></div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                              <Tag color={tc}>{act.tipo}</Tag>
-                              <span style={{ color: C.accentL, fontSize: 11, fontWeight: 700 }}>ver →</span>
-                            </div>
-                          </div> );
-                      })}</div>
-                  </Box> );
-              })}
-              {/* Actividades sin materia */}
-              {!matFiltro && actsSinMateria.length > 0 && (
-                <Box>
-                  <div style={{ color: C.dim, fontWeight: 700, fontSize: 14, marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
-                    Sin materia asignada ({actsSinMateria.length})</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                    {actsSinMateria.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).map(act => {
-                      const al = als.find(a => a.id === act.alumnoId); const tc = tipoActColor[act.tipo] || C.dim;
-                      return (
-                        <div key={act.id}
-                          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
-                          onClick={() => setDetalleAlumno(act.alumnoId)}
-                          onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
-                          onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <div style={{ width: 4, height: 40, background: tc, borderRadius: 3 }} />
-                            <div>
-                              <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
-                              <div style={{ color: C.dim, fontSize: 12 }}>{act.descripcion}</div>
-                              <div style={{ color: C.muted, fontSize: 11 }}>📅 {fmt(act.fecha)}</div>
-                            </div></div>
-                          <Tag color={tc}>{act.tipo}</Tag>
-                        </div> );
-                    })}</div>
-                </Box> )}</div>
-          </> )}
-      </div> ); }
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:22 }}>
+          <select value={filtroMat} onChange={e => setFiltroMat(e.target.value)}
+            style={{ background:"#07101e", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:filtroMat?C.text:C.dim, fontSize:13, outline:"none" }}>
+            <option value="">📚 Todas las materias</option>
+            {mats.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+          </select>
+          <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
+            style={{ background:"#07101e", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:filtroEstado?C.text:C.dim, fontSize:13, outline:"none" }}>
+            <option value="">🔘 Todos los estados</option>
+            {ESTADOS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+          </select>
+        </div>
+        {agendaAll.length === 0
+          ? <Empty icon="📅" msg="No hay exámenes ni TPs programados todavía." />
+          : <>
+              {proximos.length > 0 && <>
+                <div style={{ fontSize:11, color:C.accentL, fontWeight:800, textTransform:"uppercase", letterSpacing:1.2, marginBottom:12 }}>Próximos ({proximos.length})</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:28 }}>
+                  {proximos.map(ev => <AgendaCard key={ev.id} ev={ev} />)}
+                </div>
+              </>}
+              {pasados.length > 0 && <>
+                <div style={{ fontSize:11, color:C.dim, fontWeight:800, textTransform:"uppercase", letterSpacing:1.2, marginBottom:12 }}>Pasados ({pasados.length})</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:10, opacity:0.6 }}>
+                  {pasados.map(ev => <AgendaCard key={ev.id} ev={ev} />)}
+                </div>
+              </>}
+            </>
+        }
+        {popOpen && (
+          <Pop title={editId ? "✏️ Editar evento" : "📅 Programar examen / TP"} onClose={cerrar}>
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              <Inp label="Título *" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo:e.target.value }))} placeholder="Ej: Parcial Unidades 1-3" />
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <Sel label="Tipo *" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo:e.target.value }))}>
+                  {TIPOS.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
+                </Sel>
+                <Inp label="Fecha *" type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha:e.target.value }))} />
+              </div>
+              <Sel label="Materia (opcional)" value={form.materiaId} onChange={e => setForm(f => ({ ...f, materiaId:e.target.value }))}>
+                <option value="">— Sin materia específica —</option>
+                {mats.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+              </Sel>
+              <Sel label="Alumno específico (opcional)" value={form.alumnoId} onChange={e => setForm(f => ({ ...f, alumnoId:e.target.value }))}>
+                <option value="">— Para todo el curso —</option>
+                {[...als].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
+              </Sel>
+              <Inp label="Descripción / Temas" value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion:e.target.value }))} placeholder="Ej: Unidades 1, 2 y 3 — págs. 40-80" />
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                <label style={{ fontSize:10, color:C.dim, fontWeight:800, textTransform:"uppercase", letterSpacing:1.4 }}>📎 Archivo adjunto (opcional)</label>
+                <div style={{ background:"#070c18", border:`1.5px dashed ${adjFile?C.accent:C.border}`, borderRadius:12, padding:"14px 16px", display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}
+                  onClick={() => document.getElementById("adj-inp").click()}>
+                  <input id="adj-inp" type="file" accept="image/*,.pdf,.doc,.docx,.xlsx,.pptx" style={{ display:"none" }} onChange={e => setAdjFile(e.target.files[0]||null)} />
+                  {adjFile
+                    ? <><span style={{ fontSize:18 }}>📄</span><span style={{ color:C.accentL, fontSize:13, fontWeight:600, flex:1 }}>{adjFile.name}</span><button onClick={e => { e.stopPropagation(); setAdjFile(null); }} style={{ background:"none", border:"none", color:C.dim, cursor:"pointer", fontSize:16 }}>✕</button></>
+                    : <><span style={{ fontSize:18 }}>☁️</span><span style={{ color:C.dim, fontSize:13 }}>Subir enunciado, PDF, imagen...</span></>
+                  }
+                </div>
+                {form.archivoUrl && !adjFile && <a href={form.archivoUrl} target="_blank" rel="noreferrer" style={{ color:C.accentL, fontSize:12, fontWeight:600, textDecoration:"none" }}>📎 Archivo actual: {form.archivoNombre||"ver"}</a>}
+              </div>
+              <Sel label="Estado" value={form.estado} onChange={e => setForm(f => ({ ...f, estado:e.target.value }))}>
+                {ESTADOS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+              </Sel>
+              <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:4 }}>
+                <Btn v="ghost" onClick={cerrar}>Cancelar</Btn>
+                <Btn onClick={guardar} disabled={uploading}>{uploading ? "⏳ Subiendo..." : editId ? "💾 Guardar cambios" : "📅 Programar"}</Btn>
+              </div>
+            </div>
+          </Pop>
+        )}
+      </div>
+    );
+  }
   const resAlumnos = busLower
     ? als.filter(a => `${a.nombre} ${a.apellido} ${a.dni || ""} ${a.curso || ""}`.toLowerCase().includes(busLower))
     : [];
@@ -770,7 +857,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
         <SC label="Alumnos"         value={als.length}    color={C.accentL} onClick={() => setVista("alumnos")}    sub="click para ver" />
         <SC label="Notas por curso" value={notas.length}  color={C.yellow} onClick={() => setVista("notas")}       sub="click para ver" />
         <SC label="Promedio por mat." value={prom ?? "—"} color={nc(prom)} onClick={() => setVista("promedio")}    sub="click para ver" />
-        <SC label="Actividades"     value={acts.length}   color={C.dim}    onClick={() => setVista("actividades")} sub="click para ver" />
+        <SC label="Agenda" value={(data.agenda||[]).filter(e=>e.colegioId===colegioId).length} color={C.yellow} onClick={() => setVista("agenda")} sub="click para ver" />
       </div>}
       {/* Resumen rápido por materia */}
       {!busLower && mats.length > 0 && (
@@ -808,7 +895,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Actividad reciente</h3>
-              <button onClick={() => setVista("actividades")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>ver todas →</button>
+              <button onClick={() => setVista("agenda")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>ver agenda →</button>
             </div>
             <Box>
               {feed.map((item, idx) => {
@@ -820,7 +907,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                 if (item._src === "actividad") {
                   const tc = tipoActColor[item.tipo] || C.dim;
                   return (
-                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => { setDetalleAlumno(item.alumnoId); setVista("actividades"); }}>
+                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => { setDetalleAlumno(item.alumnoId); }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{ width: 32, height: 32, borderRadius: 9, background: tc + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>⚡</div>
                         <div>
