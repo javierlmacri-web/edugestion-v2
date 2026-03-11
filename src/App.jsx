@@ -215,7 +215,7 @@ const Welcome = ({ onGo }) => {
         <p style={{ color: C.muted, fontSize: 12, marginTop: 44 }}>💾 Datos guardados automáticamente en tu dispositivo</p>
       </div>
     </div>
-    </div> ); };
+  ); };
 const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
   const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", direccion: "", telefono: "", email: "" }); const [editId, setEditId] = useState(null);
   const openAdd = () => { setForm({ nombre: "", direccion: "", telefono: "", email: "" }); setEditId(null); setPop(true); };
