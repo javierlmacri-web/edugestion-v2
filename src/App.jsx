@@ -526,6 +526,152 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
             })}
           </div> )}
       </div> ); }
+  if (vista === "historial-feed") {
+    const feedCompleto = [
+      ...acts.map(a => ({ ...a, _src: "actividad", _fecha: a.fecha || "" })),
+      ...notas.map(n => ({ ...n, _src: "nota", _fecha: n.fecha || "" })),
+      ...eventos.map(e => ({ ...e, _src: "evento", _fecha: e.fecha || "" })),
+      ...inasistencias.map(i => ({ ...i, _src: "inasistencia", _fecha: i.fecha || "" })),
+      ...recentDocs.map(d => ({ ...d, _src: "documento", _fecha: d.createdAt || d.fecha || "" })),
+      ...mats.map(m => ({ ...m, _src: "materia", _fecha: m.createdAt || "" })),
+      ...als.map(a => ({ ...a, _src: "alumno", _fecha: a.createdAt || "" })),
+    ].filter(x => x._fecha).sort((a, b) => new Date(b._fecha) - new Date(a._fecha));
+
+    const tipoActColor = { positiva: C.green, negativa: C.red, neutral: C.yellow, participacion: C.blue, observacion: C.dim };
+
+    return (
+      <div>
+        <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Toda la actividad" }]} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>🕐 Toda la actividad</h2>
+          <span style={{ color: C.dim, fontSize: 13 }}>{feedCompleto.length} registros</span>
+        </div>
+        <Box>
+          {feedCompleto.length === 0
+            ? <Empty icon="🕐" msg="No hay actividad registrada aún." />
+            : feedCompleto.map((item, idx) => {
+                const al  = als.find(a => a.id === item.alumnoId);
+                const mat = mats.find(m => m.id === item.materiaId);
+                const isLast = idx === feedCompleto.length - 1;
+                const row = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: isLast ? "none" : `1px solid ${C.border}`, gap: 10 };
+
+                if (item._src === "actividad") {
+                  const tc = tipoActColor[item.tipo] || C.dim;
+                  return (
+                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.alumnoId)}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: tc + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>⚡</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
+                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
+                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={tc}>{item.tipo}</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+                if (item._src === "nota") {
+                  const nc2 = nc(parseFloat(item.nota));
+                  return (
+                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.alumnoId)}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: nc2 + "18", border: `1.5px solid ${nc2}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: nc2, flexShrink: 0 }}>{item.nota}</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
+                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
+                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion || item.tipo}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={C.blue}>📝 {item.tipo}</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+                if (item._src === "inasistencia") {
+                  return (
+                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.alumnoId)}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.red + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🚫</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
+                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.tipoInasist || "Inasistencia"}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={C.red}>Inasistencia</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+                if (item._src === "evento") {
+                  return (
+                    <div key={item.id} style={{ ...row }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.blue + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🗓️</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.titulo || item.nombre}</span>
+                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>
+                        </div>
+                      </div>
+                      <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmt(item._fecha)}</span>
+                    </div>
+                  );
+                }
+                if (item._src === "documento") {
+                  return (
+                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => item.url && window.open(item.url, "_blank")}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.accent + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📎</div>
+                        <div>
+                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
+                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
+                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.nombre || item.tipo}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                        <Tag color={C.accent}>doc</Tag>
+                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
+                      </div>
+                    </div>
+                  );
+                }
+                if (item._src === "materia") {
+                  return (
+                    <div key={item.id} style={{ ...row }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.blue + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📚</div>
+                        <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>Materia creada: {item.nombre}</span>
+                      </div>
+                      <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmt(item._fecha)}</span>
+                    </div>
+                  );
+                }
+                if (item._src === "alumno") {
+                  return (
+                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.id)}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.accentDim, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>👤</div>
+                        <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>Alumno registrado: {item.apellido}, {item.nombre}</span>
+                      </div>
+                      <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmt(item._fecha)}</span>
+                    </div>
+                  );
+                }
+                return null;
+              })
+          }
+        </Box>
+      </div>
+    );
+  }
+
   if (vista === "agenda") {
     const TIPOS = [
       { id: "examen",  label: "Examen",             icon: "📝", color: C.red    },
@@ -912,7 +1058,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Actividad reciente</h3>
-              <button onClick={() => setVista("agenda")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>ver agenda →</button>
+              <button onClick={() => setVista("historial-feed")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>Ver todo →</button>
             </div>
             <Box>
               {feed.map((item, idx) => {
