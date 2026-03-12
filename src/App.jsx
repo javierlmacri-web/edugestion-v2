@@ -419,6 +419,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                     </div></div>
                   {/* Alumnos con sus notas - solo si está abierta */}
                   {abierta && (
+                  <div>
                   {alsMat.length === 0 ? (
                     <div style={{ color: "#92400e", fontSize: 13, padding: "8px 0" }}>Sin alumnos inscriptos.</div> ) : ( <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {alsMat.map(al => {
@@ -443,6 +444,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                           </div> );
                       })}
                     </div> )}
+                  </div>
                   )}
                 </Box> );
             })}
