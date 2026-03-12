@@ -291,12 +291,20 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
         }
       }
       if (nuevasInsc.length > 0) {
-        const results = await Promise.all(nuevasInsc.map(i =>
-          supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId, colegio_id: colegioId })
-        ));
-        const errs = results.filter(r => r.error);
-        if (errs.length) console.error("Inscripcion sync error:", JSON.stringify(errs[0].error));
-        else setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] }));
+        // Verificar que los alumno_id existan en Supabase antes de insertar
+        const { data: alsDB } = await supabase.from("alumnos").select("id").in("id", [...new Set(nuevasInsc.map(i => i.alumnoId))]);
+        const idsValidos = new Set((alsDB || []).map(a => a.id));
+        const inscValidas = nuevasInsc.filter(i => idsValidos.has(i.alumnoId));
+        const descartadas = nuevasInsc.length - inscValidas.length;
+        if (descartadas > 0) console.warn(`⚠️ ${descartadas} inscripciones descartadas por alumno_id huérfano`);
+        if (inscValidas.length > 0) {
+          const results = await Promise.all(inscValidas.map(i =>
+            supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId })
+          ));
+          const errs = results.filter(r => r.error);
+          if (errs.length) console.error("Inscripcion sync error:", JSON.stringify(errs[0].error));
+          else setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), ...inscValidas] }));
+        }
       }
 
       setSincState("done");
@@ -3315,7 +3323,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
       }
       if (nuevasInsc.length === 0) { alert("✅ Todo está sincronizado. No hay cambios pendientes."); setSincronizando(false); return; }
       const results = await Promise.all(nuevasInsc.map(i =>
-        supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId, colegio_id: colegioId })
+        supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId })
       ));
       const errs = results.filter(r => r.error);
       if (errs.length) { alert("❌ Error: " + JSON.stringify(errs[0].error)); }
