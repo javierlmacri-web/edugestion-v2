@@ -2607,6 +2607,8 @@ const Documentos = ({ data, setData, colegioId }) => {
   const [filtroAlumno, setFiltroAlumno] = useState("");
   const [filtroMateria, setFiltroMateria] = useState("");
   const [showResumen, setShowResumen] = useState(false);
+  const [editDoc, setEditDoc] = useState(null); // doc being edited
+  const [editForm, setEditForm] = useState({});
   const alumnos = data.alumnos.filter(a => a.colegioId === colegioId);
   const materias = data.materias.filter(m => m.colegioId === colegioId);
 
@@ -2748,6 +2750,23 @@ const Documentos = ({ data, setData, colegioId }) => {
     if (doc.alumno_id) await registrarHistorial(doc.alumno_id, "Archivo eliminado", `${doc.nombre} — ${doc.tipo || "documento"}`, true);
     await supabase.from("documentos").delete().eq("id", doc.id);
     setArchivos(a => a.filter(x => x.id !== doc.id));
+  };
+
+  const abrirEditar = (doc) => {
+    setEditForm({ tipo: doc.tipo || "documento", alumno_id: doc.alumno_id || "", materia_id: doc.materia_id || "", nombre: doc.nombre || "" });
+    setEditDoc(doc);
+  };
+
+  const guardarEditar = async () => {
+    const { error } = await supabase.from("documentos").update({
+      tipo: editForm.tipo,
+      alumno_id: editForm.alumno_id || null,
+      materia_id: editForm.materia_id || null,
+      nombre: editForm.nombre,
+    }).eq("id", editDoc.id);
+    if (error) { alert("Error: " + error.message); return; }
+    setArchivos(a => a.map(x => x.id === editDoc.id ? { ...x, ...editForm } : x));
+    setEditDoc(null);
   };
 
   const getAlumnoMaterias = (alumnoId) => {
@@ -2913,7 +2932,10 @@ const Documentos = ({ data, setData, colegioId }) => {
                     {al && <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>👤 {al.apellido}, {al.nombre}</div>}
                     <div style={{ color: C.dim, fontSize: 11, marginTop: 2 }}>{doc.fecha}</div>
                   </div>
-                  <button onClick={() => eliminarDoc(doc)} style={{ background: C.red+"22", border: `1px solid ${C.red}44`, color: C.red, borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontSize: 13 }}>🗑</button>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => abrirEditar(doc)} style={{ background: C.blue+"22", border: `1px solid ${C.blue}44`, color: C.blue, borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontSize: 13 }}>✏️</button>
+                    <button onClick={() => eliminarDoc(doc)} style={{ background: C.red+"22", border: `1px solid ${C.red}44`, color: C.red, borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontSize: 13 }}>🗑</button>
+                  </div>
                 </div>
               </div>
             </Box>
@@ -2921,6 +2943,35 @@ const Documentos = ({ data, setData, colegioId }) => {
         })}
       </div>}
     </div>
+
+    {/* Modal editar documento */}
+    {editDoc && (
+      <Pop title="✏️ Editar documento" onClose={() => setEditDoc(null)}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <Inp label="Nombre del archivo" value={editForm.nombre} onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))} />
+          <Sel label="Tipo" value={editForm.tipo} onChange={e => setEditForm(f => ({ ...f, tipo: e.target.value }))}>
+            <option value="examen">📝 Examen</option>
+            <option value="trabajo">📋 Trabajo práctico</option>
+            <option value="documento">📄 Documento</option>
+            <option value="dni">🪪 DNI/Documentación</option>
+          </Sel>
+          <Sel label="Alumno" value={editForm.alumno_id} onChange={e => setEditForm(f => ({ ...f, alumno_id: e.target.value }))}>
+            <option value="">— Sin alumno —</option>
+            {[...alumnos].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => (
+              <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>
+            ))}
+          </Sel>
+          <Sel label="Materia" value={editForm.materia_id} onChange={e => setEditForm(f => ({ ...f, materia_id: e.target.value }))}>
+            <option value="">— Sin materia —</option>
+            {materias.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+          </Sel>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+            <Btn v="ghost" onClick={() => setEditDoc(null)}>Cancelar</Btn>
+            <Btn onClick={guardarEditar}>💾 Guardar</Btn>
+          </div>
+        </div>
+      </Pop>
+    )}
   );
 };
 
