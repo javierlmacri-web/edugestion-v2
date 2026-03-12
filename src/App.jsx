@@ -2746,7 +2746,9 @@ const Documentos = ({ data, setData, colegioId }) => {
         return tieneApellido && tieneNombre;
       });
       console.log("Alumno encontrado:", alumnoEncontrado?.apellido, alumnoEncontrado?.nombre, "| texto:", analisis.nombre?.slice(0,30));
-      queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "", notaDetectada: analisis.nota || "" });
+      const alumnoIns = alumnoEncontrado ? data.inscripciones.filter(i => i.alumnoId === alumnoEncontrado.id) : [];
+      const materiaIdSugerida = alumnoIns.length === 1 ? alumnoIns[0].materiaId : "";
+      queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "", notaDetectada: analisis.nota || "", materiaId: materiaIdSugerida });
     }
     setConfirmQueue(queue);
     setProcesando(false);
@@ -2775,8 +2777,7 @@ const Documentos = ({ data, setData, colegioId }) => {
       // Save nota if provided
       const notaFinal = notaOverride !== undefined ? notaOverride : item.notaDetectada;
       if (notaFinal && alumnoId) {
-        const inscripciones = data.inscripciones.filter(i => i.alumnoId === alumnoId);
-        const materiaId = inscripciones.length > 0 ? inscripciones[0].materiaId : "";
+        const materiaId = item.materiaId || (data.inscripciones.filter(i => i.alumnoId === alumnoId)[0]?.materiaId || "");
         const nota = { id: crypto.randomUUID(), alumno_id: alumnoId, materia_id: materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
         console.log("Saving nota:", JSON.stringify(nota));
         const { error: notaErr } = await supabase.from("notas").insert(nota);
@@ -2785,6 +2786,14 @@ const Documentos = ({ data, setData, colegioId }) => {
           setData(d => ({ ...d, notas: [...d.notas, nota] }));
           await registrarHistorial(alumnoId, "Nota agregada", `${tipo} — ${item.file.name} — Nota: ${notaFinal}`);
         }
+      }
+      // Registrar actividad visible en dashboard
+      if (alumnoId) {
+        const materiaIdAct = item.materiaId || (data.inscripciones.filter(i => i.alumnoId === alumnoId)[0]?.materiaId || "");
+        const actNueva = { id: crypto.randomUUID(), alumno_id: alumnoId, materia_id: materiaIdAct || null, tipo: "documento", descripcion: `📎 Archivo subido: ${item.file.name}`, fecha: new Date().toISOString().slice(0,10) };
+        const { error: actErr } = await supabase.from("actividades").insert(actNueva);
+        if (!actErr) setData(d => ({ ...d, actividades: [...d.actividades, { ...actNueva, alumnoId, materiaId: materiaIdAct }] }));
+        await registrarHistorial(alumnoId, "Archivo subido", `${tipo} — ${item.file.name}`);
       }
       setArchivos(a => [doc, ...a]);
       setConfirmQueue(q => q.filter(x => x !== item));
@@ -2898,8 +2907,11 @@ const Documentos = ({ data, setData, colegioId }) => {
                     <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 14, marginBottom: 4 }}>📄 {item.file.name}</div>
                     {item.analisis.descripcion && <div style={{ color: "#92400e", fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                      <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
-                        style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
+                      <select value={item.alumnoId} onChange={e => {
+                          const aid = e.target.value;
+                          const ins = data.inscripciones.filter(i => i.alumnoId === aid);
+                          setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: aid, materiaId: ins.length===1 ? ins[0].materiaId : ""} : x));
+                        }} style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
                         <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Sin alumno asignado —</option>
                         {alumnos.map(a => <option key={a.id} value={a.id} style={{ background: "#fff8f0", color: "#1c1410" }}>{a.apellido}, {a.nombre}</option>)}
                       </select>
@@ -2910,6 +2922,20 @@ const Documentos = ({ data, setData, colegioId }) => {
                         <option style={{ background: "#fff8f0", color: "#1c1410" }} value="documento">📄 Documento</option>
                         <option style={{ background: "#fff8f0", color: "#1c1410" }} value="dni">🪪 DNI/Documentación</option>
                       </select>
+                      {item.alumnoId && data.inscripciones.filter(i => i.alumnoId === item.alumnoId).length > 1 && (
+                        <select value={item.materiaId || ""} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, materiaId: e.target.value} : x))}
+                          style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
+                          <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Seleccionar materia —</option>
+                          {data.inscripciones.filter(i => i.alumnoId === item.alumnoId).map(i => {
+                            const mat = data.materias.find(m => m.id === i.materiaId);
+                            return <option key={i.materiaId} value={i.materiaId} style={{ background: "#fff8f0", color: "#1c1410" }}>{mat?.nombre || "—"}</option>;
+                          })}
+                        </select>
+                      )}
+                      {item.alumnoId && data.inscripciones.filter(i => i.alumnoId === item.alumnoId).length === 1 && (() => {
+                        const mat = data.materias.find(m => m.id === item.materiaId);
+                        return mat ? <span style={{ fontSize: 12, color: "#92400e", fontWeight: 600, padding: "7px 10px", background: "#f9731618", borderRadius: 8 }}>📚 {mat.nombre}</span> : null;
+                      })()}
                     </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, background: item.notaDetectada ? C.green+"22" : C.accentDim, border: `1px solid ${item.notaDetectada ? C.green+"44" : C.accent+"44"}`, borderRadius: 10, padding: "6px 12px" }}>
                         <span style={{ fontSize: 12, color: "#b45309", fontWeight: 700 }}>📊 Nota:</span>
