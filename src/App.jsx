@@ -35,8 +35,8 @@ const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).
 const nc = (n) => { if (n === null || n === undefined) return C.muted; const v = parseFloat(n); return v >= 7 ? C.green : v >= 5 ? C.yellow : C.red; };
 
 const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial",agenda:"agenda"};
-const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",created_at:null}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
-const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac"}; const out={}; for(const [k,v] of Object.entries(obj)){out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
+const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",archivo_url:"archivoUrl",archivo_nombre:"archivoNombre",created_at:"createdAt"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
+const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac",archivoUrl:"archivo_url",archivoNombre:"archivo_nombre"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue; out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
 const saveD = async () => {};
 const upsertRow = async (table, obj) => { 
@@ -1064,9 +1064,13 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
 
   const estadoIcon    = { presente: "✅", ausente: "❌", tardanza: "🕐", justificado: "📋" };
 
+  const agendaItemsAlumno = (data.agenda || []).filter(e =>
+    (e.alumnoId === alumnoId) || (!e.alumnoId && e.materiaId === materiaId)
+  ).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
   const SUBTABS = [
     { id: "notas",       icon: "📝", label: `Notas (${notas.length})` },
-    { id: "actividades", icon: "⚡", label: `Actividades (${acts.length})` },
+    { id: "actividades", icon: "⚡", label: `Actividades (${acts.length + agendaItemsAlumno.length})` },
     { id: "asistencia",  icon: "📅", label: `Asistencia (${totalClases})` },
     { id: "archivos",    icon: "📁", label: `Archivos` }, ];
   return (
@@ -1240,9 +1244,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
         <div>
           {/* Exámenes/TPs de agenda para este alumno */}
           {(() => {
-            const agendaItems = (data.agenda || []).filter(e =>
-              (e.alumnoId === alumnoId) || (!e.alumnoId && e.materiaId === materiaId)
-            ).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+            const agendaItems = agendaItemsAlumno;
             const today = new Date().toISOString().slice(0,10);
             if (agendaItems.length === 0) return null;
             return (
