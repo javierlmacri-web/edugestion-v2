@@ -1821,11 +1821,40 @@ const Materias = ({ data, setData, colegioId }) => {
   const del = (id) => { if (!confirm("¿Eliminar materia?")) return; setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) })); };
 
   const edit = (m) => { setForm({ nombre: m.nombre, descripcion: m.descripcion || "", division: m.division || "" }); setEditId(m.id); setPop(true); };
+
+  const sincronizar = async () => {
+    if (!confirm("¿Sincronizar inscripciones? Esto va a inscribir automáticamente a todos los alumnos en las materias que coincidan con su curso/división.")) return;
+    const alsColegio = data.alumnos.filter(a => a.colegioId === colegioId && a.curso);
+    const matsDiv = materias.filter(m => m.division);
+    let total = 0;
+    const nuevasInsc = [];
+    for (const mat of matsDiv) {
+      const alsDiv = alsColegio.filter(a => a.curso === mat.division);
+      const inscActuales = new Set((data.inscripciones || []).filter(i => i.materiaId === mat.id).map(i => i.alumnoId));
+      for (const al of alsDiv) {
+        if (!inscActuales.has(al.id)) {
+          nuevasInsc.push({ id: crypto.randomUUID(), materiaId: mat.id, alumnoId: al.id, colegioId });
+          total++;
+        }
+      }
+    }
+    if (total === 0) { alert("✅ Todo ya estaba sincronizado, no hay inscripciones nuevas."); return; }
+    const results = await Promise.all(nuevasInsc.map(i =>
+      supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId, colegio_id: colegioId })
+    ));
+    const errs = results.filter(r => r.error);
+    if (errs.length) { console.error("Sync error:", JSON.stringify(errs[0].error)); alert("❌ Error al sincronizar: " + JSON.stringify(errs[0].error)); return; }
+    setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] }));
+    alert(`✅ Sincronización completada: ${total} inscripción(es) nueva(s) creada(s).`);
+  };
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h2 style={{ color: "#1c1410", margin: 0, fontSize: 22, fontWeight: 800 }}>📚 Materias</h2>
-        <Btn onClick={() => { setForm({ nombre: "", descripcion: "", division: "" }); setEditId(null); setPop(true); }}>+ Nueva Materia</Btn>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Btn v="ghost" onClick={sincronizar}>🔄 Sincronizar</Btn>
+          <Btn onClick={() => { setForm({ nombre: "", descripcion: "", division: "" }); setEditId(null); setPop(true); }}>+ Nueva Materia</Btn>
+        </div>
       </div>
       {materias.length === 0 ? (
         <Empty icon="📚" msg="No hay materias en este colegio. Creá la primera para empezar." />
@@ -3246,6 +3275,35 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
     setTimeout(() => { exportarExcel(data, colegioId); setExportando(false); }, 100);
   };
 
+  const [sincronizando, setSincronizando] = useState(false);
+  const handleSincronizar = async () => {
+    if (!confirm("¿Sincronizar inscripciones? Esto va a inscribir a todos los alumnos en las materias que correspondan según su curso y división.")) return;
+    setSincronizando(true);
+    try {
+      const matsConDiv = data.materias.filter(m => m.colegioId === colegioId && m.division);
+      const nuevasInsc = [];
+      for (const mat of matsConDiv) {
+        const alsDivision = data.alumnos.filter(a => a.colegioId === colegioId && a.curso === mat.division);
+        const inscActuales = new Set((data.inscripciones || []).filter(i => i.materiaId === mat.id).map(i => i.alumnoId));
+        for (const al of alsDivision) {
+          if (!inscActuales.has(al.id)) {
+            nuevasInsc.push({ id: crypto.randomUUID(), materiaId: mat.id, alumnoId: al.id });
+          }
+        }
+      }
+      if (nuevasInsc.length === 0) { alert("✅ Todo está sincronizado. No hay cambios pendientes."); setSincronizando(false); return; }
+      const results = await Promise.all(nuevasInsc.map(i =>
+        supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId, colegio_id: colegioId })
+      ));
+      const errs = results.filter(r => r.error);
+      if (errs.length) { alert("❌ Error: " + JSON.stringify(errs[0].error)); }
+      else {
+        setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] }));
+        alert(`✅ Sincronización completa. ${nuevasInsc.length} inscripción(es) nueva(s) creadas.`);
+      }
+    } finally { setSincronizando(false); }
+  };
+
   // ── MOBILE LAYOUT ──────────────────────────────────────────────────────────
   if (isMobile) return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)" }}>
@@ -3278,6 +3336,10 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
             <button onClick={() => { handleExport(); setMenuOpen(false); }} disabled={exportando}
               style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: `1px solid #22c55e33`, cursor: "pointer", fontSize: 14, fontWeight: 700, background: "#22c55e12", color: "#22c55e" }}>
               <span>{exportando ? "⏳" : "📊"}</span>{exportando ? "Generando..." : "Exportar Excel"}
+            </button>
+            <button onClick={() => { handleSincronizar(); setMenuOpen(false); }} disabled={sincronizando}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: `1px solid #f9731633`, cursor: "pointer", fontSize: 14, fontWeight: 700, background: "#f9731612", color: "#fb923c" }}>
+              <span>{sincronizando ? "⏳" : "🔄"}</span>{sincronizando ? "Sincronizando..." : "Sincronizar"}
             </button>
             <button onClick={() => { onSalir(); setMenuOpen(false); }}
               style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: "transparent", color: C.muted }}>
@@ -3338,6 +3400,13 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
             onMouseLeave={e => { e.currentTarget.style.background = "#22c55e12"; }}>
             <span style={{ fontSize: 15 }}>{exportando ? "⏳" : "📊"}</span>
             {exportando ? "Generando..." : "Exportar Excel"}
+          </button>
+          <button onClick={handleSincronizar} disabled={sincronizando}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: `1px solid #f9731633`, cursor: sincronizando ? "wait" : "pointer", fontSize: 13, fontWeight: 700, background: "#f9731612", color: "#fb923c", transition: "all .15s" }}
+            onMouseEnter={e => { if (!sincronizando) e.currentTarget.style.background = "#f9731622"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#f9731612"; }}>
+            <span style={{ fontSize: 15 }}>{sincronizando ? "⏳" : "🔄"}</span>
+            {sincronizando ? "Sincronizando..." : "Sincronizar"}
           </button>
           <button onClick={onSalir}
             style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
