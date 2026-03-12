@@ -401,10 +401,12 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
               const alsMat = als.filter(a => ins.includes(a.id));
               const mNotas = notas.filter(n => n.materiaId === m.id);
               const mv = mNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const mProm = avg(mv);
+              const abierta = detalleMateria === m.id + "_notas";
               return (
                 <Box key={m.id}>
-                  {/* Cabecera materia */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+                  {/* Cabecera materia - clickeable para colapsar */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: abierta ? "0 0 12px 0" : 0, borderBottom: abierta ? `1px solid ${C.border}` : "none", marginBottom: abierta ? 14 : 0 }}
+                    onClick={() => setDetalleMateria(abierta ? null : m.id + "_notas")}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ width: 38, height: 38, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📚</div>
                       <div>
@@ -413,9 +415,10 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontSize: 28, fontWeight: 900, color: nc(mProm) }}>{mProm ?? "—"}</div>
                         <div style={{ fontSize: 11, color: C.muted }}>promedio</div></div>
-                      <Btn v="ghost" sm onClick={() => setDetalleMateria(m.id)}>Ver materia →</Btn>
+                      <span style={{ fontSize: 18, color: "#92400e" }}>{abierta ? "▲" : "▼"}</span>
                     </div></div>
-                  {/* Alumnos con sus notas en esta materia */}
+                  {/* Alumnos con sus notas - solo si está abierta */}
+                  {abierta && (
                   {alsMat.length === 0 ? (
                     <div style={{ color: "#92400e", fontSize: 13, padding: "8px 0" }}>Sin alumnos inscriptos.</div> ) : ( <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {alsMat.map(al => {
@@ -440,6 +443,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                           </div> );
                       })}
                     </div> )}
+                  )}
                 </Box> );
             })}
           </div> )}
@@ -936,10 +940,10 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <h3 style={{ color: "#b45309", fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Últimas actividades</h3>
-            <button onClick={() => setVista("actividades")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>ver todas →</button>
+            <button onClick={() => setVista("actividades")} style={{ background: "#1c1410", border: "none", color: "#fb923c", cursor: "pointer", fontSize: 12, fontWeight: 700, padding: "5px 12px", borderRadius: 8 }}>ver todas →</button>
           </div>
           <Box>
-            {acts.slice(-6).reverse().map(act => {
+            {acts.slice(-20).reverse().map(act => {
               const al  = als.find(a => a.id === act.alumnoId);
               const mat = mats.find(m => m.id === act.materiaId); const tc  = tipoActColor[act.tipo] || C.dim;
               return (
