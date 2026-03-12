@@ -6,10 +6,33 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxd29zaXdwcGRmc2lmd3JhdnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mzg0MTEsImV4cCI6MjA4ODIxNDQxMX0.z5zeE7-mNHe7Ie6AalyYBCmnMWXqLR-wGoL5HLjMmhw"
 );
 const C = {
-  bg: "#0c0e16", card: "#151821", card2: "#1a1d2b", border: "#242736",
-  accent: "#6c63ff", accentL: "#9b95ff", accentDim: "#6c63ff1a", accentGlow: "#6c63ff40",
-  green: "#2dd4bf", red: "#f87171", yellow: "#fbbf24", blue: "#60a5fa",
-  text: "#e2e8f0", muted: "#4a5068", dim: "#8892a4", };
+  // Fondo degradado naranja/amarillo
+  bg: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)",
+  bgSolid: "#fde68a",
+  // Sidebar y elementos oscuros
+  sidebar: "#1c1410",
+  sidebarBorder: "#2d1f14",
+  sidebarText: "#8a6a4a",
+  // Cards con glass
+  card: "#ffffffcc",
+  card2: "#ffffff99",
+  border: "#ffffff80",
+  borderDark: "#f9731630",
+  // Acentos naranja
+  accent: "#ea580c",
+  accentL: "#fb923c",
+  accentDim: "#f9731622",
+  accentGlow: "#f9731640",
+  // Estados
+  green: "#16a34a", red: "#dc2626", yellow: "#d97706", blue: "#2563eb",
+  // Texto
+  text: "#1c1410",
+  muted: "#92400e",
+  dim: "#b45309",
+  // Gradientes
+  grad: "linear-gradient(135deg, #f97316, #ea580c)",
+  gradCard: "#ffffffcc",
+};
 const S = {
   row:    { display:"flex", alignItems:"center" },
   rowSB:  { display:"flex", justifyContent:"space-between", alignItems:"center" },
@@ -54,30 +77,30 @@ const deleteRow = async (table, id) => { try { const {error} = await supabase.fr
 
 const Inp = ({ label, ...p }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-    {label && <label style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
-    <input {...p} style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 14, outline: "none", transition: "border .2s", ...p.style }}
-      onFocus={e => e.target.style.borderColor = C.accent} onBlur={e => e.target.style.borderColor = C.border} />
+    {label && <label style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
+    <input {...p} style={{ background: "#ffffff99", border: "1px solid #f9731650", borderRadius: 10, padding: "10px 14px", color: "#1c1410", fontSize: 14, outline: "none", transition: "border .2s", ...p.style }}
+      onFocus={e => e.target.style.borderColor = "#ea580c"} onBlur={e => e.target.style.borderColor = "#f9731650"} />
   </div> );
 const Sel = ({ label, children, ...p }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-    {label && <label style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
-    <select {...p} style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 14, outline: "none", cursor: "pointer", ...p.style }}>{children}</select>
+    {label && <label style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
+    <select {...p} style={{ background: "#ffffff99", border: "1px solid #f9731650", borderRadius: 10, padding: "10px 14px", color: "#1c1410", fontSize: 14, outline: "none", cursor: "pointer", ...p.style }}>{children}</select>
   </div> );
 const Btn = ({ children, v = "primary", sm, ...p }) => {
   const base = { borderRadius: 10, fontWeight: 700, cursor: "pointer", transition: "all .2s", border: "none", fontSize: sm ? 12 : 14, padding: sm ? "6px 13px" : "10px 20px", display: "inline-flex", alignItems: "center", gap: 6 };
 
-  const vs = { primary: { background: C.accent, color: "#fff", boxShadow: `0 0 18px ${C.accentGlow}` }, danger: { background: C.red + "18", color: C.red, border: `1px solid ${C.red}33` }, ghost: { background: "transparent", color: C.dim, border: `1px solid ${C.border}` }, success: { background: C.green + "18", color: C.green, border: `1px solid ${C.green}33` } };
+  const vs = { primary: { background: "#1c1410", color: "#fb923c", boxShadow: "0 4px 14px #0000003a" }, danger: { background: C.red + "18", color: C.red, border: `1px solid ${C.red}33` }, ghost: { background: "#ffffff60", color: "#1c1410", border: "1px solid #1c141030" }, success: { background: C.green + "18", color: C.green, border: `1px solid ${C.green}33` } };
   return <button style={{ ...base, ...vs[v] }} {...p}>{children}</button>; };
 const Box = ({ children, style, onClick, hi }) => {
   const [h, setH] = useState(false);
   return <div onClick={onClick} onMouseEnter={() => hi && setH(true)} onMouseLeave={() => hi && setH(false)}
-    style={{ background: h ? C.card2 : C.card, border: `1px solid ${h ? C.accent + "55" : C.border}`, borderRadius: 16, padding: 20, cursor: onClick ? "pointer" : undefined, transition: "all .18s", ...style }}>{children}</div>;
+    style={{ background: h ? "#ffffffee" : "#ffffffcc", border: `1px solid ${h ? "#ea580c55" : "#ffffff80"}`, borderRadius: 16, padding: 20, cursor: onClick ? "pointer" : undefined, transition: "all .18s", backdropFilter: "blur(8px)", boxShadow: "0 2px 12px #f9731614", ...style }}>{children}</div>;
 };
 const Pop = ({ title, onClose, children, wide }) => (
-  <div style={{ position: "fixed", inset: 0, background: "#000000aa", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20, backdropFilter: "blur(8px)" }}>
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 28, width: "100%", maxWidth: wide ? 680 : 500, maxHeight: "92vh", overflowY: "auto" }}>
+  <div style={{ position: "fixed", inset: 0, background: "#00000066", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20, backdropFilter: "blur(4px)" }}>
+    <div style={{ background: "#ffffffee", border: "1px solid #ffffff90", borderRadius: 20, padding: 28, width: "100%", maxWidth: wide ? 680 : 500, maxHeight: "92vh", overflowY: "auto", backdropFilter: "blur(16px)", boxShadow: "0 20px 60px #0000002a" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
-        <h3 style={{ color: C.text, margin: 0, fontSize: 17, fontWeight: 800 }}>{title}</h3>
+        <h3 style={{ color: "#1c1410", margin: 0, fontSize: 17, fontWeight: 800 }}>{title}</h3>
         <Btn v="ghost" sm onClick={onClose}>✕</Btn></div>
       {children}</div>
   </div> );
@@ -90,7 +113,7 @@ const Empty = ({ icon, msg }) => (
     <p style={{ margin: 0, fontSize: 14 }}>{msg}</p> </div> );  const Breadcrumb = ({ items }) => ( <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 22, flexWrap: "wrap" }}>
     {items.map((it, i) => (
       <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {i > 0 && <span style={{ color: C.muted, fontSize: 13 }}>›</span>}
+        {i > 0 && <span style={{ color: "#92400e", fontSize: 13 }}>›</span>}
         {it.onClick
           ? <button onClick={it.onClick} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0 }}>{it.label}</button>
           : <span style={{ color: i === items.length - 1 ? C.text : C.dim, fontSize: 13, fontWeight: i === items.length - 1 ? 700 : 400 }}>{it.label}</span>}
@@ -115,13 +138,13 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, position: "relative" }}>
       <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", width: 600, height: 600, background: `radial-gradient(circle, ${C.accent}0e 0%, transparent 70%)`, pointerEvents: "none" }} />
       <div style={{ opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(24px)", transition: "all .7s ease", width: "100%", maxWidth: 420, zIndex: 1 }}>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
           <div style={{ width: 80, height: 80, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 38, margin: "0 auto 20px" }}>🎓</div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: C.text, margin: "0 0 8px", letterSpacing: -1 }}>EduGestión</h1>
-          <p style={{ color: C.dim, fontSize: 14, margin: 0 }}>Ingresá con tu cuenta para continuar</p>
+          <h1 style={{ fontSize: 28, fontWeight: 900, color: "#1c1410", margin: "0 0 8px", letterSpacing: -1 }}>EduGestión</h1>
+          <p style={{ color: "#b45309", fontSize: 14, margin: 0 }}>Ingresá con tu cuenta para continuar</p>
         </div>
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 28, display: "flex", flexDirection: "column", gap: 16 }}>
           <Inp label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" onKeyDown={e => e.key === "Enter" && handleLogin()} />
@@ -141,14 +164,14 @@ const Welcome = ({ onGo }) => {
   const [show, setShow] = useState(false);
   useEffect(() => { setTimeout(() => setShow(true), 80); }, []);
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden", position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden", position: "relative" }}>
       <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", width: 700, height: 700, background: `radial-gradient(circle, ${C.accent}0e 0%, transparent 70%)`, pointerEvents: "none" }} />
       <div style={{ opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(24px)", transition: "all .7s ease", textAlign: "center", maxWidth: 560, zIndex: 1 }}>
         <div style={{ width: 96, height: 96, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44, margin: "0 auto 28px" }}>🎓</div>
-        <h1 style={{ fontSize: 46, fontWeight: 900, color: C.text, margin: "0 0 10px", letterSpacing: -2, lineHeight: 1.1 }}>
+        <h1 style={{ fontSize: 46, fontWeight: 900, color: "#1c1410", margin: "0 0 10px", letterSpacing: -2, lineHeight: 1.1 }}>
           Bienvenido/a,{" "}<span style={{ background: `linear-gradient(135deg, ${C.accent}, ${C.accentL})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Profesor/a 👋</span>
         </h1>
-        <p style={{ color: C.dim, fontSize: 16, margin: "0 0 52px", lineHeight: 1.7 }}>Sistema integral de gestión escolar.<br />Administrá alumnos, notas y actividades por materia y colegio.</p>
+        <p style={{ color: "#b45309", fontSize: 16, margin: "0 0 52px", lineHeight: 1.7 }}>Sistema integral de gestión escolar.<br />Administrá alumnos, notas y actividades por materia y colegio.</p>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <button onClick={onGo} style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, border: "none", borderRadius: 20, padding: 3, cursor: "pointer", transition: "all .25s", boxShadow: `0 10px 40px ${C.accentGlow}`, width: 270 }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 18px 50px ${C.accentGlow}`; }}
@@ -161,7 +184,7 @@ const Welcome = ({ onGo }) => {
               </div>
               <div style={{ color: C.accentL, fontSize: 20, marginLeft: "auto" }}>→</div></div>
           </button></div>
-        <p style={{ color: C.muted, fontSize: 12, marginTop: 44 }}>💾 Datos guardados automáticamente en tu dispositivo</p>
+        <p style={{ color: "#92400e", fontSize: 12, marginTop: 44 }}>💾 Datos guardados automáticamente en tu dispositivo</p>
       </div>
     </div> ); };
 const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
@@ -177,22 +200,22 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
     setPop(false); setEditId(null); };
   const del = (id) => { if (!confirm("¿Eliminar colegio y todos sus datos?")) return; setData(d => ({ ...d, colegios: d.colegios.filter(c => c.id !== id), alumnos: d.alumnos.filter(a => a.colegioId !== id), materias: d.materias.filter(m => m.colegioId !== id) })); };
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-      <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "16px 32px", display: "flex", alignItems: "center", gap: 14 }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: C.dim, cursor: "pointer", fontSize: 18, padding: "4px 8px", borderRadius: 8 }}>←</button>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      <div style={{ background: "#1c1410", borderBottom: "1px solid #2d1f14", padding: "16px 32px", display: "flex", alignItems: "center", gap: 14 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: "#b45309", cursor: "pointer", fontSize: 18, padding: "4px 8px", borderRadius: 8 }}>←</button>
         <div>
-          <div style={{ color: C.text, fontWeight: 800, fontSize: 18 }}>🏫 Colegios</div>
-          <div style={{ color: C.muted, fontSize: 12 }}>Elegí un colegio para ingresar</div></div>
+          <div style={{ color: "#1c1410", fontWeight: 800, fontSize: 18 }}>🏫 Colegios</div>
+          <div style={{ color: "#92400e", fontSize: 12 }}>Elegí un colegio para ingresar</div></div>
         <div style={{ marginLeft: "auto" }}><Btn onClick={openAdd}>🏫 Agregar Colegio</Btn></div> </div> <div style={{ padding: "40px 32px", maxWidth: 960, margin: "0 auto" }}>
         {data.colegios.length === 0 ? (
           <div style={{ textAlign: "center", paddingTop: 80 }}>
             <div style={{ fontSize: 60, marginBottom: 18 }}>🏫</div>
-            <h2 style={{ color: C.text, fontWeight: 900, fontSize: 22, marginBottom: 12 }}>No hay colegios registrados</h2>
-            <p style={{ color: C.dim, fontSize: 15, marginBottom: 32 }}>Agregá tu primer colegio para comenzar.</p>
+            <h2 style={{ color: "#1c1410", fontWeight: 900, fontSize: 22, marginBottom: 12 }}>No hay colegios registrados</h2>
+            <p style={{ color: "#b45309", fontSize: 15, marginBottom: 32 }}>Agregá tu primer colegio para comenzar.</p>
             <Btn onClick={openAdd}>+ Agregar primer colegio</Btn></div>
         ) : (
           <>
-            <p style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: "0 0 20px", textTransform: "uppercase", letterSpacing: 1.5 }}>Elegir colegio</p>
+            <p style={{ color: "#b45309", fontSize: 12, fontWeight: 700, margin: "0 0 20px", textTransform: "uppercase", letterSpacing: 1.5 }}>Elegir colegio</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))", gap: 16 }}>
               {data.colegios.map(col => {
                 const als = data.alumnos.filter(a => a.colegioId === col.id).length;
@@ -202,9 +225,9 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
                     <Box hi style={{ paddingBottom: 56, cursor: "pointer" }} onClick={() => onSelect(col.id)}> <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
                         <div style={{ width: 50, height: 50, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🏫</div>
                         <div>
-                          <div style={{ color: C.text, fontWeight: 800, fontSize: 16 }}>{col.nombre}</div>
+                          <div style={{ color: "#1c1410", fontWeight: 800, fontSize: 16 }}>{col.nombre}</div>
                           {col.ciclo && <div style={{ color: C.accentL, fontSize: 12, marginTop: 2, fontWeight: 700 }}>📅 Ciclo {col.ciclo}</div>}
-                          {col.direccion && <div style={{ color: C.muted, fontSize: 12, marginTop: 3 }}>📍 {col.direccion}</div>} </div> </div> <div style={{ display: "flex", gap: 20 }}>
+                          {col.direccion && <div style={{ color: "#92400e", fontSize: 12, marginTop: 3 }}>📍 {col.direccion}</div>} </div> </div> <div style={{ display: "flex", gap: 20 }}>
                         <div><div style={{ fontSize: 22, fontWeight: 900, color: C.accentL }}>{als}</div><div style={{ fontSize: 11, color: C.muted }}>Alumnos</div></div>
                         <div><div style={{ fontSize: 22, fontWeight: 900, color: C.blue }}>{mats}</div><div style={{ fontSize: 11, color: C.muted }}>Materias</div></div>
                       </div>
@@ -216,7 +239,7 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
                     </Box>
                   </div> );
               })}
-              <button onClick={openAdd} style={{ background: "none", border: `2px dashed ${C.border}`, borderRadius: 16, minHeight: 170, cursor: "pointer", transition: "all .2s", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: C.muted, fontSize: 14, fontWeight: 700 }}
+              <button onClick={openAdd} style={{ background: "none", border: `2px dashed ${C.border}`, borderRadius: 16, minHeight: 170, cursor: "pointer", transition: "all .2s", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "#92400e", fontSize: 14, fontWeight: 700 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent + "55"; e.currentTarget.style.color = C.accentL; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}>
                 <span style={{ fontSize: 28 }}>+</span>Agregar Colegio </button> </div> </> )} </div> {pop && ( <Pop title={editId ? "Editar Colegio" : "Agregar Colegio"} onClose={() => { setPop(false); setEditId(null); }}>
@@ -287,8 +310,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const SC = ({ label, value, color, onClick, sub }) => (
     <Box hi={!!onClick} onClick={onClick} style={{ textAlign: "center", cursor: onClick ? "pointer" : "default", position: "relative" }}>
       <div style={{ fontSize: 32, fontWeight: 900, color }}>{value}</div>
-      <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{label}</div>
-      {sub && <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>{sub}</div>}
+      <div style={{ fontSize: 12, color: "#92400e", marginTop: 4 }}>{label}</div>
+      {sub && <div style={{ fontSize: 11, color: "#b45309", marginTop: 2 }}>{sub}</div>}
       {onClick && <div style={{ position: "absolute", bottom: 8, right: 12, fontSize: 11, color: C.accentL, fontWeight: 700 }}>ver →</div>}
     </Box> );
   if (detalleAlumno) {
@@ -317,7 +340,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
       <div>
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Materias" }]} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>📚 Materias del Colegio</h2>
+          <h2 style={{ color: "#1c1410", margin: 0, fontSize: 20, fontWeight: 800 }}>📚 Materias del Colegio</h2>
           <Btn onClick={() => { onChangeTab && onChangeTab("materias"); }}>+ Nueva Materia</Btn>
         </div>
         {mats.length === 0 ? <Empty icon="📚" msg="No hay materias registradas." /> : (
@@ -328,7 +351,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
               const mv = mNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
               return (
                 <Box key={m.id} hi style={{ cursor: "pointer" }} onClick={() => setDetalleMateria(m.id)}> <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{m.nombre}</div>
+                    <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 15 }}>{m.nombre}</div>
                     <span style={{ fontSize: 24, fontWeight: 900, color: nc(avg(mv)) }}>{avg(mv) ?? "—"}</span>
                   </div>
                   <div style={{ fontSize: 12, color: C.dim }}>👥 {ins} alumnos · 📝 {mNotas.length} notas</div>
@@ -342,7 +365,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
       <div>
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Alumnos" }]} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>👤 Alumnos del Colegio</h2>
+          <h2 style={{ color: "#1c1410", margin: 0, fontSize: 20, fontWeight: 800 }}>👤 Alumnos del Colegio</h2>
           <Btn onClick={() => { onChangeTab && onChangeTab("alumnos"); }}>+ Nuevo Alumno</Btn>
         </div>
         {als.length === 0 ? <Empty icon="👤" msg="No hay alumnos registrados." /> : (
@@ -354,8 +377,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
               return (
                 <Box key={al.id} hi style={{ cursor: "pointer", position: "relative", paddingBottom: 50 }} onClick={() => setDetalleAlumno(al.id)}> <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                     <div>
-                      <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{al.apellido}, {al.nombre}</div>
-                      {al.curso && <div style={{ color: C.muted, fontSize: 12 }}>Curso: {al.curso}</div>} </div> <div style={{ textAlign: "right" }}>
+                      <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 15 }}>{al.apellido}, {al.nombre}</div>
+                      {al.curso && <div style={{ color: "#92400e", fontSize: 12 }}>Curso: {al.curso}</div>} </div> <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 26, fontWeight: 900, color: nc(alProm) }}>{alProm ?? "—"}</div>
                       <div style={{ fontSize: 11, color: C.muted }}>{alNotas.length} notas</div> </div> </div> {matIds.length > 0 && ( <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                       {matIds.slice(0, 3).map(mid => { const mat = mats.find(m => m.id === mid); return mat ? <Tag key={mid} color={C.accentL}>{mat.nombre}</Tag> : null; })}
@@ -370,7 +393,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
     return (
       <div>
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Notas por Materia" }]} />
-        <h2 style={{ color: C.text, margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>📝 Notas generales por Materia</h2>
+        <h2 style={{ color: "#1c1410", margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>📝 Notas generales por Materia</h2>
         {mats.length === 0 ? <Empty icon="📝" msg="No hay materias registradas." /> : (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {mats.map(m => {
@@ -385,8 +408,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ width: 38, height: 38, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📚</div>
                       <div>
-                        <div style={{ color: C.text, fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
-                        <div style={{ color: C.muted, fontSize: 12 }}>{alsMat.length} alumnos · {mNotas.length} notas</div> </div> </div> <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <div style={{ color: "#1c1410", fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
+                        <div style={{ color: "#92400e", fontSize: 12 }}>{alsMat.length} alumnos · {mNotas.length} notas</div> </div> </div> <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontSize: 28, fontWeight: 900, color: nc(mProm) }}>{mProm ?? "—"}</div>
                         <div style={{ fontSize: 11, color: C.muted }}>promedio</div></div>
@@ -394,17 +417,17 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                     </div></div>
                   {/* Alumnos con sus notas en esta materia */}
                   {alsMat.length === 0 ? (
-                    <div style={{ color: C.muted, fontSize: 13, padding: "8px 0" }}>Sin alumnos inscriptos.</div> ) : ( <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ color: "#92400e", fontSize: 13, padding: "8px 0" }}>Sin alumnos inscriptos.</div> ) : ( <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {alsMat.map(al => {
                         const alMatNotas = mNotas.filter(n => n.alumnoId === al.id);
                         const alVals = alMatNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
                         const alProm = avg(alVals);
                         return (
-                          <div key={al.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
+                          <div key={al.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: "#ffffff80", borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
                             onClick={() => setDetalleAlumno(al.id)}
                             onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
                             onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                            <div style={{ color: C.text, fontSize: 14, fontWeight: 600 }}>{al.apellido}, {al.nombre}</div> <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                            <div style={{ color: "#1c1410", fontSize: 14, fontWeight: 600 }}>{al.apellido}, {al.nombre}</div> <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                               {/* mini chips de notas */}
                               <div style={{ display: "flex", gap: 4 }}>
                                 {alMatNotas.slice(-5).map(n => (
@@ -425,7 +448,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
     return (
       <div>
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Promedio por Materia" }]} />
-        <h2 style={{ color: C.text, margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>📊 Promedio General por Materia</h2>
+        <h2 style={{ color: "#1c1410", margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>📊 Promedio General por Materia</h2>
         {mats.length === 0 ? <Empty icon="📊" msg="No hay materias registradas." /> : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {mats.map(m => {
@@ -434,7 +457,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
               const pct = mv.length && mProm ? (parseFloat(mProm) / 10) * 100 : 0;
               return (
                 <Box key={m.id} hi style={{ cursor: "pointer" }} onClick={() => setDetalleMateria(m.id)}> <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                    <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{m.nombre}</div> <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 15 }}>{m.nombre}</div> <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ fontSize: 28, fontWeight: 900, color: nc(mProm) }}>{mProm ?? "—"}</div>
                       <Btn v="ghost" sm onClick={e => { e.stopPropagation(); setDetalleMateria(m.id); }}>Ver →</Btn>
                     </div></div>
@@ -442,7 +465,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                   <div style={{ height: 8, background: C.border, borderRadius: 4, overflow: "hidden" }}>
                     <div style={{ width: `${pct}%`, height: "100%", background: nc(mProm), borderRadius: 4, transition: "width .5s" }} />
                   </div>
-                  <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>{mNotas.length} notas · {(data.inscripciones || []).filter(i => i.materiaId === m.id).length} alumnos</div>
+                  <div style={{ fontSize: 11, color: "#92400e", marginTop: 6 }}>{mNotas.length} notas · {(data.inscripciones || []).filter(i => i.materiaId === m.id).length} alumnos</div>
                 </Box> );
             })}
           </div> )}
@@ -642,7 +665,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
       <div>
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Actividades" }]} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>⚡ Actividades por Materia</h2>
+          <h2 style={{ color: "#1c1410", margin: 0, fontSize: 20, fontWeight: 800 }}>⚡ Actividades por Materia</h2>
           <div style={{ fontSize: 13, color: C.muted }}>{acts.length} actividades registradas</div>
         </div>
         {acts.length === 0 ? <Empty icon="⚡" msg="No hay actividades registradas." /> : (
@@ -671,8 +694,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                         <div style={{ width: 38, height: 38, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📚</div>
                         <div>
-                          <div style={{ color: C.text, fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
-                          <div style={{ color: C.muted, fontSize: 12 }}>{actsM.length} actividades</div> </div> </div> {/* Contadores de tipo */} <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          <div style={{ color: "#1c1410", fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
+                          <div style={{ color: "#92400e", fontSize: 12 }}>{actsM.length} actividades</div> </div> </div> {/* Contadores de tipo */} <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {conteo("positiva", actsM)   > 0 && <Tag color={C.green}>✅ {conteo("positiva", actsM)}</Tag>}
                         {conteo("negativa", actsM)   > 0 && <Tag color={C.red}>❌ {conteo("negativa", actsM)}</Tag>}
                         {conteo("participacion", actsM) > 0 && <Tag color={C.blue}>🙋 {conteo("participacion", actsM)}</Tag>}
@@ -686,16 +709,16 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                         const tc = tipoActColor[act.tipo] || C.dim;
                         return (
                           <div key={act.id}
-                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
+                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#ffffff80", borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
                             onClick={() => setDetalleAlumno(act.alumnoId)}
                             onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
                             onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                               <div style={{ width: 4, height: 40, background: tc, borderRadius: 3, flexShrink: 0 }} />
                               <div>
-                                <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
-                                <div style={{ color: C.dim, fontSize: 12, marginTop: 2 }}>{act.descripcion}</div>
-                                <div style={{ color: C.muted, fontSize: 11, marginTop: 1 }}>📅 {fmt(act.fecha)}{act.hora ? ` · 🕐 ${act.hora}` : ""}</div>
+                                <div style={{ color: "#1c1410", fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
+                                <div style={{ color: "#b45309", fontSize: 12, marginTop: 2 }}>{act.descripcion}</div>
+                                <div style={{ color: "#92400e", fontSize: 11, marginTop: 1 }}>📅 {fmt(act.fecha)}{act.hora ? ` · 🕐 ${act.hora}` : ""}</div>
                               </div></div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                               <Tag color={tc}>{act.tipo}</Tag>
@@ -708,23 +731,23 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
               {/* Actividades sin materia */}
               {!matFiltro && actsSinMateria.length > 0 && (
                 <Box>
-                  <div style={{ color: C.dim, fontWeight: 700, fontSize: 14, marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
+                  <div style={{ color: "#b45309", fontWeight: 700, fontSize: 14, marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
                     Sin materia asignada ({actsSinMateria.length})</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                     {actsSinMateria.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).map(act => {
                       const al = als.find(a => a.id === act.alumnoId); const tc = tipoActColor[act.tipo] || C.dim;
                       return (
                         <div key={act.id}
-                          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
+                          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#ffffff80", borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
                           onClick={() => setDetalleAlumno(act.alumnoId)}
                           onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
                           onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
                           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{ width: 4, height: 40, background: tc, borderRadius: 3 }} />
                             <div>
-                              <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
-                              <div style={{ color: C.dim, fontSize: 12 }}>{act.descripcion}</div>
-                              <div style={{ color: C.muted, fontSize: 11 }}>📅 {fmt(act.fecha)}</div>
+                              <div style={{ color: "#1c1410", fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
+                              <div style={{ color: "#b45309", fontSize: 12 }}>{act.descripcion}</div>
+                              <div style={{ color: "#92400e", fontSize: 11 }}>📅 {fmt(act.fecha)}</div>
                             </div></div>
                           <Tag color={tc}>{act.tipo}</Tag>
                         </div> );
@@ -754,29 +777,29 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   return (
     <div>
       <div style={{ marginBottom: 22 }}>
-        <h2 style={{ color: C.text, margin: "0 0 4px", fontSize: 22, fontWeight: 900 }}>{col?.nombre}</h2>
-        {col?.direccion && <p style={{ color: C.muted, margin: 0, fontSize: 13 }}>📍 {col.direccion}</p>} </div>  {/* ── Barra de búsqueda ── */} <div style={{ position: "relative", marginBottom: 28 }}>
+        <h2 style={{ color: "#1c1410", margin: "0 0 4px", fontSize: 22, fontWeight: 900 }}>{col?.nombre}</h2>
+        {col?.direccion && <p style={{ color: "#92400e", margin: 0, fontSize: 13 }}>📍 {col.direccion}</p>} </div>  {/* ── Barra de búsqueda ── */} <div style={{ position: "relative", marginBottom: 28 }}>
         <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, pointerEvents: "none" }}>🔍</div>
         <input
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
           placeholder="Buscar alumnos, materias, notas, actividades..."
-          style={{ width: "100%", background: C.card2, border: `1px solid ${busLower ? C.accent : C.border}`, borderRadius: 12, padding: "12px 40px 12px 42px", color: C.text, fontSize: 14, outline: "none", transition: "border .2s" }}
+          style={{ width: "100%", background: C.card2, border: `1px solid ${busLower ? C.accent : C.border}`, borderRadius: 12, padding: "12px 40px 12px 42px", color: "#1c1410", fontSize: 14, outline: "none", transition: "border .2s" }}
           onFocus={e => e.target.style.borderColor = C.accent}
           onBlur={e => e.target.style.borderColor = busLower ? C.accent : C.border} />
         {busqueda && (
-          <button onClick={() => setBusqueda("")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16, lineHeight: 1 }}>✕</button>
+          <button onClick={() => setBusqueda("")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#92400e", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>✕</button>
         )}</div>
       {/* ── Resultados de búsqueda ── */}
       {busLower && (
         <div style={{ marginBottom: 28 }}> {!hayResultados ? ( <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "32px 20px", textAlign: "center" }}>
               <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
-              <div style={{ color: C.text, fontWeight: 700, marginBottom: 6 }}>Sin resultados para "{busqueda}"</div>
-              <div style={{ color: C.muted, fontSize: 13 }}>Probá buscar por nombre de alumno, materia, tipo de actividad o descripción.</div> </div> ) : ( <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{ color: "#1c1410", fontWeight: 700, marginBottom: 6 }}>Sin resultados para "{busqueda}"</div>
+              <div style={{ color: "#92400e", fontSize: 13 }}>Probá buscar por nombre de alumno, materia, tipo de actividad o descripción.</div> </div> ) : ( <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {/* Alumnos */}
               {resAlumnos.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>👤 Alumnos ({resAlumnos.length})</div>
+                  <div style={{ fontSize: 11, color: "#b45309", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>👤 Alumnos ({resAlumnos.length})</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                     {resAlumnos.map(al => {
                       const alNotas = data.notas.filter(n => n.alumnoId === al.id);
@@ -789,7 +812,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                           onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
                           onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
                           <div>
-                            <div style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{al.apellido}, {al.nombre}</div> <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>
+                            <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 14 }}>{al.apellido}, {al.nombre}</div> <div style={{ color: "#92400e", fontSize: 12, marginTop: 2 }}>
                               {al.curso && <span>Curso: {al.curso}</span>}
                               {al.dni && <span style={{ marginLeft: al.curso ? 8 : 0 }}>DNI: {al.dni}</span>}
                               {matIds.length > 0 && <span style={{ marginLeft: 8 }}>· {matIds.length} materia{matIds.length !== 1 ? "s" : ""}</span>}
@@ -805,7 +828,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
               {/* Materias */}
               {resMaterias.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>📚 Materias ({resMaterias.length})</div>
+                  <div style={{ fontSize: 11, color: "#b45309", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>📚 Materias ({resMaterias.length})</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                     {resMaterias.map(m => {
                       const mNotas = data.notas.filter(n => n.materiaId === m.id);
@@ -817,8 +840,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                           onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
                           onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
                           <div>
-                            <div style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>📚 {m.nombre}</div>
-                            <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>👥 {ins} alumnos · 📝 {mNotas.length} notas</div> </div> <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 14 }}>📚 {m.nombre}</div>
+                            <div style={{ color: "#92400e", fontSize: 12, marginTop: 2 }}>👥 {ins} alumnos · 📝 {mNotas.length} notas</div> </div> <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{ fontSize: 22, fontWeight: 900, color: nc(avg(mv)) }}>{avg(mv) ?? "—"}</div>
                             <span style={{ color: C.accentL, fontSize: 12, fontWeight: 700 }}>ver →</span>
                           </div>
@@ -828,7 +851,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
               {/* Notas */}
               {resNotas.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>📝 Notas ({resNotas.length})</div>
+                  <div style={{ fontSize: 11, color: "#b45309", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>📝 Notas ({resNotas.length})</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                     {resNotas.slice(0, 8).map(n => {
                       const al = als.find(a => a.id === n.alumnoId);
@@ -841,19 +864,19 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{ width: 40, height: 40, borderRadius: 10, background: nc(n.nota) + "18", border: `2px solid ${nc(n.nota)}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: nc(n.nota) }}>{n.nota}</div>
                             <div>
-                              <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
-                              <div style={{ color: C.muted, fontSize: 12 }}>{mat?.nombre} · {n.tipo}{n.descripcion ? ` · ${n.descripcion}` : ""} · {fmt(n.fecha)}</div>
+                              <div style={{ color: "#1c1410", fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
+                              <div style={{ color: "#92400e", fontSize: 12 }}>{mat?.nombre} · {n.tipo}{n.descripcion ? ` · ${n.descripcion}` : ""} · {fmt(n.fecha)}</div>
                             </div></div>
                           <span style={{ color: C.accentL, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>ver alumno →</span>
                         </div> );
                     })}
-                    {resNotas.length > 8 && <div style={{ color: C.muted, fontSize: 12, textAlign: "center", padding: "6px 0" }}>+{resNotas.length - 8} notas más. Refiná la búsqueda para ver más.</div>}
+                    {resNotas.length > 8 && <div style={{ color: "#92400e", fontSize: 12, textAlign: "center", padding: "6px 0" }}>+{resNotas.length - 8} notas más. Refiná la búsqueda para ver más.</div>}
                   </div>
                 </div> )}
               {/* Actividades */}
               {resActs.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>⚡ Actividades ({resActs.length})</div>
+                  <div style={{ fontSize: 11, color: "#b45309", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>⚡ Actividades ({resActs.length})</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                     {resActs.slice(0, 8).map(act => {
                       const al = als.find(a => a.id === act.alumnoId);
@@ -867,8 +890,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{ width: 5, height: 40, background: tc, borderRadius: 3, flexShrink: 0 }} />
                             <div>
-                              <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
-                              <div style={{ color: C.muted, fontSize: 12 }}>{mat?.nombre && `${mat.nombre} · `}{act.descripcion} · {fmt(act.fecha)}</div>
+                              <div style={{ color: "#1c1410", fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
+                              <div style={{ color: "#92400e", fontSize: 12 }}>{mat?.nombre && `${mat.nombre} · `}{act.descripcion} · {fmt(act.fecha)}</div>
                             </div></div>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                             <Tag color={tc}>{act.tipo}</Tag>
@@ -876,7 +899,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                           </div>
                         </div> );
                     })}
-                    {resActs.length > 8 && <div style={{ color: C.muted, fontSize: 12, textAlign: "center", padding: "6px 0" }}>+{resActs.length - 8} actividades más. Refiná la búsqueda para ver más.</div>}
+                    {resActs.length > 8 && <div style={{ color: "#92400e", fontSize: 12, textAlign: "center", padding: "6px 0" }}>+{resActs.length - 8} actividades más. Refiná la búsqueda para ver más.</div>}
                   </div>
                 </div> )}
             </div> )}
@@ -892,7 +915,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
       {/* Resumen rápido por materia */}
       {!busLower && mats.length > 0 && (
         <>
-          <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1.2 }}>Resumen por materia</h3>
+          <h3 style={{ color: "#b45309", fontSize: 12, fontWeight: 700, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1.2 }}>Resumen por materia</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10, marginBottom: 28 }}>
             {mats.map(m => {
               const mNotas = notas.filter(n => n.materiaId === m.id);
@@ -901,8 +924,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
               return (
                 <Box key={m.id} hi style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px" }} onClick={() => { setDetalleMateria(m.id); setVista("materias"); }}>
                   <div>
-                    <div style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{m.nombre}</div>
-                    <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>👥 {ins} · 📝 {mNotas.length}</div>
+                    <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 14 }}>{m.nombre}</div>
+                    <div style={{ color: "#92400e", fontSize: 12, marginTop: 2 }}>👥 {ins} · 📝 {mNotas.length}</div>
                   </div>
                   <div style={{ fontSize: 26, fontWeight: 900, color: nc(mProm) }}>{mProm ?? "—"}</div>
                 </Box> );
@@ -912,7 +935,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
       {!busLower && acts.length > 0 && (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Últimas actividades</h3>
+            <h3 style={{ color: "#b45309", fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Últimas actividades</h3>
             <button onClick={() => setVista("actividades")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>ver todas →</button>
           </div>
           <Box>
@@ -923,11 +946,11 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                 <div key={act.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}
                   onClick={() => { setDetalleAlumno(act.alumnoId); setVista("actividades"); }}>
                   <div>
-                    <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
-                    {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
-                    <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{act.descripcion}</div> </div> <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: "#1c1410", fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
+                    {mat && <span style={{ color: "#92400e", fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
+                    <div style={{ fontSize: 12, color: "#b45309", marginTop: 1 }}>{act.descripcion}</div> </div> <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <Tag color={tc}>{act.tipo}</Tag>
-                    <span style={{ color: C.muted, fontSize: 11 }}>{fmt(act.fecha)}</span></div>
+                    <span style={{ color: "#92400e", fontSize: 11 }}>{fmt(act.fecha)}</span></div>
                 </div> );
             })}
           </Box>
@@ -1081,7 +1104,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ width: 52, height: 52, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>👤</div>
           <div>
-            <div style={{ color: C.text, fontWeight: 800, fontSize: 18 }}>{alumno?.apellido}, {alumno?.nombre}</div> <div style={{ color: C.muted, fontSize: 13, marginTop: 2 }}>
+            <div style={{ color: "#1c1410", fontWeight: 800, fontSize: 18 }}>{alumno?.apellido}, {alumno?.nombre}</div> <div style={{ color: "#92400e", fontSize: 13, marginTop: 2 }}>
               {alumno?.curso && <span>Curso: {alumno.curso} · </span>}
               {alumno?.dni && <span>DNI: {alumno.dni}</span>}</div></div></div>
         <div style={{ display: "flex", gap: 20 }}> <div style={{ textAlign: "right" }}>
@@ -1100,7 +1123,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
       {/* Boton historial */}
       <div style={{ marginBottom: 20 }}>
         <button onClick={verHistorial}
-          style={{ background: "transparent", border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 16px", color: C.muted, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}
+          style={{ background: "transparent", border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 16px", color: "#92400e", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s" }}
           onMouseEnter={e => { e.currentTarget.style.color = C.accentL; e.currentTarget.style.borderColor = C.accent; }}
           onMouseLeave={e => { e.currentTarget.style.color = C.muted; e.currentTarget.style.borderColor = C.border; }}>
           🕓 Ver historial
@@ -1113,10 +1136,10 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, maxWidth: 520, width: "100%", maxHeight: "80vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 18, fontWeight: 900, color: C.accentL }}>🕓 Historial — {alumno?.apellido}, {alumno?.nombre}</div>
-              <button onClick={() => setShowHistorial(false)} style={{ background: "transparent", border: "none", color: C.muted, fontSize: 20, cursor: "pointer" }}>✕</button>
+              <button onClick={() => setShowHistorial(false)} style={{ background: "transparent", border: "none", color: "#92400e", fontSize: 20, cursor: "pointer" }}>✕</button>
             </div>
             {loadingHistorial ? (
-              <div style={{ color: C.muted, textAlign: "center", padding: 20 }}>Cargando...</div>
+              <div style={{ color: "#92400e", textAlign: "center", padding: 20 }}>Cargando...</div>
             ) : (
             <>
             {historial.filter(h => h.accion?.includes("migrado")).length === 0 && (notas.length > 0 || acts.length > 0) && (
@@ -1126,14 +1149,14 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               </div>
             )}
             {historial.length === 0 ? (
-              <div style={{ color: C.muted, textAlign: "center", padding: 20 }}>Sin actividad registrada</div>
+              <div style={{ color: "#92400e", textAlign: "center", padding: 20 }}>Sin actividad registrada</div>
             ) : historial.map((h, i) => {
               const fecha = new Date(h.created_at);
               const dia = fecha.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
               const hora = fecha.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
               return (
                 <div key={i} style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 12, marginBottom: 12, display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <div style={{ minWidth: 90, fontSize: 11, color: C.muted, paddingTop: 2, lineHeight: 1.6 }}>
+                  <div style={{ minWidth: 90, fontSize: 11, color: "#92400e", paddingTop: 2, lineHeight: 1.6 }}>
                     <div>{dia}</div>
                     <div>{hora}</div>
                   </div>
@@ -1166,9 +1189,9 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <Tag color={C.blue}>{n.tipo}</Tag>
-                        {n.descripcion && <span style={{ color: C.text, fontSize: 14, fontWeight: 600 }}>{n.descripcion}</span>}
+                        {n.descripcion && <span style={{ color: "#1c1410", fontSize: 14, fontWeight: 600 }}>{n.descripcion}</span>}
                       </div>
-                      <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>📅 {fmt(n.fecha)}</div> </div> </div> <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ color: "#92400e", fontSize: 12, marginTop: 4 }}>📅 {fmt(n.fecha)}</div> </div> </div> <div style={{ display: "flex", gap: 6 }}>
                     <Btn v="ghost" sm onClick={() => editNota(n)}>✏️</Btn>
                     <Btn v="danger" sm onClick={() => delNota(n.id)}>🗑️</Btn></div>
                 </Box>
@@ -1177,11 +1200,11 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
           {notas.length > 0 && (
             <>
             <Box style={{ marginTop: 20, display: "flex", gap: 28, padding: "16px 22px", flexWrap: "wrap" }}>
-              <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>PROMEDIO</div><div style={{ fontSize: 28, fontWeight: 900, color: nc(prom) }}>{prom}</div></div>
-              <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>NOTA MÁX.</div><div style={{ fontSize: 28, fontWeight: 900, color: C.green }}>{vals.length ? Math.max(...vals) : "—"}</div></div>
-              <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>NOTA MÍN.</div><div style={{ fontSize: 28, fontWeight: 900, color: C.red }}>{vals.length ? Math.min(...vals) : "—"}</div></div>
-              <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>EVALUACIONES</div><div style={{ fontSize: 28, fontWeight: 900, color: C.dim }}>{notas.length}</div></div>
-              <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>ASISTENCIA</div><div style={{ fontSize: 28, fontWeight: 900, color: asistColor }}>{pctAsist !== null ? `${pctAsist}%` : "—"}</div></div>
+              <div><div style={{ fontSize: 11, color: "#92400e", marginBottom: 4, fontWeight: 700 }}>PROMEDIO</div><div style={{ fontSize: 28, fontWeight: 900, color: nc(prom) }}>{prom}</div></div>
+              <div><div style={{ fontSize: 11, color: "#92400e", marginBottom: 4, fontWeight: 700 }}>NOTA MÁX.</div><div style={{ fontSize: 28, fontWeight: 900, color: C.green }}>{vals.length ? Math.max(...vals) : "—"}</div></div>
+              <div><div style={{ fontSize: 11, color: "#92400e", marginBottom: 4, fontWeight: 700 }}>NOTA MÍN.</div><div style={{ fontSize: 28, fontWeight: 900, color: C.red }}>{vals.length ? Math.min(...vals) : "—"}</div></div>
+              <div><div style={{ fontSize: 11, color: "#92400e", marginBottom: 4, fontWeight: 700 }}>EVALUACIONES</div><div style={{ fontSize: 28, fontWeight: 900, color: C.dim }}>{notas.length}</div></div>
+              <div><div style={{ fontSize: 11, color: "#92400e", marginBottom: 4, fontWeight: 700 }}>ASISTENCIA</div><div style={{ fontSize: 28, fontWeight: 900, color: asistColor }}>{pctAsist !== null ? `${pctAsist}%` : "—"}</div></div>
             </Box>
             {notas.length >= 1 && (() => {
               const tipoColors = { parcial: "#6c63ff", final: "#f87171", trabajo: "#2dd4bf", oral: "#fbbf24", recuperatorio: "#f97316", otro: "#60a5fa" };
@@ -1192,7 +1215,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                 <div style={{ marginBottom: 8 }}>
                   <div style={{ fontSize: 11, color: C.accentL, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10, paddingBottom: 6, borderBottom: `1px solid ${C.border}` }}>{label}</div>
                   {notasGrupo.length === 0 ? (
-                    <div style={{ color: C.muted, fontSize: 12, padding: "10px 0 16px" }}>Sin notas registradas</div>
+                    <div style={{ color: "#92400e", fontSize: 12, padding: "10px 0 16px" }}>Sin notas registradas</div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {[...notasGrupo].sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).map(n => {
@@ -1201,8 +1224,8 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                         const color = tipoColors[n.tipo] || C.dim;
                         return (
                           <div key={n.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 100, fontSize: 11, color: C.dim, textAlign: "right", flexShrink: 0, textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.descripcion || n.tipo}</div>
-                            <div style={{ flex: 1, background: C.bg, borderRadius: 6, height: 24, overflow: "hidden", position: "relative" }}>
+                            <div style={{ width: 100, fontSize: 11, color: "#b45309", textAlign: "right", flexShrink: 0, textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.descripcion || n.tipo}</div>
+                            <div style={{ flex: 1, background: "#ffffff80", borderRadius: 6, height: 24, overflow: "hidden", position: "relative" }}>
                               <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 6, transition: "width .5s ease", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 8 }}>
                                 <span style={{ fontSize: 12, fontWeight: 900, color: "#fff" }}>{n.nota}</span>
                               </div>
@@ -1218,7 +1241,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               );
               return (
                 <Box style={{ marginTop: 12, padding: "20px 24px" }}>
-                  <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, marginBottom: 18, textTransform: "uppercase", letterSpacing: 1.1 }}>📊 Evolución por cuatrimestre</div>
+                  <div style={{ fontSize: 11, color: "#92400e", fontWeight: 700, marginBottom: 18, textTransform: "uppercase", letterSpacing: 1.1 }}>📊 Evolución por cuatrimestre</div>
                   <HBarGroup notasGrupo={cuatri1} label="1° Cuatrimestre — Marzo a Junio" />
                   <div style={{ borderTop: `1px solid ${C.border}`, margin: "16px 0" }} />
                   <HBarGroup notasGrupo={cuatri2} label="2° Cuatrimestre — Agosto a Noviembre" />
@@ -1226,7 +1249,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                     {tiposPresentes.map(tipo => (
                       <div key={tipo} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <div style={{ width: 14, height: 14, borderRadius: 3, background: tipoColors[tipo]||C.dim }} />
-                        <span style={{ fontSize: 12, color: C.dim, textTransform: "capitalize" }}>{tipo}</span>
+                        <span style={{ fontSize: 12, color: "#b45309", textTransform: "capitalize" }}>{tipo}</span>
                       </div>
                     ))}
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
@@ -1262,12 +1285,12 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                       <div key={ev.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", background: C.card2, border: `1px solid ${urgente ? C.red+"44" : C.border}`, borderRadius: 12 }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                            <span style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{ev.titulo}</span>
+                            <span style={{ color: "#1c1410", fontWeight: 700, fontSize: 14 }}>{ev.titulo}</span>
                             {urgente && !vencido && <span style={{ background: C.red+"22", color: C.red, border: `1px solid ${C.red}44`, borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>⚠️ {dias===0?"¡Hoy!":`${dias}d`}</span>}
                           </div>
                           <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center" }}>
                             <Tag color={color}>{ev.tipo}</Tag>
-                            <span style={{ color: C.muted, fontSize: 12 }}>📅 {fmt(ev.fecha)}{vencido?" · vencido":""}</span>
+                            <span style={{ color: "#92400e", fontSize: 12 }}>📅 {fmt(ev.fecha)}{vencido?" · vencido":""}</span>
                             {ev.archivoUrl && <a href={ev.archivoUrl} target="_blank" rel="noreferrer" style={{ color: C.accentL, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>📎 {ev.archivoNombre||"Ver archivo"}</a>}
                           </div>
                         </div>
@@ -1296,7 +1319,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               </div>
             );
           })()}
-          <div style={{ fontSize: 11, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>⚡ Actividades registradas</div>
+          <div style={{ fontSize: 11, color: "#b45309", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>⚡ Actividades registradas</div>
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
             <Btn onClick={() => { setFormAct(emptyAct); setPopAct(true); }}>+ Registrar Actividad</Btn>
           </div>
@@ -1308,8 +1331,8 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                   <Box key={act.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px" }}> <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{ width: 5, height: 48, background: tc, borderRadius: 4, flexShrink: 0 }} />
                       <div>
-                        <div style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{act.descripcion}</div>
-                        <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>📅 {fmt(act.fecha)}{act.hora ? ` · 🕐 ${act.hora}` : ""}</div> </div> </div> <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 14 }}>{act.descripcion}</div>
+                        <div style={{ color: "#92400e", fontSize: 12, marginTop: 4 }}>📅 {fmt(act.fecha)}{act.hora ? ` · 🕐 ${act.hora}` : ""}</div> </div> </div> <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <Tag color={tc}>{act.tipo}</Tag>
                       <Btn v="danger" sm onClick={() => delAct(act.id)}>🗑️</Btn></div>
                   </Box> );
@@ -1330,13 +1353,13 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
             ].map(s => (
               <Box key={s.label} style={{ textAlign: "center", padding: "14px 10px" }}>
                 <div style={{ fontSize: 26, fontWeight: 900, color: s.color }}>{s.value}</div>
-                <div style={{ fontSize: 10, color: C.muted, marginTop: 4, fontWeight: 700, letterSpacing: 0.8 }}>{s.label}</div>
+                <div style={{ fontSize: 10, color: "#92400e", marginTop: 4, fontWeight: 700, letterSpacing: 0.8 }}>{s.label}</div>
               </Box>
             ))}</div>
           {/* Barra visual de asistencia */}
           {totalClases > 0 && (
             <Box style={{ marginBottom: 20, padding: "14px 18px" }}>
-              <div style={{ fontSize: 12, color: C.muted, fontWeight: 700, marginBottom: 8 }}>REGISTRO DE CLASES</div> <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+              <div style={{ fontSize: 12, color: "#92400e", fontWeight: 700, marginBottom: 8 }}>REGISTRO DE CLASES</div> <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {asistencias.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).map(a => (
                   <div key={a.id} title={`${fmt(a.fecha)} — ${a.estado}${a.observacion ? ": " + a.observacion : ""}`}
                     style={{ width: 28, height: 28, borderRadius: 7, background: estadoColor[a.estado] + "22", border: `2px solid ${estadoColor[a.estado]}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, cursor: "default" }}>
@@ -1353,8 +1376,8 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                     <div style={{ width: 42, height: 42, borderRadius: 11, background: estadoColor[a.estado] + "18", border: `2px solid ${estadoColor[a.estado]}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
                       {estadoIcon[a.estado]}</div>
                     <div>
-                      <div style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>📅 {fmt(a.fecha)}</div>
-                      {a.observacion && <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>{a.observacion}</div>} </div> </div> <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 14 }}>📅 {fmt(a.fecha)}</div>
+                      {a.observacion && <div style={{ color: "#92400e", fontSize: 12, marginTop: 2 }}>{a.observacion}</div>} </div> </div> <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <Tag color={estadoColor[a.estado]}>{a.estado}</Tag>
                     <Btn v="danger" sm onClick={() => delAsist(a.id)}>🗑️</Btn></div>
                 </Box>
@@ -1364,7 +1387,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
           {subTab === "archivos" && (
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <div style={{ fontSize: 13, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Documentos del alumno</div>
+                <div style={{ fontSize: 13, color: "#b45309", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Documentos del alumno</div>
                 <label style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, color: "#fff", padding: "8px 16px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
                   ⬆️ Subir archivo
                   <input type="file" multiple accept="image/*,.pdf" style={{ display: "none" }} onChange={e => { if (window.__subirParaAlumno) window.__subirParaAlumno(alumnoId, e.target.files); e.target.value=""; }} />
@@ -1384,14 +1407,14 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                             <img src={doc.url} alt={doc.nombre} style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
                           </a>
                         ) : (
-                          <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80, background: C.bg, textDecoration: "none" }}>
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80, background: "#ffffff80", textDecoration: "none" }}>
                             <span style={{ fontSize: 32 }}>📄</span>
                           </a>
                         )}
                         <div style={{ padding: "10px 12px" }}>
-                          <div style={{ color: C.text, fontSize: 12, fontWeight: 700, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.nombre}</div>
+                          <div style={{ color: "#1c1410", fontSize: 12, fontWeight: 700, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.nombre}</div>
                           <span style={{ background: C.accentDim, color: C.accentL, borderRadius: 6, padding: "2px 7px", fontSize: 11, fontWeight: 700 }}>{tipoLabel[doc.tipo] || doc.tipo}</span>
-                          <div style={{ color: C.dim, fontSize: 11, marginTop: 4 }}>{doc.fecha}</div>
+                          <div style={{ color: "#b45309", fontSize: 11, marginTop: 4 }}>{doc.fecha}</div>
                         </div>
                       </Box>
                     );
@@ -1547,9 +1570,9 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 52, height: 52, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>📚</div>
           <div>
-            <div style={{ color: C.text, fontWeight: 800, fontSize: 20 }}>{materia?.nombre}</div>
-            {materia?.descripcion && <div style={{ color: C.muted, fontSize: 13 }}>{materia.descripcion}</div>}
-            <div style={{ color: C.dim, fontSize: 13, marginTop: 4 }}>{alumnosMateria.length} alumnos inscriptos</div>
+            <div style={{ color: "#1c1410", fontWeight: 800, fontSize: 20 }}>{materia?.nombre}</div>
+            {materia?.descripcion && <div style={{ color: "#92400e", fontSize: 13 }}>{materia.descripcion}</div>}
+            <div style={{ color: "#b45309", fontSize: 13, marginTop: 4 }}>{alumnosMateria.length} alumnos inscriptos</div>
           </div></div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <Btn v="ghost" onClick={() => setPopMasiva(true)}>📋 Carga masiva</Btn>
@@ -1559,8 +1582,8 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
       {alumnosMateria.length === 0 ? (
         <div style={{ textAlign: "center", paddingTop: 50 }}>
           <div style={{ fontSize: 48, marginBottom: 14 }}>👤</div>
-          <h3 style={{ color: C.text, fontWeight: 700, margin: "0 0 10px" }}>No hay alumnos en esta materia</h3>
-          <p style={{ color: C.dim, fontSize: 14, marginBottom: 24 }}>Agregá alumnos del colegio para empezar a registrar notas y actividades.</p>
+          <h3 style={{ color: "#1c1410", fontWeight: 700, margin: "0 0 10px" }}>No hay alumnos en esta materia</h3>
+          <p style={{ color: "#b45309", fontSize: 14, marginBottom: 24 }}>Agregá alumnos del colegio para empezar a registrar notas y actividades.</p>
           <Btn onClick={() => { setBusqueda(""); setPopAgregarAlumno(true); }}>+ Agregar Alumno</Btn>
         </div>
       ) : (
@@ -1573,8 +1596,8 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
               <Box key={al.id} hi style={{ cursor: "pointer", position: "relative", paddingBottom: 56 }} onClick={() => setAlumnoSeleccionado(al.id)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                   <div>
-                    <div style={{ color: C.text, fontWeight: 700, fontSize: 16 }}>{al.apellido}, {al.nombre}</div>
-                    {al.curso && <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>Curso: {al.curso}</div>} {al.dni && <div style={{ color: C.muted, fontSize: 12 }}>DNI: {al.dni}</div>} </div> <div style={{ textAlign: "right" }}>
+                    <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 16 }}>{al.apellido}, {al.nombre}</div>
+                    {al.curso && <div style={{ color: "#92400e", fontSize: 12, marginTop: 2 }}>Curso: {al.curso}</div>} {al.dni && <div style={{ color: "#92400e", fontSize: 12 }}>DNI: {al.dni}</div>} </div> <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 30, fontWeight: 900, color: nc(prom) }}>{prom ?? "—"}</div> <div style={{ fontSize: 11, color: C.muted }}>promedio</div> </div> </div> <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
                   <span style={{ fontSize: 12, color: C.dim }}>📝 {notas.length} notas</span>
                   <span style={{ fontSize: 12, color: C.dim }}>⚡ {acts.length} actividades</span> </div> {/* mini barra de notas */} {notas.length > 0 && ( <div style={{ display: "flex", gap: 3 }}>
@@ -1584,7 +1607,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                   </div> )}
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "10px 16px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: C.accentL, fontSize: 12, fontWeight: 700 }}>Ver detalle →</span>
-                  <button onClick={e => { e.stopPropagation(); quitarAlumno(al.id); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 12, padding: "2px 6px", borderRadius: 6 }}
+                  <button onClick={e => { e.stopPropagation(); quitarAlumno(al.id); }} style={{ background: "none", border: "none", color: "#92400e", cursor: "pointer", fontSize: 12, padding: "2px 6px", borderRadius: 6 }}
                     onMouseEnter={e => e.currentTarget.style.color = C.red} onMouseLeave={e => e.currentTarget.style.color = C.muted}>
                     Quitar
                   </button></div>
@@ -1614,17 +1637,17 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
             </div>
             <Inp label="Descripción (opcional)" value={descMasiva} onChange={e => setDescMasiva(e.target.value)} placeholder="Ej: Primer parcial unidades 1-3" />
             <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-              <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>Notas por alumno (0-10)</div>
+              <div style={{ fontSize: 11, color: "#b45309", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>Notas por alumno (0-10)</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto" }}>
                 {alumnosMateria.map(al => (
-                  <div key={al.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: C.bg, borderRadius: 10, padding: "10px 14px", border: `1px solid ${C.border}` }}>
-                    <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al.apellido}, {al.nombre}
-                      {al.curso && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
+                  <div key={al.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff80", borderRadius: 10, padding: "10px 14px", border: `1px solid ${C.border}` }}>
+                    <div style={{ color: "#1c1410", fontWeight: 600, fontSize: 14 }}>{al.apellido}, {al.nombre}
+                      {al.curso && <span style={{ color: "#92400e", fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
                     </div>
                     <input type="number" min="0" max="10" step="0.1" placeholder="—"
                       value={notasMasivas[al.id] || ""}
                       onChange={e => setNotasMasivas(n => ({ ...n, [al.id]: e.target.value }))}
-                      style={{ width: 70, background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
+                      style={{ width: 70, background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
                       onFocus={e => e.target.style.borderColor = C.accent}
                       onBlur={e => e.target.style.borderColor = C.border} />
                   </div>
@@ -1645,15 +1668,15 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
             </div>
             <Inp label="Descripción *" value={descAct} onChange={e => setDescAct(e.target.value)} placeholder="Ej: Participó activamente en clase" />
             <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-              <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>Tipo por alumno</div>
+              <div style={{ fontSize: 11, color: "#b45309", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>Tipo por alumno</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto" }}>
                 {alumnosMateria.map(al => (
-                  <div key={al.id} style={{ display: "flex", alignItems: "center", gap: 10, background: C.bg, borderRadius: 10, padding: "10px 14px", border: `1px solid ${C.border}` }}>
-                    <div style={{ flex: 1, color: C.text, fontWeight: 600, fontSize: 14 }}>{al.apellido}, {al.nombre}
-                      {al.curso && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
+                  <div key={al.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "#ffffff80", borderRadius: 10, padding: "10px 14px", border: `1px solid ${C.border}` }}>
+                    <div style={{ flex: 1, color: "#1c1410", fontWeight: 600, fontSize: 14 }}>{al.apellido}, {al.nombre}
+                      {al.curso && <span style={{ color: "#92400e", fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
                     </div>
                     <select value={tipoAct[al.id]||"positiva"} onChange={e => setTipoAct(t => ({...t, [al.id]: e.target.value}))}
-                      style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                      style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none", cursor: "pointer" }}>
                       <option value="positiva">✅ Positiva</option>
                       <option value="negativa">❌ Negativa</option>
                       <option value="participacion">🙋 Participación</option>
@@ -1685,9 +1708,9 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                 onChange={e => setBusqueda(e.target.value)}
                 style={{ marginBottom: 14 }} />  {/* Lista de disponibles */} {disponibles.length > 0 ? ( <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 320, overflowY: "auto", marginBottom: 14 }}>
                   {disponibles.map(al => (
-                    <div key={al.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px" }}>
+                    <div key={al.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#ffffff80", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 16px" }}>
                       <div>
-                        <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al.apellido}, {al.nombre}</div> <div style={{ color: C.muted, fontSize: 12 }}>
+                        <div style={{ color: "#1c1410", fontWeight: 600, fontSize: 14 }}>{al.apellido}, {al.nombre}</div> <div style={{ color: "#92400e", fontSize: 12 }}>
                           {al.curso ? `Curso: ${al.curso}` : ""}
                           {al.curso && al.dni ? " · " : ""}
                           {al.dni ? `DNI: ${al.dni}` : ""}</div></div>
@@ -1695,18 +1718,18 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                     </div>
                   ))}</div>
               ) : (
-                <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, padding: "22px 18px", marginBottom: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div> <div style={{ color: C.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
+                <div style={{ background: "#ffffff80", border: `1px solid ${C.border}`, borderRadius: 12, padding: "22px 18px", marginBottom: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div> <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
                     {busqueda
                       ? `No se encontró "${busqueda}" en el colegio`
                       : "Todos los alumnos del colegio ya están en esta materia"}</div>
-                  <div style={{ color: C.muted, fontSize: 13 }}>
+                  <div style={{ color: "#92400e", fontSize: 13 }}>
                     {busqueda ? "¿Querés crear este alumno nuevo?" : "Podés crear un alumno nuevo si lo necesitás."}
                   </div>
                 </div> )}
               {/* Separador + botón crear nuevo */}
               <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: C.muted, fontSize: 13 }}>¿No está en la lista?</span>
+                <span style={{ color: "#92400e", fontSize: 13 }}>¿No está en la lista?</span>
                 <Btn onClick={() => {
                   setFormNuevo({ ...emptyForm, nombre: busqueda.split(" ")[0] || "", apellido: busqueda.split(" ").slice(1).join(" ") || "" });
                   setCreandoNuevo(true);
@@ -1772,7 +1795,7 @@ const Materias = ({ data, setData, colegioId }) => {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 800 }}>📚 Materias</h2>
+        <h2 style={{ color: "#1c1410", margin: 0, fontSize: 22, fontWeight: 800 }}>📚 Materias</h2>
         <Btn onClick={() => { setForm({ nombre: "", descripcion: "", division: "" }); setEditId(null); setPop(true); }}>+ Nueva Materia</Btn>
       </div>
       {materias.length === 0 ? (
@@ -1788,9 +1811,9 @@ const Materias = ({ data, setData, colegioId }) => {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}> <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                     <div style={{ width: 42, height: 42, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>📚</div>
                     <div>
-                      <div style={{ color: C.text, fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
+                      <div style={{ color: "#1c1410", fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
                       {m.division && <div style={{ color: C.accentL, fontSize: 11, fontWeight: 700, marginTop: 2 }}>📋 {m.division}</div>}
-                      {m.descripcion && <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>{m.descripcion}</div>} </div> </div> <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 8 }}>
+                      {m.descripcion && <div style={{ color: "#92400e", fontSize: 12, marginTop: 2 }}>{m.descripcion}</div>} </div> </div> <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 8 }}>
                     <div style={{ fontSize: 26, fontWeight: 900, color: nc(prom) }}>{prom ?? "—"}</div>
                     <div style={{ fontSize: 11, color: C.muted }}>promedio</div> </div> </div> <div style={{ display: "flex", gap: 16, fontSize: 12, color: C.dim }}>
                   <span>👥 {inscriptos} alumnos</span>
@@ -1913,7 +1936,7 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}> <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ width: 56, height: 56, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>👤</div>
             <div>
-              <div style={{ color: C.text, fontWeight: 900, fontSize: 20 }}>{alumno?.apellido}, {alumno?.nombre}</div> <div style={{ color: C.muted, fontSize: 13, marginTop: 3, display: "flex", gap: 14, flexWrap: "wrap" }}>
+              <div style={{ color: "#1c1410", fontWeight: 900, fontSize: 20 }}>{alumno?.apellido}, {alumno?.nombre}</div> <div style={{ color: "#92400e", fontSize: 13, marginTop: 3, display: "flex", gap: 14, flexWrap: "wrap" }}>
                 {alumno?.curso && <span>📋 Curso: {alumno.curso}</span>}
                 {alumno?.dni && <span>🪪 DNI: {alumno.dni}</span>}
                 {alumno?.email && <span>✉️ {alumno.email}</span>}
@@ -1935,14 +1958,14 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
           <Btn v="ghost" sm onClick={() => imprimirBoletin(data, alumnoId, colegioId)}>🖨️ Imprimir Boletín</Btn>
         </div> </div> </div>  {materiaIds.length === 0 ? ( <div style={{ textAlign: "center", padding: "48px 20px" }}>
           <div style={{ fontSize: 44, marginBottom: 14 }}>📚</div>
-          <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Este alumno no está inscripto en ninguna materia</div>
-          <div style={{ color: C.dim, fontSize: 14 }}>Inscribilo desde la sección <strong style={{ color: C.accentL }}>Materias</strong> para empezar a registrar notas y actividades.</div>
+          <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Este alumno no está inscripto en ninguna materia</div>
+          <div style={{ color: "#b45309", fontSize: 14 }}>Inscribilo desde la sección <strong style={{ color: C.accentL }}>Materias</strong> para empezar a registrar notas y actividades.</div>
         </div>
       ) : (
         <>
           {/* Selector de materia */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>Seleccioná una materia</div> <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 11, color: "#b45309", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 10 }}>Seleccioná una materia</div> <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {materiaIds.map(mid => {
                 const mat = data.materias.find(m => m.id === mid);
                 const mNotas = data.notas.filter(n => n.alumnoId === alumnoId && n.materiaId === mid);
@@ -1996,7 +2019,7 @@ const Alumnos = ({ data, setData, colegioId }) => {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 800 }}>👤 Alumnos del Colegio</h2>
+        <h2 style={{ color: "#1c1410", margin: 0, fontSize: 22, fontWeight: 800 }}>👤 Alumnos del Colegio</h2>
         <Btn onClick={() => { setEditId(null); setForm({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); setPop(true); }}>+ Nuevo Alumno</Btn>
       </div>
       <Inp placeholder="🔍 Buscar por nombre, apellido o DNI..." value={filtro} onChange={e => setFiltro(e.target.value)} style={{ marginBottom: 12 }} />
@@ -2020,10 +2043,10 @@ const Alumnos = ({ data, setData, colegioId }) => {
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{al.apellido}, {al.nombre}</div>
+                      <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 15 }}>{al.apellido}, {al.nombre}</div>
                       {prom !== null && parseFloat(prom) < 6 && <span style={{ background: C.red + "22", color: C.red, border: `1px solid ${C.red}44`, borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>⚠️ Bajo</span>}
                     </div>
-                    {al.dni && <div style={{ color: C.muted, fontSize: 12 }}>DNI: {al.dni}</div>} {al.curso && <div style={{ color: C.dim, fontSize: 12 }}>Curso: {al.curso}</div>} </div> <div style={{ textAlign: "right" }}>
+                    {al.dni && <div style={{ color: "#92400e", fontSize: 12 }}>DNI: {al.dni}</div>} {al.curso && <div style={{ color: "#b45309", fontSize: 12 }}>Curso: {al.curso}</div>} </div> <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 28, fontWeight: 900, color: nc(prom) }}>{prom ?? "—"}</div>
                     <div style={{ fontSize: 11, color: C.muted }}>{notas.length} notas</div> </div> </div> {materiaIds.length > 0 && ( <div style={{ marginBottom: 10, display: "flex", flexWrap: "wrap", gap: 4 }}>
                     {materiaIds.slice(0, 3).map(mid => {
@@ -2497,15 +2520,15 @@ const Reportes = ({ data, setData, onClose }) => {
   };
 
   return (
-    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: C.bg, padding: 24 }}>
+    <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", minHeight: "100vh", background: "#ffffff80", padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 900 }}>🐛 Panel de Reportes</h2>
+        <h2 style={{ color: "#1c1410", margin: 0, fontSize: 22, fontWeight: 900 }}>🐛 Panel de Reportes</h2>
         <Btn v="ghost" onClick={onClose}>← Volver</Btn>
       </div>
 
       {/* Formulario nuevo reporte */}
       <Box style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 12, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 16 }}>Nuevo reporte</div>
+        <div style={{ fontSize: 12, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 16 }}>Nuevo reporte</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <Inp label="Título *" value={form.titulo} onChange={e => setForm(f => ({...f, titulo: e.target.value}))} placeholder="Ej: El botón guardar no responde" />
           <Inp label="Descripción *" value={form.descripcion} onChange={e => setForm(f => ({...f, descripcion: e.target.value}))} placeholder="Describí el problema con detalle..." />
@@ -2528,14 +2551,14 @@ const Reportes = ({ data, setData, onClose }) => {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-                    <span style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{r.titulo}</span>
+                    <span style={{ color: "#1c1410", fontWeight: 700, fontSize: 15 }}>{r.titulo}</span>
                     <span style={{ background: prioColor[r.prioridad]+"22", color: prioColor[r.prioridad], border: `1px solid ${prioColor[r.prioridad]}44`, borderRadius: 6, padding: "1px 8px", fontSize: 11, fontWeight: 700, textTransform: "capitalize" }}>{r.prioridad}</span>
                     <span style={{ background: estadoColor[r.estado]+"22", color: estadoColor[r.estado], border: `1px solid ${estadoColor[r.estado]}44`, borderRadius: 6, padding: "1px 8px", fontSize: 11, fontWeight: 700, textTransform: "capitalize" }}>{r.estado}</span>
                   </div>
-                  <div style={{ color: C.muted, fontSize: 13, marginBottom: 10 }}>{r.descripcion}</div>
+                  <div style={{ color: "#92400e", fontSize: 13, marginBottom: 10 }}>{r.descripcion}</div>
                   <div style={{ fontSize: 11, color: C.dim }}>📅 {fmt(r.fecha)}</div>
                 </div>
-                <button onClick={() => eliminar(r.id)} style={{ background: "transparent", border: "none", color: C.muted, cursor: "pointer", fontSize: 16, flexShrink: 0 }} title="Eliminar">🗑</button>
+                <button onClick={() => eliminar(r.id)} style={{ background: "transparent", border: "none", color: "#92400e", cursor: "pointer", fontSize: 16, flexShrink: 0 }} title="Eliminar">🗑</button>
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
                 {["pendiente","en revision","resuelto"].map(e => (
@@ -2580,20 +2603,20 @@ const PanelFallas = ({ user, onClose }) => {
 
   return (
     <Pop title="🐛 Panel de fallas reportadas" onClose={onClose} wide>
-      {loading ? <div style={{ color: C.muted, textAlign: "center", padding: 20 }}>Cargando...</div> :
+      {loading ? <div style={{ color: "#92400e", textAlign: "center", padding: 20 }}>Cargando...</div> :
       fallas.length === 0 ? <Empty icon="✅" msg="No hay fallas reportadas." /> :
       <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 500, overflowY: "auto" }}>
         {fallas.map(f => (
-          <div key={f.id} style={{ background: C.bg, border: `1px solid ${f.estado==="resuelto" ? C.green+"44" : C.red+"44"}`, borderRadius: 12, padding: "14px 16px" }}>
+          <div key={f.id} style={{ background: "#ffffff80", border: `1px solid ${f.estado==="resuelto" ? C.green+"44" : C.red+"44"}`, borderRadius: 12, padding: "14px 16px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
                   <span style={{ background: f.estado==="resuelto" ? C.green+"22" : C.red+"22", color: f.estado==="resuelto" ? C.green : C.red, border: `1px solid ${f.estado==="resuelto" ? C.green+"44" : C.red+"44"}`, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{f.estado==="resuelto" ? "✅ Resuelto" : "🔴 Pendiente"}</span>
-                  <span style={{ color: C.muted, fontSize: 11 }}>{f.email}</span>
-                  <span style={{ color: C.dim, fontSize: 11 }}>{new Date(f.created_at).toLocaleDateString("es-AR")}</span>
+                  <span style={{ color: "#92400e", fontSize: 11 }}>{f.email}</span>
+                  <span style={{ color: "#b45309", fontSize: 11 }}>{new Date(f.created_at).toLocaleDateString("es-AR")}</span>
                 </div>
-                <div style={{ color: C.text, fontSize: 14 }}>{f.descripcion}</div>
-                {f.seccion && <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>Sección: {f.seccion}</div>}
+                <div style={{ color: "#1c1410", fontSize: 14 }}>{f.descripcion}</div>
+                {f.seccion && <div style={{ color: "#92400e", fontSize: 12, marginTop: 4 }}>Sección: {f.seccion}</div>}
               </div>
               {isAdmin && (
                 <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
@@ -2850,7 +2873,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     <>
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>📁 Archivos y Documentos</h2>
+        <h2 style={{ color: "#1c1410", margin: 0, fontSize: 20, fontWeight: 800 }}>📁 Archivos y Documentos</h2>
         <label style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, color: "#fff", padding: "10px 18px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
           {procesando ? "🔍 Analizando..." : "⬆️ Subir archivos"}
           <input type="file" multiple accept="image/*,.pdf" style={{ display: "none" }} onChange={e => subirArchivos(e.target.files)} disabled={procesando} />
@@ -2866,16 +2889,16 @@ const Documentos = ({ data, setData, colegioId }) => {
               <div key={i} style={{ background: C.card, borderRadius: 12, padding: "14px 16px", border: `1px solid ${C.border}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ color: C.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>📄 {item.file.name}</div>
-                    {item.analisis.descripcion && <div style={{ color: C.muted, fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
+                    <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 14, marginBottom: 4 }}>📄 {item.file.name}</div>
+                    {item.analisis.descripcion && <div style={{ color: "#92400e", fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                       <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
-                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
                         <option value="">— Sin alumno asignado —</option>
                         {alumnos.map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
                       </select>
                       <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, tipoSeleccionado: e.target.value, analisis:{...x.analisis, tipo: e.target.value, descripcion: e.target.value}} : x))}
-                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
                         <option value="examen">📝 Examen</option>
                         <option value="trabajo">📋 Trabajo práctico</option>
                         <option value="documento">📄 Documento</option>
@@ -2883,7 +2906,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                       </select>
                     </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, background: item.notaDetectada ? C.green+"22" : C.accentDim, border: `1px solid ${item.notaDetectada ? C.green+"44" : C.accent+"44"}`, borderRadius: 10, padding: "6px 12px" }}>
-                        <span style={{ fontSize: 12, color: C.dim, fontWeight: 700 }}>📊 Nota:</span>
+                        <span style={{ fontSize: 12, color: "#b45309", fontWeight: 700 }}>📊 Nota:</span>
                         <input type="number" min="0" max="10" step="0.1" placeholder="0-10"
                           value={item.notaDetectada || ""}
                           onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, notaDetectada: e.target.value} : x))}
@@ -2921,8 +2944,8 @@ const Documentos = ({ data, setData, colegioId }) => {
               const alumno = alumnos.find(a => a.id === item.alumnoId);
               return (
                 <div key={i} style={{ borderBottom: `1px solid ${C.border}`, paddingBottom: 10, marginBottom: 10 }}>
-                  <div style={{ color: C.text, fontWeight: 700, fontSize: 13 }}>📄 {item.file.name}</div>
-                  <div style={{ color: C.dim, fontSize: 12, marginTop: 4 }}>
+                  <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 13 }}>📄 {item.file.name}</div>
+                  <div style={{ color: "#b45309", fontSize: 12, marginTop: 4 }}>
                     👤 {alumno ? `${alumno.apellido}, ${alumno.nombre}` : "Sin alumno"}
                     &nbsp;·&nbsp; 📁 {item.tipo || item.analisis.descripcion || "documento"}
                     {item.notaDetectada && <span>&nbsp;·&nbsp; 📊 Nota: <b style={{ color: C.accentL }}>{item.notaDetectada}</b></span>}
@@ -2931,7 +2954,7 @@ const Documentos = ({ data, setData, colegioId }) => {
               );
             })}
             <div style={{ display: "flex", gap: 12, marginTop: 20, justifyContent: "flex-end" }}>
-              <button onClick={() => setShowResumen(false)} style={{ padding: "10px 22px", borderRadius: 10, border: `1px solid ${C.border}`, background: "transparent", color: C.muted, fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+              <button onClick={() => setShowResumen(false)} style={{ padding: "10px 22px", borderRadius: 10, border: `1px solid ${C.border}`, background: "transparent", color: "#92400e", fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
               <button onClick={ejecutarConfirmarTodo} style={{ padding: "10px 22px", borderRadius: 10, border: "none", background: C.accent, color: "#fff", fontWeight: 900, cursor: "pointer" }}>✅ Confirmar todo</button>
             </div>
           </div>
@@ -2942,7 +2965,7 @@ const Documentos = ({ data, setData, colegioId }) => {
       {/* Filtro Materia - siempre visible */}
       {materias.length > 0 && (
       <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Materia:</div>
+        <div style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Materia:</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {materias.map(m => (
             <button key={m.id} onClick={() => { setFiltroMateria(filtroMateria===m.id ? "" : m.id); setFiltroAlumno(""); }}
@@ -2956,7 +2979,7 @@ const Documentos = ({ data, setData, colegioId }) => {
       {/* Filtro Alumno - solo si hay materia seleccionada */}
       {filtroMateria && (
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Alumno:</div>
+        <div style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Alumno:</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button onClick={() => setFiltroAlumno("")}
             style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroAlumno ? C.accent : C.border}`, background: !filtroAlumno ? C.accentDim : "transparent", color: !filtroAlumno ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
@@ -2973,7 +2996,7 @@ const Documentos = ({ data, setData, colegioId }) => {
       )}
 
       {/* Lista de archivos */}
-      {loading ? <div style={{ color: C.muted, textAlign: "center", padding: 40 }}>Cargando...</div> :
+      {loading ? <div style={{ color: "#92400e", textAlign: "center", padding: 40 }}>Cargando...</div> :
       docsFiltrados.length === 0 ? <Empty icon="📁" msg="No hay archivos subidos todavía." /> :
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
         {docsFiltrados.map(doc => {
@@ -2991,7 +3014,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                     <img src={doc.url} alt={doc.nombre} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
                   </a>
                 ) : (
-                  <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 100, background: C.bg, textDecoration: "none" }}>
+                  <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 100, background: "#ffffff80", textDecoration: "none" }}>
                     <span style={{ fontSize: 40 }}>📄</span>
                   </a>
                 )}
@@ -3003,7 +3026,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                 )}
               </div>
               <div style={{ padding: "12px 14px" }}>
-                <div style={{ color: C.text, fontWeight: 700, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.nombre}</div>
+                <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.nombre}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -3012,8 +3035,8 @@ const Documentos = ({ data, setData, colegioId }) => {
                         <span style={{ background: notaColor+"22", color: notaColor, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700, border: `1px solid ${notaColor}44` }}>📝 Nota: {notaVal}</span>
                       )}
                     </div>
-                    {al && <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>👤 {al.apellido}, {al.nombre}</div>}
-                    <div style={{ color: C.dim, fontSize: 11, marginTop: 2 }}>{doc.fecha}</div>
+                    {al && <div style={{ color: "#92400e", fontSize: 12, marginTop: 4 }}>👤 {al.apellido}, {al.nombre}</div>}
+                    <div style={{ color: "#b45309", fontSize: 11, marginTop: 2 }}>{doc.fecha}</div>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => abrirEditar(doc)} style={{ background: C.blue+"22", border: `1px solid ${C.blue}44`, color: C.blue, borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontSize: 13 }}>✏️</button>
@@ -3122,16 +3145,16 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
 
   // ── MOBILE LAYOUT ──────────────────────────────────────────────────────────
   if (isMobile) return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: C.bg }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)" }}>
       {/* Header móvil */}
-      <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
+      <div style={{ background: "#1c1410", borderBottom: "1px solid #2d1f14", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {tab !== "dashboard" && (
             <button onClick={goBack} style={{ background: "transparent", border: "none", color: C.accent, fontSize: 24, cursor: "pointer", padding: "0 2px", lineHeight: 1 }}>‹</button>
           )}
           <div onClick={goInicio} style={{ cursor: "pointer" }}>
-            <div style={{ fontSize: 9, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>Colegio activo</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>{col?.nombre}</div>
+            <div style={{ fontSize: 9, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>Colegio activo</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#1c1410" }}>{col?.nombre}</div>
           </div>
         </div>
         <button onClick={() => setMenuOpen(o => !o)} style={{ background: menuOpen ? C.accentDim : "transparent", border: `1px solid ${menuOpen ? C.accent : C.border}`, borderRadius: 10, padding: "8px 12px", color: menuOpen ? C.accentL : C.dim, fontSize: 18, cursor: "pointer" }}>
@@ -3141,10 +3164,10 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
 
       {/* Menú desplegable móvil */}
       {menuOpen && (
-        <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4, zIndex: 99 }}>
+        <div style={{ background: "#1c1410", borderBottom: "1px solid #2d1f14", padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4, zIndex: 99 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: activeTab === t.id ? 700 : 500, background: activeTab === t.id ? C.accentDim : "transparent", color: activeTab === t.id ? C.accentL : C.dim, textAlign: "left" }}>
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: activeTab === t.id ? 700 : 500, background: activeTab === t.id ? "#f9731622" : "transparent", color: activeTab === t.id ? "#fb923c" : "#8a6a4a", textAlign: "left" }}>
               <span style={{ fontSize: 20 }}>{t.icon}</span>{t.label}
             </button>
           ))}
@@ -3191,21 +3214,21 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
 
   // ── DESKTOP LAYOUT ─────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: C.bg }}>
-      <aside style={{ width: 220, background: C.card, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
-        <div style={{ padding: "18px 16px 14px", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }} onClick={goInicio}>
-          <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>Colegio activo</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: C.text, lineHeight: 1.3 }}>{col?.nombre}</div>
+    <div style={{ display: "flex", minHeight: "100vh", background: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)" }}>
+      <aside style={{ width: 220, background: "#1c1410", borderRight: "1px solid #2d1f14", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
+        <div style={{ padding: "18px 16px 14px", borderBottom: "1px solid #2d1f14", cursor: "pointer" }} onClick={goInicio}>
+          <div style={{ fontSize: 10, color: "#8a6a4a", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>Colegio activo</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#f5e6d0", lineHeight: 1.3 }}>{col?.nombre}</div>
         </div>
         <nav style={{ flex: 1, padding: "12px 9px", display: "flex", flexDirection: "column", gap: 3 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: activeTab === t.id ? 700 : 500, transition: "all .15s", background: activeTab === t.id ? C.accentDim : "transparent", color: activeTab === t.id ? C.accentL : C.dim }}>
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: activeTab === t.id ? 700 : 500, transition: "all .15s", background: activeTab === t.id ? "#f9731622" : "transparent", color: activeTab === t.id ? "#fb923c" : "#8a6a4a" }}>
               <span style={{ fontSize: 16 }}>{t.icon}</span>{t.label}
             </button>
           ))}
         </nav>
-        <div style={{ padding: "10px 9px", borderTop: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ padding: "10px 9px", borderTop: "1px solid #2d1f14", display: "flex", flexDirection: "column", gap: 6 }}>
           <button onClick={handleExport} disabled={exportando}
             style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: `1px solid #22c55e33`, cursor: exportando ? "wait" : "pointer", fontSize: 13, fontWeight: 700, background: "#22c55e12", color: "#22c55e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#22c55e22"; }}
@@ -3214,27 +3237,27 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
             {exportando ? "Generando..." : "Exportar Excel"}
           </button>
           <button onClick={onSalir}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             ← Cambiar colegio
           </button>
           <button onClick={() => setShowReporte(true)}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = C.yellow; }}
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             🐛 Reportar falla
           </button>
           {isAdmin && (
           <button onClick={() => setShowPanel(true)}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = C.accent; }}
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             📋 Ver fallas
           </button>
           )}
           <button onClick={onLogout}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             🚪 Cerrar sesión
@@ -3319,7 +3342,7 @@ export default function App() {
   }, []);
 
   if (loading) return (
-    <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", color: C.muted, fontSize: 16 }}>Cargando...</div>
+    <div style={{ background: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#92400e", fontSize: 16 }}>Cargando...</div>
   );
   return (
     <ErrorBoundary>
