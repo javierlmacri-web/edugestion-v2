@@ -97,7 +97,7 @@ const Box = ({ children, style, onClick, hi }) => {
     style={{ background: h ? "#ffffffee" : "#ffffffcc", border: `1px solid ${h ? "#ea580c55" : "#ffffff80"}`, borderRadius: 16, padding: 20, cursor: onClick ? "pointer" : undefined, transition: "all .18s", backdropFilter: "blur(8px)", boxShadow: "0 2px 12px #f9731614", ...style }}>{children}</div>;
 };
 const Pop = ({ title, onClose, children, wide }) => (
-  <div style={{ position: "fixed", inset: 0, background: "#00000066", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20, backdropFilter: "blur(4px)" }}>
+  <div style={{ position: "fixed", inset: 0, background: "#00000066", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20, backdropFilter: "blur(4px)" }}>
     <div style={{ background: "#ffffffee", border: "1px solid #ffffff90", borderRadius: 20, padding: 28, width: "100%", maxWidth: wide ? 680 : 500, maxHeight: "92vh", overflowY: "auto", backdropFilter: "blur(16px)", boxShadow: "0 20px 60px #0000002a" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
         <h3 style={{ color: "#1c1410", margin: 0, fontSize: 17, fontWeight: 800 }}>{title}</h3>
@@ -3200,7 +3200,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
       </main>
 
       {/* Tab bar inferior móvil */}
-      <nav style={{ background: C.card, borderTop: `1px solid ${C.border}`, display: "flex", position: "sticky", bottom: 0, zIndex: 100 }}>
+      <nav style={{ background: "#1c1410", borderTop: "1px solid #2d1f14", display: "flex", position: "sticky", bottom: 0, zIndex: 100 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => handleTab(t.id)}
             style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px", border: "none", cursor: "pointer", background: "transparent", color: activeTab === t.id ? C.accentL : C.dim, borderTop: `2px solid ${activeTab === t.id ? C.accent : "transparent"}` }}>
@@ -3263,12 +3263,12 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
             🚪 Cerrar sesión
           </button>
           {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
-          {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
         </div>
       </aside>
-      <main style={{ flex: 1, padding: 32, overflowY: "auto" }}>
+      <main style={{ flex: 1, padding: 32, overflowY: "auto", background: "#ffffff14" }}>
         <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
+      {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
     </div>
   );
 };
