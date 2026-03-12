@@ -1733,7 +1733,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
         </Pop> )}
     </div> ); };
 const Materias = ({ data, setData, colegioId }) => {
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "" });
+  const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "", division: "" });
   const [editId, setEditId] = useState(null);
   const materias = data.materias.filter(m => m.colegioId === colegioId);
   if (materiaSeleccionada) {
@@ -1743,15 +1743,15 @@ const Materias = ({ data, setData, colegioId }) => {
     if (!form.nombre.trim()) return;
     if (editId) setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? { ...m, ...form } : m) }));
     else setData(d => ({ ...d, materias: [...d.materias, { id: uid(), colegioId, ...form }] }));
-    setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "" }); };
+    setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "", division: "" }); };
   const del = (id) => { if (!confirm("¿Eliminar materia?")) return; setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) })); };
 
-  const edit = (m) => { setForm({ nombre: m.nombre, descripcion: m.descripcion || "" }); setEditId(m.id); setPop(true); };
+  const edit = (m) => { setForm({ nombre: m.nombre, descripcion: m.descripcion || "", division: m.division || "" }); setEditId(m.id); setPop(true); };
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 800 }}>📚 Materias</h2>
-        <Btn onClick={() => { setForm({ nombre: "", descripcion: "" }); setEditId(null); setPop(true); }}>+ Nueva Materia</Btn>
+        <Btn onClick={() => { setForm({ nombre: "", descripcion: "", division: "" }); setEditId(null); setPop(true); }}>+ Nueva Materia</Btn>
       </div>
       {materias.length === 0 ? (
         <Empty icon="📚" msg="No hay materias en este colegio. Creá la primera para empezar." />
@@ -1767,6 +1767,7 @@ const Materias = ({ data, setData, colegioId }) => {
                     <div style={{ width: 42, height: 42, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>📚</div>
                     <div>
                       <div style={{ color: C.text, fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
+                      {m.division && <div style={{ color: C.accentL, fontSize: 11, fontWeight: 700, marginTop: 2 }}>📋 {m.division}</div>}
                       {m.descripcion && <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>{m.descripcion}</div>} </div> </div> <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 8 }}>
                     <div style={{ fontSize: 26, fontWeight: 900, color: nc(prom) }}>{prom ?? "—"}</div>
                     <div style={{ fontSize: 11, color: C.muted }}>promedio</div> </div> </div> <div style={{ display: "flex", gap: 16, fontSize: 12, color: C.dim }}>
@@ -1785,6 +1786,24 @@ const Materias = ({ data, setData, colegioId }) => {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <Inp label="Nombre *" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Economía y Administración" />
             <Inp label="Descripción (opcional)" value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))} placeholder="Descripción breve..." />
+            <Sel label="Curso / Grado" value={form.division} onChange={e => setForm(f => ({ ...f, division: e.target.value }))}>
+              <option value="">-- Seleccionar --</option>
+              <optgroup label="1º Año">
+                <option value="1° Año - División 1">1° Año - División 1</option>
+                <option value="1° Año - División 2">1° Año - División 2</option>
+                <option value="1° Año - División 3">1° Año - División 3</option>
+              </optgroup>
+              <optgroup label="2º y 3º Año">
+                <option value="2° y 3° Año - División 1">2° y 3° Año - División 1</option>
+                <option value="2° y 3° Año - División 2">2° y 3° Año - División 2</option>
+                <option value="2° y 3° Año - División 3">2° y 3° Año - División 3</option>
+              </optgroup>
+              <optgroup label="4º y 5º Año">
+                <option value="4° y 5° Año - División 1">4° y 5° Año - División 1</option>
+                <option value="4° y 5° Año - División 2">4° y 5° Año - División 2</option>
+                <option value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
+              </optgroup>
+            </Sel>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <Btn v="ghost" onClick={() => { setPop(false); setEditId(null); }}>Cancelar</Btn>
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
