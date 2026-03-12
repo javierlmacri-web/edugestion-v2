@@ -2715,7 +2715,8 @@ const Documentos = ({ data, setData, colegioId }) => {
           console.log("Claude detectó → nota:", d.nota, "| tipo:", d.tipo);
           const notaDetectada = d.nota || "";
           const tipo = d.tipo || "documento";
-          resolve({ nombre: cleanText, tipo, descripcion: tipo, nota: notaDetectada });
+          const materiaDetectada = d.materiaDetectada || "";
+          resolve({ nombre: cleanText, tipo, descripcion: tipo, nota: notaDetectada, materiaDetectada });
         } catch(err) { console.log("Error:", err.message); resolve({ nombre: "", tipo: "documento", descripcion: "" }); }
       };
       reader.readAsDataURL(file);
@@ -2747,8 +2748,19 @@ const Documentos = ({ data, setData, colegioId }) => {
       });
       console.log("Alumno encontrado:", alumnoEncontrado?.apellido, alumnoEncontrado?.nombre, "| texto:", analisis.nombre?.slice(0,30));
       const alumnoIns = alumnoEncontrado ? data.inscripciones.filter(i => i.alumnoId === alumnoEncontrado.id) : [];
-      const materiaIdSugerida = alumnoIns.length === 1 ? alumnoIns[0].materiaId : "";
-      queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "", notaDetectada: analisis.nota || "", materiaId: materiaIdSugerida });
+      // Buscar materia por nombre detectado
+      let materiaIdSugerida = "";
+      if (analisis.materiaDetectada) {
+        const nombreDet = analisis.materiaDetectada.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+        const matEncontrada = data.materias.find(m => {
+          const mn = (m.nombre || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+          return mn.includes(nombreDet.slice(0,5)) || nombreDet.includes(mn.slice(0,5));
+        });
+        if (matEncontrada) materiaIdSugerida = matEncontrada.id;
+      }
+      // Si no se encontró por nombre pero el alumno tiene una sola materia, usarla
+      if (!materiaIdSugerida && alumnoIns.length === 1) materiaIdSugerida = alumnoIns[0].materiaId;
+      queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "", notaDetectada: analisis.nota || "", materiaId: materiaIdSugerida, materiaSugerida: analisis.materiaDetectada });
     }
     setConfirmQueue(queue);
     setProcesando(false);
@@ -2941,7 +2953,8 @@ const Documentos = ({ data, setData, colegioId }) => {
                           style={{ width: 70, background: "transparent", border: "none", color: item.notaDetectada ? C.green : C.accentL, fontSize: 18, fontWeight: 900, textAlign: "center", outline: "none" }} />
                         {item.notaDetectada ? <span style={{ fontSize: 11, color: C.green }}>✓ detectada</span> : <span style={{ fontSize: 11, color: C.muted }}>ingresá</span>}
                       </div>
-                    {item.alumnoSugerido && <div style={{ color: C.accentL, fontSize: 12, marginTop: 6 }}>✨ IA sugirió: {item.alumnoSugerido.apellido}, {item.alumnoSugerido.nombre}</div>}
+                    {item.alumnoSugerido && <div style={{ color: C.accentL, fontSize: 12, marginTop: 4 }}>✨ IA sugirió alumno: {item.alumnoSugerido.apellido}, {item.alumnoSugerido.nombre}</div>}
+                    {item.materiaSugerida && <div style={{ color: "#16a34a", fontSize: 12, marginTop: 2 }}>📚 IA detectó materia: {item.materiaSugerida}</div>}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <Btn onClick={() => confirmarYSubir(item, item.alumnoId, item.analisis.tipo||"documento")} disabled={subiendo}>✓ Confirmar</Btn>
