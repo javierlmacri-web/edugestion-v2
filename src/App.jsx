@@ -1653,7 +1653,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                     <input type="number" min="0" max="10" step="0.1" placeholder="—"
                       value={notasMasivas[al.id] || ""}
                       onChange={e => setNotasMasivas(n => ({ ...n, [al.id]: e.target.value }))}
-                      style={{ width: 70, background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
+                      style={{ width: 70, background: "#ffffffcc", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
                       onFocus={e => e.target.style.borderColor = C.accent}
                       onBlur={e => e.target.style.borderColor = C.border} />
                   </div>
@@ -1682,7 +1682,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                       {al.curso && <span style={{ color: "#92400e", fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
                     </div>
                     <select value={tipoAct[al.id]||"positiva"} onChange={e => setTipoAct(t => ({...t, [al.id]: e.target.value}))}
-                      style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none", cursor: "pointer" }}>
+                      style={{ background: "#ffffffcc", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none", cursor: "pointer" }}>
                       <option value="positiva">✅ Positiva</option>
                       <option value="negativa">❌ Negativa</option>
                       <option value="participacion">🙋 Participación</option>
@@ -2301,7 +2301,7 @@ const Eventos = ({ data, setData, colegioId }) => {
             <Inp label="Participantes" value={form.participantes} onChange={e=>setForm(f=>({...f,participantes:e.target.value}))} placeholder="Ej: Directivos, docentes, padres..." />
             <div style={{display:"flex",flexDirection:"column",gap:5}}>
               <label style={{fontSize:11,color:C.dim,fontWeight:700,textTransform:"uppercase",letterSpacing:1.1}}>Descripcion / Lo sucedido</label>
-              <textarea value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Describí lo que ocurrio, acuerdos, temas..." rows={6} style={{background:"#090b12",border:"1px solid "+C.border,borderRadius:10,padding:"10px 14px",color:C.text,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.7}} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border} />
+              <textarea value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Describí lo que ocurrio, acuerdos, temas..." rows={6} style={{background:"#ffffffcc",border:"1px solid "+C.border,borderRadius:10,padding:"10px 14px",color:"#1c1410",fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.7}} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border} />
             </div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <Btn v="ghost" onClick={()=>{setPop(false);setEditId(null);}}>Cancelar</Btn>
@@ -2899,12 +2899,12 @@ const Documentos = ({ data, setData, colegioId }) => {
                     {item.analisis.descripcion && <div style={{ color: "#92400e", fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                       <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
-                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
+                        style={{ background: "#ffffffcc", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
                         <option value="">— Sin alumno asignado —</option>
                         {alumnos.map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
                       </select>
                       <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, tipoSeleccionado: e.target.value, analisis:{...x.analisis, tipo: e.target.value, descripcion: e.target.value}} : x))}
-                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
+                        style={{ background: "#ffffffcc", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
                         <option value="examen">📝 Examen</option>
                         <option value="trabajo">📋 Trabajo práctico</option>
                         <option value="documento">📄 Documento</option>
