@@ -1,4 +1,4 @@
-export default async function handler(req, res) {//hola
+export default async function handler(req, res) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -81,10 +81,16 @@ export default async function handler(req, res) {//hola
       }
     }
 
-    // Validar rango 0-10
+    // Validar rango 0-10 — si el número es mayor a 10 y tiene 2 dígitos, correr la coma (75 → 7.5)
     if (nota) {
       const n = parseFloat(nota);
-      if (isNaN(n) || n < 0 || n > 10) nota = "";
+      if (!isNaN(n) && n > 10) {
+        const s = String(Math.round(n));
+        if (s.length === 2) nota = s[0] + "." + s[1]; // 75 → 7.5
+        else nota = ""; // número raro, descartar
+      } else if (isNaN(n) || n < 0) {
+        nota = "";
+      }
     }
 
     // ─── Detección de materia ────────────────────────────────────────────────
