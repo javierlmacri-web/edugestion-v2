@@ -257,7 +257,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   // Expose setVista for cross-component agenda navigation
   useEffect(() => {
     window.__openAgenda = () => setVista("agenda");
-    return () => { delete window.__openAgenda; };
+    window.__getDashVista = () => vista;
+    return () => { delete window.__openAgenda; delete window.__getDashVista; };
   }, []);
 
   const col  = data.colegios.find(c => c.id === colegioId);
@@ -3062,6 +3063,9 @@ const Documentos = ({ data, setData, colegioId }) => {
 
 const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [tab, setTab] = useState(() => localStorage.getItem("lastTab") || "dashboard");
+  const [dashVista, setDashVista] = useState(null);
+  // activeTab: "agenda" when on dashboard with agenda vista open
+  const activeTab = (tab === "dashboard" && dashVista === "agenda") ? "agenda" : tab;
   const [showReporte, setShowReporte] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -3087,14 +3091,14 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
     if (id === "agenda") {
       setTab("dashboard"); setDashKey(k => k+1); setMenuOpen(false);
       localStorage.setItem("lastTab", "dashboard");
-      // Signal Dashboard to open agenda vista via dashKey change
+      setDashVista("agenda");
       setTimeout(() => window.__openAgenda?.(), 50);
       return;
     }
-    if (id === "dashboard") { goInicio(); }
-    else if (id === tab) { setTabKey(k => k + 1); setMenuOpen(false); }
+    if (id === "dashboard") { setDashVista(null); goInicio(); }
+    else if (id === tab) { setDashVista(null); setTabKey(k => k + 1); setMenuOpen(false); }
     else {
-      setTab(id); setTabKey(k => k + 1); setMenuOpen(false);
+      setDashVista(null); setTab(id); setTabKey(k => k + 1); setMenuOpen(false);
       window.history.pushState({ tab: id }, "", "#" + id);
       localStorage.setItem("lastTab", id);
     }
@@ -3140,7 +3144,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
         <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4, zIndex: 99 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? C.accentDim : "transparent", color: tab === t.id ? C.accentL : C.dim, textAlign: "left" }}>
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: activeTab === t.id ? 700 : 500, background: activeTab === t.id ? C.accentDim : "transparent", color: activeTab === t.id ? C.accentL : C.dim, textAlign: "left" }}>
               <span style={{ fontSize: 20 }}>{t.icon}</span>{t.label}
             </button>
           ))}
@@ -3176,9 +3180,9 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
       <nav style={{ background: C.card, borderTop: `1px solid ${C.border}`, display: "flex", position: "sticky", bottom: 0, zIndex: 100 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => handleTab(t.id)}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px", border: "none", cursor: "pointer", background: "transparent", color: tab === t.id ? C.accentL : C.dim, borderTop: `2px solid ${tab === t.id ? C.accent : "transparent"}` }}>
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px", border: "none", cursor: "pointer", background: "transparent", color: activeTab === t.id ? C.accentL : C.dim, borderTop: `2px solid ${activeTab === t.id ? C.accent : "transparent"}` }}>
             <span style={{ fontSize: 20 }}>{t.icon}</span>
-            <span style={{ fontSize: 10, fontWeight: tab === t.id ? 700 : 500 }}>{t.label}</span>
+            <span style={{ fontSize: 10, fontWeight: activeTab === t.id ? 700 : 500 }}>{t.label}</span>
           </button>
         ))}
       </nav>
@@ -3196,7 +3200,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
         <nav style={{ flex: 1, padding: "12px 9px", display: "flex", flexDirection: "column", gap: 3 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: tab === t.id ? 700 : 500, transition: "all .15s", background: tab === t.id ? C.accentDim : "transparent", color: tab === t.id ? C.accentL : C.dim }}>
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: activeTab === t.id ? 700 : 500, transition: "all .15s", background: activeTab === t.id ? C.accentDim : "transparent", color: activeTab === t.id ? C.accentL : C.dim }}>
               <span style={{ fontSize: 16 }}>{t.icon}</span>{t.label}
             </button>
           ))}
