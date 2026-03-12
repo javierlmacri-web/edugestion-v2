@@ -78,13 +78,13 @@ const deleteRow = async (table, id) => { try { const {error} = await supabase.fr
 const Inp = ({ label, ...p }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
     {label && <label style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
-    <input {...p} style={{ background: "#ffffff99", border: "1px solid #f9731650", borderRadius: 10, padding: "10px 14px", color: "#1c1410", fontSize: 14, outline: "none", transition: "border .2s", ...p.style }}
+    <input {...p} style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 10, padding: "10px 14px", color: "#1c1410", fontSize: 14, outline: "none", transition: "border .2s", ...p.style }}
       onFocus={e => e.target.style.borderColor = "#ea580c"} onBlur={e => e.target.style.borderColor = "#f9731650"} />
   </div> );
 const Sel = ({ label, children, ...p }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
     {label && <label style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
-    <select {...p} style={{ background: "#ffffff99", border: "1px solid #f9731650", borderRadius: 10, padding: "10px 14px", color: "#1c1410", fontSize: 14, outline: "none", cursor: "pointer", ...p.style }}>{children}</select>
+    <select {...p} style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 10, padding: "10px 14px", color: "#1c1410", fontSize: 14, outline: "none", cursor: "pointer", ...p.style }}>{children}</select>
   </div> );
 const Btn = ({ children, v = "primary", sm, ...p }) => {
   const base = { borderRadius: 10, fontWeight: 700, cursor: "pointer", transition: "all .2s", border: "none", fontSize: sm ? 12 : 14, padding: sm ? "6px 13px" : "10px 20px", display: "inline-flex", alignItems: "center", gap: 6 };
@@ -592,12 +592,12 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:22 }}>
           <select value={filtroMat} onChange={e => setFiltroMat(e.target.value)}
             style={{ background:"#07101e", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:filtroMat?C.text:C.dim, fontSize:13, outline:"none" }}>
-            <option value="">📚 Todas las materias</option>
+            <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">📚 Todas las materias</option>
             {mats.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
           </select>
           <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
             style={{ background:"#07101e", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:filtroEstado?C.text:C.dim, fontSize:13, outline:"none" }}>
-            <option value="">🔘 Todos los estados</option>
+            <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">🔘 Todos los estados</option>
             {ESTADOS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </div>
@@ -629,11 +629,11 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                 <Inp label="Fecha *" type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha:e.target.value }))} />
               </div>
               <Sel label="Materia (opcional)" value={form.materiaId} onChange={e => setForm(f => ({ ...f, materiaId:e.target.value }))}>
-                <option value="">— Sin materia específica —</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Sin materia específica —</option>
                 {mats.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
               </Sel>
               <Sel label="Alumno específico (opcional)" value={form.alumnoId} onChange={e => setForm(f => ({ ...f, alumnoId:e.target.value }))}>
-                <option value="">— Para todo el curso —</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Para todo el curso —</option>
                 {[...als].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
               </Sel>
               <Inp label="Descripción / Temas" value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion:e.target.value }))} placeholder="Ej: Unidades 1, 2 y 3 — págs. 40-80" />
@@ -1314,9 +1314,9 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                             borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none"
                           }}
                         >
-                          <option value="pendiente">pendiente</option>
-                          <option value="entregado">entregado</option>
-                          <option value="calificado">calificado</option>
+                          <option style={{ background: "#fff8f0", color: "#1c1410" }} value="pendiente">pendiente</option>
+                          <option style={{ background: "#fff8f0", color: "#1c1410" }} value="entregado">entregado</option>
+                          <option style={{ background: "#fff8f0", color: "#1c1410" }} value="calificado">calificado</option>
                         </select>
                       </div>
                     );
@@ -1438,12 +1438,12 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <Inp label="Nota * (0-10)" type="number" min="0" max="10" step="0.1" value={formNota.nota} onChange={e => setFormNota(f => ({ ...f, nota: e.target.value }))} placeholder="Ej: 8.5" />
               <Sel label="Tipo de evaluación" value={formNota.tipo} onChange={e => setFormNota(f => ({ ...f, tipo: e.target.value }))}>
-                <option value="parcial">Parcial</option>
-                <option value="final">Final</option>
-                <option value="trabajo">Trabajo práctico</option>
-                <option value="oral">Oral</option>
-                <option value="recuperatorio">Recuperatorio</option>
-                <option value="otro">Otro</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="parcial">Parcial</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="final">Final</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="trabajo">Trabajo práctico</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="oral">Oral</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="recuperatorio">Recuperatorio</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="otro">Otro</option>
               </Sel></div>
             <Inp label="Descripción" value={formNota.descripcion} onChange={e => setFormNota(f => ({ ...f, descripcion: e.target.value }))} placeholder="Ej: Primer parcial, unidades 1-3" />
             <Inp label="Fecha" type="date" value={formNota.fecha} onChange={e => setFormNota(f => ({ ...f, fecha: e.target.value }))} />
@@ -1458,11 +1458,11 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
             <div style={{ background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, padding: "10px 14px", fontSize: 13, color: C.accentL }}>
               📚 {materia?.nombre} · 👤 {alumno?.nombre} {alumno?.apellido}</div>
             <Sel label="Tipo de actividad *" value={formAct.tipo} onChange={e => setFormAct(f => ({ ...f, tipo: e.target.value }))}>
-              <option value="positiva">✅ Positiva</option>
-              <option value="negativa">❌ Negativa</option>
-              <option value="neutral">⚪ Neutral</option>
-              <option value="participacion">🙋 Participación activa</option>
-              <option value="observacion">📌 Observación docente</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="positiva">✅ Positiva</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="negativa">❌ Negativa</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="neutral">⚪ Neutral</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="participacion">🙋 Participación activa</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="observacion">📌 Observación docente</option>
             </Sel>
             <Inp label="Descripción *" value={formAct.descripcion} onChange={e => setFormAct(f => ({ ...f, descripcion: e.target.value }))} placeholder="Ej: Participó activamente en la resolución..." />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -1481,10 +1481,10 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               📚 {materia?.nombre} · 👤 {alumno?.nombre} {alumno?.apellido}</div>
             <Inp label="Fecha *" type="date" value={formAsist.fecha} onChange={e => setFormAsist(f => ({ ...f, fecha: e.target.value }))} />
             <Sel label="Estado *" value={formAsist.estado} onChange={e => setFormAsist(f => ({ ...f, estado: e.target.value }))}>
-              <option value="presente">✅ Presente</option>
-              <option value="ausente">❌ Ausente</option>
-              <option value="tardanza">🕐 Tardanza</option>
-              <option value="justificado">📋 Ausente justificado</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="presente">✅ Presente</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="ausente">❌ Ausente</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="tardanza">🕐 Tardanza</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="justificado">📋 Ausente justificado</option>
             </Sel>
             <Inp label="Observación (opcional)" value={formAsist.observacion} onChange={e => setFormAsist(f => ({ ...f, observacion: e.target.value }))} placeholder="Ej: Llegó 15 min tarde, con justificativo médico..." />
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -1632,12 +1632,12 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <Sel label="Tipo de evaluación" value={tipoMasivo} onChange={e => setTipoMasivo(e.target.value)}>
-                <option value="parcial">Parcial</option>
-                <option value="final">Final</option>
-                <option value="trabajo">Trabajo práctico</option>
-                <option value="oral">Oral</option>
-                <option value="recuperatorio">Recuperatorio</option>
-                <option value="otro">Otro</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="parcial">Parcial</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="final">Final</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="trabajo">Trabajo práctico</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="oral">Oral</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="recuperatorio">Recuperatorio</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="otro">Otro</option>
               </Sel>
               <Inp label="Fecha" type="date" value={fechaMasiva} onChange={e => setFechaMasiva(e.target.value)} />
             </div>
@@ -1683,12 +1683,12 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                     </div>
                     <select value={tipoAct[al.id]||"positiva"} onChange={e => setTipoAct(t => ({...t, [al.id]: e.target.value}))}
                       style={{ background: "#ffffffcc", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none", cursor: "pointer" }}>
-                      <option value="positiva">✅ Positiva</option>
-                      <option value="negativa">❌ Negativa</option>
-                      <option value="participacion">🙋 Participación</option>
-                      <option value="tarea">📚 Tarea</option>
-                      <option value="comportamiento">⚠️ Comportamiento</option>
-                      <option value="otro">📌 Otro</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="positiva">✅ Positiva</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="negativa">❌ Negativa</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="participacion">🙋 Participación</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="tarea">📚 Tarea</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="comportamiento">⚠️ Comportamiento</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="otro">📌 Otro</option>
                     </select>
                   </div>
                 ))}
@@ -1756,21 +1756,21 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13 }}>
                   <Inp label="DNI" value={formNuevo.dni} onChange={e => setFormNuevo(f => ({ ...f, dni: e.target.value }))} placeholder="40123456" />
                   <Sel label="Curso / Grado" value={formNuevo.curso} onChange={e => setFormNuevo(f => ({ ...f, curso: e.target.value }))}>
-                    <option value="">-- Seleccionar --</option>
+                    <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">-- Seleccionar --</option>
                     <optgroup label="1° Año">
-                      <option value="1° Año - División 1">1° Año - División 1</option>
-                      <option value="1° Año - División 2">1° Año - División 2</option>
-                      <option value="1° Año - División 3">1° Año - División 3</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="1° Año - División 1">1° Año - División 1</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="1° Año - División 2">1° Año - División 2</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="1° Año - División 3">1° Año - División 3</option>
                     </optgroup>
                     <optgroup label="2° y 3° Año">
-                      <option value="2° y 3° Año - División 1">2° y 3° Año - División 1</option>
-                      <option value="2° y 3° Año - División 2">2° y 3° Año - División 2</option>
-                      <option value="2° y 3° Año - División 3">2° y 3° Año - División 3</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="2° y 3° Año - División 1">2° y 3° Año - División 1</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="2° y 3° Año - División 2">2° y 3° Año - División 2</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="2° y 3° Año - División 3">2° y 3° Año - División 3</option>
                     </optgroup>
                     <optgroup label="4° y 5° Año">
-                      <option value="4° y 5° Año - División 1">4° y 5° Año - División 1</option>
-                      <option value="4° y 5° Año - División 2">4° y 5° Año - División 2</option>
-                      <option value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 1">4° y 5° Año - División 1</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 2">4° y 5° Año - División 2</option>
+                      <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
                     </optgroup>
                   </Sel>
                 </div>
@@ -1838,21 +1838,21 @@ const Materias = ({ data, setData, colegioId }) => {
             <Inp label="Nombre *" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Economía y Administración" />
             <Inp label="Descripción (opcional)" value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))} placeholder="Descripción breve..." />
             <Sel label="Curso / Grado" value={form.division} onChange={e => setForm(f => ({ ...f, division: e.target.value }))}>
-              <option value="">-- Seleccionar --</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">-- Seleccionar --</option>
               <optgroup label="1º Año">
-                <option value="1° Año - División 1">1° Año - División 1</option>
-                <option value="1° Año - División 2">1° Año - División 2</option>
-                <option value="1° Año - División 3">1° Año - División 3</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="1° Año - División 1">1° Año - División 1</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="1° Año - División 2">1° Año - División 2</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="1° Año - División 3">1° Año - División 3</option>
               </optgroup>
               <optgroup label="2º y 3º Año">
-                <option value="2° y 3° Año - División 1">2° y 3° Año - División 1</option>
-                <option value="2° y 3° Año - División 2">2° y 3° Año - División 2</option>
-                <option value="2° y 3° Año - División 3">2° y 3° Año - División 3</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="2° y 3° Año - División 1">2° y 3° Año - División 1</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="2° y 3° Año - División 2">2° y 3° Año - División 2</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="2° y 3° Año - División 3">2° y 3° Año - División 3</option>
               </optgroup>
               <optgroup label="4º y 5º Año">
-                <option value="4° y 5° Año - División 1">4° y 5° Año - División 1</option>
-                <option value="4° y 5° Año - División 2">4° y 5° Año - División 2</option>
-                <option value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 1">4° y 5° Año - División 1</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 2">4° y 5° Año - División 2</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
               </optgroup>
             </Sel>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -2080,21 +2080,21 @@ const Alumnos = ({ data, setData, colegioId }) => {
               <Inp label="Fecha de nacimiento" type="date" value={form.fechaNac} onChange={e => setForm(f => ({ ...f, fechaNac: e.target.value }))} />
             </div>
             <Sel label="Curso / Grado" value={form.curso} onChange={e => setForm(f => ({ ...f, curso: e.target.value }))}>
-              <option value="">-- Seleccionar --</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">-- Seleccionar --</option>
               <optgroup label="1° Año">
-                <option value="1° Año - División 1">1° Año - División 1</option>
-                <option value="1° Año - División 2">1° Año - División 2</option>
-                <option value="1° Año - División 3">1° Año - División 3</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="1° Año - División 1">1° Año - División 1</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="1° Año - División 2">1° Año - División 2</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="1° Año - División 3">1° Año - División 3</option>
               </optgroup>
               <optgroup label="2° y 3° Año">
-                <option value="2° y 3° Año - División 1">2° y 3° Año - División 1</option>
-                <option value="2° y 3° Año - División 2">2° y 3° Año - División 2</option>
-                <option value="2° y 3° Año - División 3">2° y 3° Año - División 3</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="2° y 3° Año - División 1">2° y 3° Año - División 1</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="2° y 3° Año - División 2">2° y 3° Año - División 2</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="2° y 3° Año - División 3">2° y 3° Año - División 3</option>
               </optgroup>
               <optgroup label="4° y 5° Año">
-                <option value="4° y 5° Año - División 1">4° y 5° Año - División 1</option>
-                <option value="4° y 5° Año - División 2">4° y 5° Año - División 2</option>
-                <option value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 1">4° y 5° Año - División 1</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 2">4° y 5° Año - División 2</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
               </optgroup>
             </Sel>
             <Inp label="Email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="juan@email.com" />
@@ -2540,9 +2540,9 @@ const Reportes = ({ data, setData, onClose }) => {
           <Inp label="Descripción *" value={form.descripcion} onChange={e => setForm(f => ({...f, descripcion: e.target.value}))} placeholder="Describí el problema con detalle..." />
           <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
             <Sel label="Prioridad" value={form.prioridad} onChange={e => setForm(f => ({...f, prioridad: e.target.value}))}>
-              <option value="alta">🔴 Alta</option>
-              <option value="media">🟡 Media</option>
-              <option value="baja">🟢 Baja</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="alta">🔴 Alta</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="media">🟡 Media</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="baja">🟢 Baja</option>
             </Sel>
             <Btn onClick={save}>+ Agregar reporte</Btn>
           </div>
@@ -2899,16 +2899,16 @@ const Documentos = ({ data, setData, colegioId }) => {
                     {item.analisis.descripcion && <div style={{ color: "#92400e", fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                       <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
-                        style={{ background: "#ffffffcc", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
-                        <option value="">— Sin alumno asignado —</option>
+                        style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
+                        <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Sin alumno asignado —</option>
                         {alumnos.map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
                       </select>
                       <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, tipoSeleccionado: e.target.value, analisis:{...x.analisis, tipo: e.target.value, descripcion: e.target.value}} : x))}
-                        style={{ background: "#ffffffcc", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
-                        <option value="examen">📝 Examen</option>
-                        <option value="trabajo">📋 Trabajo práctico</option>
-                        <option value="documento">📄 Documento</option>
-                        <option value="dni">🪪 DNI/Documentación</option>
+                        style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
+                        <option style={{ background: "#fff8f0", color: "#1c1410" }} value="examen">📝 Examen</option>
+                        <option style={{ background: "#fff8f0", color: "#1c1410" }} value="trabajo">📋 Trabajo práctico</option>
+                        <option style={{ background: "#fff8f0", color: "#1c1410" }} value="documento">📄 Documento</option>
+                        <option style={{ background: "#fff8f0", color: "#1c1410" }} value="dni">🪪 DNI/Documentación</option>
                       </select>
                     </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, background: item.notaDetectada ? C.green+"22" : C.accentDim, border: `1px solid ${item.notaDetectada ? C.green+"44" : C.accent+"44"}`, borderRadius: 10, padding: "6px 12px" }}>
@@ -3062,20 +3062,20 @@ const Documentos = ({ data, setData, colegioId }) => {
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <Inp label="Nombre del archivo" value={editForm.nombre} onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))} />
           <Sel label="Tipo" value={editForm.tipo} onChange={e => setEditForm(f => ({ ...f, tipo: e.target.value }))}>
-            <option value="examen">📝 Examen</option>
-            <option value="trabajo">📋 Trabajo práctico</option>
-            <option value="documento">📄 Documento</option>
-            <option value="dni">🪪 DNI/Documentación</option>
+            <option style={{ background: "#fff8f0", color: "#1c1410" }} value="examen">📝 Examen</option>
+            <option style={{ background: "#fff8f0", color: "#1c1410" }} value="trabajo">📋 Trabajo práctico</option>
+            <option style={{ background: "#fff8f0", color: "#1c1410" }} value="documento">📄 Documento</option>
+            <option style={{ background: "#fff8f0", color: "#1c1410" }} value="dni">🪪 DNI/Documentación</option>
           </Sel>
           <Inp label="Nota (opcional, 0-10)" type="number" min="0" max="10" step="0.1" value={editForm.nota || ""} onChange={e => setEditForm(f => ({ ...f, nota: e.target.value }))} placeholder="Ej: 8.5 — dejá vacío para no registrar nota" />
           <Sel label="Alumno" value={editForm.alumno_id} onChange={e => setEditForm(f => ({ ...f, alumno_id: e.target.value }))}>
-            <option value="">— Sin alumno —</option>
+            <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Sin alumno —</option>
             {[...alumnos].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => (
               <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>
             ))}
           </Sel>
           <Sel label="Materia" value={editForm.materia_id} onChange={e => setEditForm(f => ({ ...f, materia_id: e.target.value }))}>
-            <option value="">— Sin materia —</option>
+            <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Sin materia —</option>
             {materias.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
           </Sel>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
