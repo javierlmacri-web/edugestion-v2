@@ -1808,10 +1808,10 @@ const Materias = ({ data, setData, colegioId }) => {
         if (nuevasInsc.length === 0) return d;
         // Guardar en Supabase en background
         Promise.all(nuevasInsc.map(i =>
-          supabase.from("inscripciones").insert({ id: i.id, materia_id: materiaId, alumno_id: i.alumnoId })
+          supabase.from("inscripciones").insert({ id: i.id, materia_id: materiaId, alumno_id: i.alumnoId, colegio_id: colegioId })
         )).then(results => {
           const errs = results.filter(r => r.error);
-          if (errs.length) console.error("Inscripcion auto error:", errs);
+          if (errs.length) console.error("Inscripcion auto error:", JSON.stringify(errs[0].error));
           else if (nuevasInsc.length > 0) alert(`✅ ${nuevasInsc.length} alumno(s) inscripto(s) automáticamente en "${form.nombre}" (División: ${form.division}).`);
         });
         return { ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] };
@@ -2049,10 +2049,10 @@ const Alumnos = ({ data, setData, colegioId }) => {
         }
         if (nuevasInsc.length) {
           Promise.all(nuevasInsc.map(i =>
-            supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: alumnoId })
+            supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: alumnoId, colegio_id: colegioId })
           )).then(results => {
             const errs = results.filter(r => r.error);
-            if (errs.length) console.error("Inscripcion auto alumno error:", errs);
+            if (errs.length) console.error("Inscripcion auto alumno error:", JSON.stringify(errs[0].error));
             else if (nuevasInsc.length > 0) alert(`✅ ${form.nombre} ${form.apellido} inscripto/a automáticamente en ${nuevasInsc.length} materia(s) del curso "${form.curso}".`);
           });
         }
