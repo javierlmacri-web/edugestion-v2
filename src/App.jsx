@@ -2762,7 +2762,6 @@ const Documentos = ({ data, setData, colegioId }) => {
     const { error } = await supabase.from("documentos").update({
       tipo: editForm.tipo,
       alumno_id: editForm.alumno_id || null,
-      materia_id: editForm.materia_id || null,
       nombre: editForm.nombre,
     }).eq("id", editDoc.id);
     if (error) { alert("Error: " + error.message); return; }
