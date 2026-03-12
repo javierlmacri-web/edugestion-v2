@@ -1270,7 +1270,24 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                             {ev.archivoUrl && <a href={ev.archivoUrl} target="_blank" rel="noreferrer" style={{ color: C.accentL, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>📎 {ev.archivoNombre||"Ver archivo"}</a>}
                           </div>
                         </div>
-                        <Tag color={ev.estado==="calificado"?C.green:ev.estado==="entregado"?C.blue:C.yellow}>{ev.estado}</Tag>
+                        <select
+                          value={ev.estado || "pendiente"}
+                          onChange={async e => {
+                            const nuevoEstado = e.target.value;
+                            await supabase.from("agenda").update({ estado: nuevoEstado }).eq("id", ev.id);
+                            setData(d => ({ ...d, agenda: d.agenda.map(x => x.id === ev.id ? { ...x, estado: nuevoEstado } : x) }));
+                          }}
+                          style={{
+                            background: ev.estado==="calificado" ? C.green+"22" : ev.estado==="entregado" ? C.blue+"22" : C.yellow+"22",
+                            color: ev.estado==="calificado" ? C.green : ev.estado==="entregado" ? C.blue : C.yellow,
+                            border: `1px solid ${ev.estado==="calificado" ? C.green : ev.estado==="entregado" ? C.blue : C.yellow}44`,
+                            borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none"
+                          }}
+                        >
+                          <option value="pendiente">pendiente</option>
+                          <option value="entregado">entregado</option>
+                          <option value="calificado">calificado</option>
+                        </select>
                       </div>
                     );
                   })}
