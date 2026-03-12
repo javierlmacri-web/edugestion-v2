@@ -572,7 +572,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
           <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
             <select value={ev.estado} onChange={e => cambiarEstado(ev.id, e.target.value)}
               style={{ background:est.color+"18", border:`1px solid ${est.color}44`, borderRadius:8, padding:"5px 10px", color:est.color, fontSize:12, fontWeight:700, cursor:"pointer", outline:"none" }}>
-              {ESTADOS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+              {ESTADOS.map(s => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={s.id} value={s.id}>{s.label}</option>)}
             </select>
             <div style={{ display:"flex", gap:6 }}>
               <Btn v="ghost" sm onClick={() => abrirEditar(ev)}>✏️</Btn>
@@ -593,12 +593,12 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
           <select value={filtroMat} onChange={e => setFiltroMat(e.target.value)}
             style={{ background:"#07101e", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:filtroMat?C.text:C.dim, fontSize:13, outline:"none" }}>
             <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">📚 Todas las materias</option>
-            {mats.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+            {mats.map(m => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={m.id} value={m.id}>{m.nombre}</option>)}
           </select>
           <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
             style={{ background:"#07101e", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:filtroEstado?C.text:C.dim, fontSize:13, outline:"none" }}>
             <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">🔘 Todos los estados</option>
-            {ESTADOS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+            {ESTADOS.map(s => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </div>
         {agendaAll.length === 0
@@ -624,17 +624,17 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
               <Inp label="Título *" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo:e.target.value }))} placeholder="Ej: Parcial Unidades 1-3" />
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                 <Sel label="Tipo *" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo:e.target.value }))}>
-                  {TIPOS.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
+                  {TIPOS.map(t => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
                 </Sel>
                 <Inp label="Fecha *" type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha:e.target.value }))} />
               </div>
               <Sel label="Materia (opcional)" value={form.materiaId} onChange={e => setForm(f => ({ ...f, materiaId:e.target.value }))}>
                 <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Sin materia específica —</option>
-                {mats.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+                {mats.map(m => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={m.id} value={m.id}>{m.nombre}</option>)}
               </Sel>
               <Sel label="Alumno específico (opcional)" value={form.alumnoId} onChange={e => setForm(f => ({ ...f, alumnoId:e.target.value }))}>
                 <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Para todo el curso —</option>
-                {[...als].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
+                {[...als].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
               </Sel>
               <Inp label="Descripción / Temas" value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion:e.target.value }))} placeholder="Ej: Unidades 1, 2 y 3 — págs. 40-80" />
               <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
@@ -650,7 +650,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                 {form.archivoUrl && !adjFile && <a href={form.archivoUrl} target="_blank" rel="noreferrer" style={{ color:C.accentL, fontSize:12, fontWeight:600, textDecoration:"none" }}>📎 Archivo actual: {form.archivoNombre||"ver"}</a>}
               </div>
               <Sel label="Estado" value={form.estado} onChange={e => setForm(f => ({ ...f, estado:e.target.value }))}>
-                {ESTADOS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                {ESTADOS.map(s => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={s.id} value={s.id}>{s.label}</option>)}
               </Sel>
               <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:4 }}>
                 <Btn v="ghost" onClick={cerrar}>Cancelar</Btn>
@@ -2901,7 +2901,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                       <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
                         style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
                         <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Sin alumno asignado —</option>
-                        {alumnos.map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
+                        {alumnos.map(a => <option key={a.id} value={a.id} style={{ background: "#fff8f0", color: "#1c1410" }}>{a.apellido}, {a.nombre}</option>)}
                       </select>
                       <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, tipoSeleccionado: e.target.value, analisis:{...x.analisis, tipo: e.target.value, descripcion: e.target.value}} : x))}
                         style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
@@ -3071,12 +3071,12 @@ const Documentos = ({ data, setData, colegioId }) => {
           <Sel label="Alumno" value={editForm.alumno_id} onChange={e => setEditForm(f => ({ ...f, alumno_id: e.target.value }))}>
             <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Sin alumno —</option>
             {[...alumnos].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => (
-              <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>
             ))}
           </Sel>
           <Sel label="Materia" value={editForm.materia_id} onChange={e => setEditForm(f => ({ ...f, materia_id: e.target.value }))}>
             <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Sin materia —</option>
-            {materias.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+            {materias.map(m => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={m.id} value={m.id}>{m.nombre}</option>)}
           </Sel>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
             <Btn v="ghost" onClick={() => setEditDoc(null)}>Cancelar</Btn>
