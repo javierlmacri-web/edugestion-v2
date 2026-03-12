@@ -20,7 +20,7 @@ const S = {
   ellip:  { whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }, };
 const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [], reportes: [], agenda: [] };
 
-const uid = () => Math.random().toString(36).slice
+const uid = () => crypto.randomUUID();
 
 const registrarHistorial = async (alumnoId, accion, detalle, eliminado = false) => {
   try {
