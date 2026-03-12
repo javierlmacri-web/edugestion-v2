@@ -1347,6 +1347,10 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <div style={{ fontSize: 13, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Documentos del alumno</div>
+                <label style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, color: "#fff", padding: "8px 16px", borderRadius: 10, cursor: "pointer", fontWeight: 700, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  ⬆️ Subir archivo
+                  <input type="file" multiple accept="image/*,.pdf" style={{ display: "none" }} onChange={e => { if (window.__subirParaAlumno) window.__subirParaAlumno(alumnoId, e.target.files); e.target.value=""; }} />
+                </label>
               </div>
               {docsAlumno.length === 0 ? (
                 <Empty icon="📁" msg="No hay archivos para este alumno." />
@@ -2635,6 +2639,14 @@ const Documentos = ({ data, setData, colegioId }) => {
     supabase.from("documentos").select("*").eq("colegio_id", colegioId).order("created_at", { ascending: false })
       .then(({ data: docs }) => { setArchivos(docs || []); setLoading(false); });
   }, [colegioId]);
+
+  useEffect(() => {
+    window.__subirParaAlumno = (alumnoId, files) => {
+      setFiltroAlumno(alumnoId);
+      subirArchivos(files);
+    };
+    return () => { delete window.__subirParaAlumno; };
+  }, [alumnos, data]);
 
   const tipoLabel = { examen: "📝 Examen", trabajo: "📋 Trabajo práctico", documento: "📄 Documento", dni: "🪪 DNI/Documentación" };
 
