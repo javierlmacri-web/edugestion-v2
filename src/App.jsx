@@ -1508,9 +1508,8 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
   const saveActividades = async () => {
     if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
     const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
-    for (const act of nuevas) {
-      await upsertRow("actividades", act, setData);
-    }
+    setData(d => ({ ...d, actividades: [...d.actividades, ...nuevas] }));
+    for (const act of nuevas) { await upsertRow("actividades", act); }
     setPopMasiva(false); setDescAct(""); setHoraAct(""); setTipoAct({});
     alert(`✅ Se registraron ${nuevas.length} actividades.`);
   };
@@ -2924,7 +2923,7 @@ const Documentos = ({ data, setData, colegioId }) => {
 
 
 const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
-  const [tab, setTab] = useState(() => localStorage.getItem("lastTab") || "dashboard");
+  const [tab, setTab] = useState(() => { const t = localStorage.getItem("lastTab") || "dashboard"; return t === "agenda" ? "dashboard" : t; });
   const [showReporte, setShowReporte] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -2933,7 +2932,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useIsMobile();
   const col = data.colegios.find(c => c.id === colegioId);
-  const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos };
+  const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos, agenda: Dashboard };
   // Agenda tab -> Dashboard con vista="agenda" preseleccionada
   const handleAgendaTab = () => {
     setTab("dashboard"); setDashKey(k => k+1); setMenuOpen(false);
@@ -2950,8 +2949,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
     if (id === "agenda") {
       setTab("dashboard"); setDashKey(k => k+1); setMenuOpen(false);
       localStorage.setItem("lastTab", "dashboard");
-      // Signal Dashboard to open agenda vista via dashKey change
-      setTimeout(() => window.__openAgenda?.(), 50);
+      setTimeout(() => window.__openAgenda?.(), 80);
       return;
     }
     if (id === "dashboard") { goInicio(); }
