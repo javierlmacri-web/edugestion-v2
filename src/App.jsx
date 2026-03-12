@@ -1,41 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-// ── ERROR BOUNDARY ──────────────────────────────────────────────────────────
-import React from "react";
-class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-  static getDerivedStateFromError(err) { return { hasError: true, error: err }; }
-  componentDidCatch(err, info) { console.error("🔴 App Error:", err, info); }
-  render() {
-    if (this.state.hasError) {
-      return React.createElement("div", {
-        style: { background: "#0b0f1a", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "monospace" }
-      }, React.createElement("div", {
-        style: { background: "#1a0505", border: "1px solid #ef4444", borderRadius: 12, padding: 24, maxWidth: 700, width: "100%" }
-      }, React.createElement("div", { style: { color: "#ef4444", fontWeight: 800, fontSize: 18, marginBottom: 12 } }, "🔴 Error en EduGestión"),
-         React.createElement("pre", { style: { color: "#fca5a5", fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-all", margin: 0 } },
-           String(this.state.error) + "\n\n" + (this.state.error?.stack || ""))
-      ));
-    }
-    return this.props.children;
-  }
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
-
 const supabase = createClient(
   "https://vqwosiwppdfsifwravsh.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxd29zaXdwcGRmc2lmd3JhdnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2Mzg0MTEsImV4cCI6MjA4ODIxNDQxMX0.z5zeE7-mNHe7Ie6AalyYBCmnMWXqLR-wGoL5HLjMmhw"
 );
 const C = {
-  bg: "#0b0f1a", card: "#111827", card2: "#161d2e", border: "#1e2a3d",
-  accent: "#22c55e", accentL: "#4ade80", accentDim: "#22c55e10", accentGlow: "#22c55e40",
-  green: "#34d399", red: "#ef4444", yellow: "#f97316", blue: "#60a5fa",
-  text: "#e8edf5", muted: "#1e2d42", dim: "#4d6480",
-  grad: "linear-gradient(135deg, #22c55e, #f97316)",
-  gradCard: "linear-gradient(160deg, #111827 0%, #161d2e 100%)",
-};
+  bg: "#0c0e16", card: "#151821", card2: "#1a1d2b", border: "#242736",
+  accent: "#6c63ff", accentL: "#9b95ff", accentDim: "#6c63ff1a", accentGlow: "#6c63ff40",
+  green: "#2dd4bf", red: "#f87171", yellow: "#fbbf24", blue: "#60a5fa",
+  text: "#e2e8f0", muted: "#4a5068", dim: "#8892a4", };
 const S = {
   row:    { display:"flex", alignItems:"center" },
   rowSB:  { display:"flex", justifyContent:"space-between", alignItems:"center" },
@@ -46,14 +20,14 @@ const S = {
   ellip:  { whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }, };
 const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [], reportes: [], agenda: [] };
 
-const uid = () => crypto.randomUUID();
+const uid = () => Math.random().toString(36).slice
 
 const registrarHistorial = async (alumnoId, accion, detalle, eliminado = false) => {
   try {
     const entry = { id: uid(), alumno_id: alumnoId, accion, detalle, eliminado, created_at: new Date().toISOString() };
     await supabase.from("historial").insert(entry);
   } catch(e) { console.log("Error historial:", e.message); }
-};
+};(2, 10);
 const fmt = (d) => { if (!d) return "—"; return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }); };
 
 const fmtT = (d) => new Date(d).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
@@ -61,8 +35,8 @@ const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).
 const nc = (n) => { if (n === null || n === undefined) return C.muted; const v = parseFloat(n); return v >= 7 ? C.green : v >= 5 ? C.yellow : C.red; };
 
 const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial",agenda:"agenda"};
-const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",created_at:"createdAt",archivo_url:"archivoUrl",archivo_nombre:"archivoNombre"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===undefined)out[k]=v;else if(m!==null)out[m]=v;} return out; };
-const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue;out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
+const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",created_at:null}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
+const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac"}; const out={}; for(const [k,v] of Object.entries(obj)){out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
 const saveD = async () => {};
 const upsertRow = async (table, obj) => { 
@@ -79,78 +53,57 @@ const upsertRow = async (table, obj) => {
 const deleteRow = async (table, id) => { try { const {error} = await supabase.from(TABLE_MAP[table]).delete().eq("id",id); if(error)console.error("delete",table,error); } catch(e){console.error(e);} };
 
 const Inp = ({ label, ...p }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-    {label && <label style={{ fontSize: 10, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.4 }}>{label}</label>}
-    <input {...p} style={{ background: "#070c18", border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 16px", color: C.text, fontSize: 14, outline: "none", transition: "border-color .2s, box-shadow .2s", fontFamily: "inherit", ...p.style }}
-      onFocus={e => { e.target.style.borderColor = C.accent; e.target.style.boxShadow = `0 0 0 3px ${C.accentGlow}`; }}
-      onBlur={e => { e.target.style.borderColor = C.border; e.target.style.boxShadow = "none"; }} />
-  </div>
-);
+  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+    {label && <label style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
+    <input {...p} style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 14, outline: "none", transition: "border .2s", ...p.style }}
+      onFocus={e => e.target.style.borderColor = C.accent} onBlur={e => e.target.style.borderColor = C.border} />
+  </div> );
 const Sel = ({ label, children, ...p }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-    {label && <label style={{ fontSize: 10, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.4 }}>{label}</label>}
-    <select {...p} style={{ background: "#070c18", border: `1.5px solid ${C.border}`, borderRadius: 12, padding: "11px 16px", color: C.text, fontSize: 14, outline: "none", cursor: "pointer", fontFamily: "inherit", transition: "border-color .2s", ...p.style }}
-      onFocus={e => e.target.style.borderColor = C.accent} onBlur={e => e.target.style.borderColor = C.border}>{children}</select>
-  </div>
-);
+  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+    {label && <label style={{ fontSize: 11, color: C.dim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{label}</label>}
+    <select {...p} style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 14, outline: "none", cursor: "pointer", ...p.style }}>{children}</select>
+  </div> );
 const Btn = ({ children, v = "primary", sm, ...p }) => {
-  const base = { borderRadius: 11, fontWeight: 700, cursor: "pointer", transition: "all .18s", border: "none", fontSize: sm ? 12 : 14, padding: sm ? "6px 13px" : "10px 22px", display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "inherit", letterSpacing: 0.2 };
-  const vs = {
-    primary: { background: C.grad, color: "#fff", boxShadow: `0 4px 20px ${C.accentGlow}` },
-    danger:  { background: C.red + "15", color: C.red, border: `1.5px solid ${C.red}30` },
-    ghost:   { background: "transparent", color: C.dim, border: `1.5px solid ${C.border}` },
-    success: { background: C.green + "15", color: C.green, border: `1.5px solid ${C.green}30` },
-  };
-  return <button style={{ ...base, ...vs[v] }} {...p}>{children}</button>;
-};
+  const base = { borderRadius: 10, fontWeight: 700, cursor: "pointer", transition: "all .2s", border: "none", fontSize: sm ? 12 : 14, padding: sm ? "6px 13px" : "10px 20px", display: "inline-flex", alignItems: "center", gap: 6 };
+
+  const vs = { primary: { background: C.accent, color: "#fff", boxShadow: `0 0 18px ${C.accentGlow}` }, danger: { background: C.red + "18", color: C.red, border: `1px solid ${C.red}33` }, ghost: { background: "transparent", color: C.dim, border: `1px solid ${C.border}` }, success: { background: C.green + "18", color: C.green, border: `1px solid ${C.green}33` } };
+  return <button style={{ ...base, ...vs[v] }} {...p}>{children}</button>; };
 const Box = ({ children, style, onClick, hi }) => {
   const [h, setH] = useState(false);
-  return (
-    <div onClick={onClick} onMouseEnter={() => hi && setH(true)} onMouseLeave={() => hi && setH(false)}
-      style={{ background: h ? C.card2 : C.card, border: `1.5px solid ${h ? C.accent + "60" : C.border}`, borderRadius: 18, padding: 20, cursor: onClick ? "pointer" : undefined, transition: "all .2s", boxShadow: h ? `0 8px 32px ${C.accentGlow}` : "none", ...style }}>
-      {children}
-    </div>
-  );
+  return <div onClick={onClick} onMouseEnter={() => hi && setH(true)} onMouseLeave={() => hi && setH(false)}
+    style={{ background: h ? C.card2 : C.card, border: `1px solid ${h ? C.accent + "55" : C.border}`, borderRadius: 16, padding: 20, cursor: onClick ? "pointer" : undefined, transition: "all .18s", ...style }}>{children}</div>;
 };
 const Pop = ({ title, onClose, children, wide }) => (
-  <div style={{ position: "fixed", inset: 0, background: "#000000bb", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20, backdropFilter: "blur(12px)" }}>
-    <div style={{ background: C.card, border: `1.5px solid ${C.border}`, borderRadius: 22, padding: 30, width: "100%", maxWidth: wide ? 700 : 520, maxHeight: "92vh", overflowY: "auto", boxShadow: `0 24px 80px #00000088` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h3 style={{ color: C.text, margin: 0, fontSize: 17, fontWeight: 900, letterSpacing: -0.3 }}>{title}</h3>
-        <button onClick={onClose} style={{ background: C.card2, border: `1.5px solid ${C.border}`, borderRadius: 9, width: 32, height: 32, color: C.dim, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>✕</button>
-      </div>
-      {children}
-    </div>
-  </div>
-);
+  <div style={{ position: "fixed", inset: 0, background: "#000000aa", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20, backdropFilter: "blur(8px)" }}>
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 28, width: "100%", maxWidth: wide ? 680 : 500, maxHeight: "92vh", overflowY: "auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+        <h3 style={{ color: C.text, margin: 0, fontSize: 17, fontWeight: 800 }}>{title}</h3>
+        <Btn v="ghost" sm onClick={onClose}>✕</Btn></div>
+      {children}</div>
+  </div> );
 const Tag = ({ children, color = C.accent }) => (
-  <span style={{ background: color + "18", color, border: `1px solid ${color}30`, borderRadius: 7, padding: "3px 10px", fontSize: 11, fontWeight: 700, display: "inline-block", letterSpacing: 0.3 }}>{children}</span>
+  <span style={{ background: color + "1a", color, border: `1px solid ${color}2e`, borderRadius: 6, padding: "2px 9px", fontSize: 11, fontWeight: 700, display: "inline-block" }}>{children}</span>
 );
 const Empty = ({ icon, msg }) => (
-  <div style={{ textAlign: "center", padding: "60px 20px", color: C.muted }}>
-    <div style={{ fontSize: 44, marginBottom: 14, opacity: 0.5 }}>{icon}</div>
-    <p style={{ margin: 0, fontSize: 14, color: C.dim }}>{msg}</p>
-  </div>
-);
-const Breadcrumb = ({ items }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
+  <div style={{ textAlign: "center", padding: "48px 20px", color: C.muted }}>
+    <div style={{ fontSize: 42, marginBottom: 12 }}>{icon}</div>
+    <p style={{ margin: 0, fontSize: 14 }}>{msg}</p> </div> );  const Breadcrumb = ({ items }) => ( <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 22, flexWrap: "wrap" }}>
     {items.map((it, i) => (
       <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {i > 0 && <span style={{ color: C.muted, fontSize: 12 }}>›</span>}
+        {i > 0 && <span style={{ color: C.muted, fontSize: 13 }}>›</span>}
         {it.onClick
-          ? <button onClick={it.onClick} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0, fontFamily: "inherit" }}>{it.label}</button>
+          ? <button onClick={it.onClick} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 13, fontWeight: 600, padding: 0 }}>{it.label}</button>
           : <span style={{ color: i === items.length - 1 ? C.text : C.dim, fontSize: 13, fontWeight: i === items.length - 1 ? 700 : 400 }}>{it.label}</span>}
       </span>
     ))}
-  </div>
-);
+  </div> );
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [show, setShow] = useState(false);
-  useEffect(() => { setTimeout(() => setShow(true), 60); }, []);
+  useEffect(() => { setTimeout(() => setShow(true), 80); }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) { setError("Ingresá email y contraseña."); return; }
@@ -162,23 +115,19 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, position: "relative", overflow: "hidden", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-      {/* Ambient glow blobs */}
-      <div style={{ position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)", width: 700, height: 500, background: `radial-gradient(ellipse, ${C.accent}12 0%, transparent 65%)`, pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: "0%", right: "-5%", width: 400, height: 400, background: `radial-gradient(ellipse, #f9731610 0%, transparent 65%)`, pointerEvents: "none" }} />
-      <div style={{ opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(20px)", transition: "all .6s cubic-bezier(.22,.68,0,1.2)", width: "100%", maxWidth: 420, zIndex: 1 }}>
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ width: 72, height: 72, background: C.accentDim, border: `2px solid ${C.accent}35`, borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, margin: "0 auto 20px", boxShadow: `0 0 40px ${C.accentGlow}` }}>🎓</div>
-          <h1 style={{ fontSize: 30, fontWeight: 900, color: C.text, margin: "0 0 8px", letterSpacing: -1.2 }}>EduGestión</h1>
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, position: "relative" }}>
+      <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", width: 600, height: 600, background: `radial-gradient(circle, ${C.accent}0e 0%, transparent 70%)`, pointerEvents: "none" }} />
+      <div style={{ opacity: show ? 1 : 0, transform: show ? "translateY(0)" : "translateY(24px)", transition: "all .7s ease", width: "100%", maxWidth: 420, zIndex: 1 }}>
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div style={{ width: 80, height: 80, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 38, margin: "0 auto 20px" }}>🎓</div>
+          <h1 style={{ fontSize: 28, fontWeight: 900, color: C.text, margin: "0 0 8px", letterSpacing: -1 }}>EduGestión</h1>
           <p style={{ color: C.dim, fontSize: 14, margin: 0 }}>Ingresá con tu cuenta para continuar</p>
         </div>
-        <div style={{ background: C.card, border: `1.5px solid ${C.border}`, borderRadius: 22, padding: 30, display: "flex", flexDirection: "column", gap: 16, boxShadow: "0 20px 60px #00000060" }}>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 28, display: "flex", flexDirection: "column", gap: 16 }}>
           <Inp label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@email.com" onKeyDown={e => e.key === "Enter" && handleLogin()} />
           <Inp label="Contraseña" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleLogin()} />
-          {error && (
-            <div style={{ background: C.red + "12", border: `1.5px solid ${C.red}30`, borderRadius: 11, padding: "10px 14px", color: C.red, fontSize: 13 }}>⚠️ {error}</div>
-          )}
-          <button onClick={handleLogin} disabled={loading} style={{ background: C.grad, border: "none", borderRadius: 13, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: loading ? "wait" : "pointer", marginTop: 6, transition: "all .2s", opacity: loading ? 0.7 : 1, boxShadow: `0 6px 24px ${C.accentGlow}`, fontFamily: "inherit", letterSpacing: 0.3 }}>
+          {error && <div style={{ background: C.red + "18", border: `1px solid ${C.red}33`, borderRadius: 10, padding: "10px 14px", color: C.red, fontSize: 13 }}>{error}</div>}
+          <button onClick={handleLogin} disabled={loading} style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, border: "none", borderRadius: 12, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: loading ? "wait" : "pointer", marginTop: 4, transition: "all .2s", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Ingresando..." : "Ingresar →"}
           </button>
         </div>
@@ -201,11 +150,11 @@ const Welcome = ({ onGo }) => {
         </h1>
         <p style={{ color: C.dim, fontSize: 16, margin: "0 0 52px", lineHeight: 1.7 }}>Sistema integral de gestión escolar.<br />Administrá alumnos, notas y actividades por materia y colegio.</p>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <button onClick={onGo} style={{ background: C.grad, border: "none", borderRadius: 20, padding: 3, cursor: "pointer", transition: "all .25s", boxShadow: `0 10px 40px ${C.accentGlow}`, width: 270 }}
+          <button onClick={onGo} style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, border: "none", borderRadius: 20, padding: 3, cursor: "pointer", transition: "all .25s", boxShadow: `0 10px 40px ${C.accentGlow}`, width: 270 }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = `0 18px 50px ${C.accentGlow}`; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = `0 10px 40px ${C.accentGlow}`; }}>
-            <div style={{ background: "#0b0f1aee", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 52, height: 52, background: C.grad, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>🏫</div>
+            <div style={{ background: "#0c0e16ee", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 52, height: 52, background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>🏫</div>
               <div style={{ textAlign: "left" }}>
                 <div style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>Colegios</div>
                 <div style={{ color: C.accentL + "99", fontSize: 12, marginTop: 2 }}>Acceder al sistema</div>
@@ -214,30 +163,19 @@ const Welcome = ({ onGo }) => {
           </button></div>
         <p style={{ color: C.muted, fontSize: 12, marginTop: 44 }}>💾 Datos guardados automáticamente en tu dispositivo</p>
       </div>
-    </div>
-  ); };
+    </div> ); };
 const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
   const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", direccion: "", telefono: "", email: "" }); const [editId, setEditId] = useState(null);
   const openAdd = () => { setForm({ nombre: "", direccion: "", telefono: "", email: "" }); setEditId(null); setPop(true); };
 
   const openEdit = (c) => { setForm({ nombre: c.nombre, direccion: c.direccion || "", telefono: c.telefono || "", email: c.email || "" }); setEditId(c.id); setPop(true); };
 
-  const save = async () => {
+  const save = () => {
     if (!form.nombre.trim()) return;
-    if (editId) {
-      const updated = { ...data.colegios.find(c => c.id === editId), ...form };
-      setData(d => ({ ...d, colegios: d.colegios.map(c => c.id === editId ? updated : c) }));
-      await upsertRow("colegios", updated);
-    } else {
-      const nuevo = { id: uid(), ciclo: new Date().getFullYear().toString(), ...form };
-      setData(d => ({ ...d, colegios: [...d.colegios, nuevo] }));
-      await upsertRow("colegios", nuevo);
-    }
+    if (editId) setData(d => ({ ...d, colegios: d.colegios.map(c => c.id === editId ? { ...c, ...form } : c) }));
+    else setData(d => ({ ...d, colegios: [...d.colegios, { id: uid(), ciclo: new Date().getFullYear().toString(), ...form }] }));
     setPop(false); setEditId(null); };
-  const del = async (id) => {
-    if (!confirm("¿Eliminar colegio y todos sus datos?")) return;
-    setData(d => ({ ...d, colegios: d.colegios.filter(c => c.id !== id), alumnos: d.alumnos.filter(a => a.colegioId !== id), materias: d.materias.filter(m => m.colegioId !== id) }));
-    await deleteRow("colegios", id); };
+  const del = (id) => { if (!confirm("¿Eliminar colegio y todos sus datos?")) return; setData(d => ({ ...d, colegios: d.colegios.filter(c => c.id !== id), alumnos: d.alumnos.filter(a => a.colegioId !== id), materias: d.materias.filter(m => m.colegioId !== id) })); };
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
       <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "16px 32px", display: "flex", alignItems: "center", gap: 14 }}>
@@ -292,101 +230,57 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
               <Btn v="ghost" onClick={() => { setPop(false); setEditId(null); }}>Cancelar</Btn>
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
-    </div>
-  ); };
+    </div> ); };
 const TABS = [
   { id: "dashboard", icon: "🏠", label: "Inicio" },
   { id: "materias",  icon: "📚", label: "Materias" },
   { id: "alumnos",   icon: "👤", label: "Alumnos" },
-  { id: "agenda",    icon: "📅", label: "Agenda" },
-  { id: "eventos",   icon: "🗓️", label: "Eventos del Colegio" },
+  { id: "eventos",   icon: "📅", label: "Eventos del Colegio" },
+  { id: "agenda",    icon: "🗓️", label: "Agenda" },
   { id: "documentos", icon: "📁", label: "Archivos/Docs" }, ];
-const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
+const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
-  const [vista, setVista] = useState(initialVista || null);
+  const [vista, setVista] = useState(null); // null | "materias" | "alumnos" | "notas" | "promedio" | "actividades"
   const [detalleMateria, setDetalleMateria] = useState(null); const [detalleAlumno, setDetalleAlumno] = useState(null); const [matFiltro, setMatFiltro] = useState(null);
-  const [recentDocs, setRecentDocs] = useState([]);
-  // Estados de Agenda (deben estar al nivel del componente, no dentro de if)
-  const [agendaPopOpen,      setAgendaPopOpen]      = useState(false);
-  const [agendaEditId,       setAgendaEditId]       = useState(null);
-  const [agendaAdjFile,      setAgendaAdjFile]      = useState(null);
-  const [agendaUploading,    setAgendaUploading]    = useState(false);
-  const [agendaFiltroMat,    setAgendaFiltroMat]    = useState("");
-  const [agendaFiltroEstado, setAgendaFiltroEstado] = useState("");
-  const agendaEmptyForm = { titulo:"", tipo:"examen", materiaId:"", alumnoId:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", archivoUrl:"", archivoNombre:"", estado:"pendiente" };
-  const [agendaForm, setAgendaForm] = useState(agendaEmptyForm);
   const [materiaAbierta, setMateriaAbierta] = useState(null);
+  const [reloadTick, setReloadTick] = useState(0);
+  // Agenda states (nivel componente para cumplir reglas de hooks)
+  const [agendaPopOpen,    setAgendaPopOpen]    = useState(false);
+  const [agendaEditId,     setAgendaEditId]     = useState(null);
+  const [agendaAdjFile,    setAgendaAdjFile]    = useState(null);
+  const [agendaUploading,  setAgendaUploading]  = useState(false);
+  const [agendaFiltroMat,  setAgendaFiltroMat]  = useState("");
+  const [agendaFiltroEst,  setAgendaFiltroEst]  = useState("");
+  const agendaEmpty = { titulo:"", tipo:"examen", materiaId:"", alumnoId:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", archivoUrl:"", archivoNombre:"", estado:"pendiente" };
+  const [agendaForm,       setAgendaForm]       = useState(agendaEmpty);
   const goInicio = () => { setVista(null); setDetalleMateria(null); setDetalleAlumno(null); setMatFiltro(null); };
+  // Expose setVista for cross-component agenda navigation
+  useEffect(() => {
+    window.__openAgenda = () => setVista("agenda");
+    return () => { delete window.__openAgenda; };
+  }, []);
 
   const col  = data.colegios.find(c => c.id === colegioId);
   const als  = data.alumnos.filter(a => a.colegioId === colegioId);
   const mats = data.materias.filter(m => m.colegioId === colegioId);
   const notas = data.notas.filter(n => als.some(a => a.id === n.alumnoId));
   const acts  = data.actividades.filter(a => als.some(al => al.id === a.alumnoId));
+  const vals  = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom  = avg(vals);
+  const tipoActColor = { positiva: C.green, negativa: C.red, neutral: C.yellow, participacion: C.blue, observacion: C.dim };
   const eventos = (data.eventos || []).filter(e => e.colegioId === colegioId);
   const inasistencias = (data.inasistencias || []).filter(i => i.colegioId === colegioId);
-  const vals  = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom = avg(vals);
-  const tipoActColor = { positiva: C.green, negativa: C.red, neutral: C.yellow, participacion: C.blue, observacion: C.dim };
 
-
-  const [reloadTick, setReloadTick] = useState(0);
-
-  // Efecto principal: carga datos frescos desde Supabase
-  // Se ejecuta al montar Y cada vez que als.length cambia (cuando cargan los alumnos)
   useEffect(() => {
     if (!colegioId) return;
-
-    // Materias: no depende de alumnos
-    supabase.from("materias").select("*").eq("colegio_id", colegioId)
-      .then(({ data: rows }) => {
-        if (!rows) return;
-        const frescas = rows.map(r => fromDB(r));
-        setData(d => ({ ...d, materias: [...d.materias.filter(m => m.colegioId !== colegioId), ...frescas] }));
-      });
-
-    // Actividades y notas: necesitan alumnoIds
-    const fetchActsNotas = (alumnoIds) => {
-      if (!alumnoIds.length) return;
+    const alumnoIds = als.map(a => a.id);
+    if (alumnoIds.length > 0) {
       supabase.from("actividades").select("*").in("alumno_id", alumnoIds)
-        .then(({ data: rows, error }) => {
-          if (error || !rows) { console.error("reload actividades:", error); return; }
-          const deSupabase = rows.map(r => fromDB(r));
-          setData(d => {
-            const idsDB = new Set(deSupabase.map(a => a.id));
-            const enMemoria = d.actividades.filter(a => alumnoIds.includes(a.alumnoId) && !idsDB.has(a.id));
-            const otras = d.actividades.filter(a => !alumnoIds.includes(a.alumnoId));
-            return { ...d, actividades: [...otras, ...deSupabase, ...enMemoria] };
-          });
-        });
+        .then(({ data: rows }) => { if (rows) setData(d => ({ ...d, actividades: [...d.actividades.filter(a => !alumnoIds.includes(a.alumnoId)), ...rows.map(r => fromDB(r))] })); });
       supabase.from("notas").select("*").in("alumno_id", alumnoIds)
-        .then(({ data: rows, error }) => {
-          if (error || !rows) { console.error("reload notas:", error); return; }
-          const deSupabase = rows.map(r => fromDB(r));
-          setData(d => {
-            const idsDB = new Set(deSupabase.map(n => n.id));
-            const enMemoria = d.notas.filter(n => alumnoIds.includes(n.alumnoId) && !idsDB.has(n.id));
-            const otras = d.notas.filter(n => !alumnoIds.includes(n.alumnoId));
-            return { ...d, notas: [...otras, ...deSupabase, ...enMemoria] };
-          });
-        });
-      supabase.from("documentos").select("*").in("alumno_id", alumnoIds).order("created_at", { ascending: false }).limit(20)
-        .then(({ data: docs }) => { if (docs) setRecentDocs(docs.map(d => fromDB(d))); });
-    };
-
-    // Si ya tenemos alumnos cargados, buscar ahora
-    const alumnoIds = data.alumnos.filter(a => a.colegioId === colegioId).map(a => a.id);
-    fetchActsNotas(alumnoIds);
-
-    // Si todavía no hay alumnos, cargarlos y luego buscar
-    if (alumnoIds.length === 0) {
-      supabase.from("alumnos").select("*").eq("colegio_id", colegioId)
-        .then(({ data: rows }) => {
-          if (!rows || rows.length === 0) return;
-          const frescos = rows.map(r => fromDB(r));
-          setData(d => ({ ...d, alumnos: [...d.alumnos.filter(a => a.colegioId !== colegioId), ...frescos] }));
-          fetchActsNotas(frescos.map(a => a.id));
-        });
+        .then(({ data: rows }) => { if (rows) setData(d => ({ ...d, notas: [...d.notas.filter(n => !alumnoIds.includes(n.alumnoId)), ...rows.map(r => fromDB(r))] })); });
     }
+    supabase.from("agenda").select("*").eq("colegio_id", colegioId)
+      .then(({ data: rows }) => { if (rows) setData(d => ({ ...d, agenda: rows.map(r => fromDB(r)) })); });
   }, [colegioId, reloadTick]);
 
   const SC = ({ label, value, color, onClick, sub }) => (
@@ -406,9 +300,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
           { label: `${al?.apellido}, ${al?.nombre}` },
         ]} />
         <AlumnoPerfilGlobal data={data} setData={setData} alumnoId={detalleAlumno} colegioId={colegioId} onBack={() => setDetalleAlumno(null)} />
-      </div>
-    );
-  }
+      </div> ); }
   if (detalleMateria) {
     return (
       <div>
@@ -418,9 +310,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
           { label: mats.find(m => m.id === detalleMateria)?.nombre },
         ]} />
         <MateriaDetalle data={data} setData={setData} materiaId={detalleMateria} colegioId={colegioId} onBack={() => setDetalleMateria(null)} />
-      </div>
-    );
-  }
+      </div> ); }
   if (vista === "materias") {
     return (
       <div>
@@ -445,9 +335,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                 </Box> );
             })}
           </div> )}
-      </div>
-    );
-  }
+      </div> ); }
   if (vista === "alumnos") {
     return (
       <div>
@@ -476,91 +364,62 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                 </Box> );
             })}
           </div> )}
-      </div>
-    );
-  }
+      </div> ); }
   if (vista === "notas") {
     return (
       <div>
         <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Notas por Materia" }]} />
         <h2 style={{ color: C.text, margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>📝 Notas generales por Materia</h2>
         {mats.length === 0 ? <Empty icon="📝" msg="No hay materias registradas." /> : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {mats.map(m => {
-              const ins    = (data.inscripciones || []).filter(i => i.materiaId === m.id).map(i => i.alumnoId);
+              const ins = (data.inscripciones || []).filter(i => i.materiaId === m.id).map(i => i.alumnoId);
               const alsMat = als.filter(a => ins.includes(a.id));
               const mNotas = notas.filter(n => n.materiaId === m.id);
-              const mv     = mNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
-              const mProm  = avg(mv);
-              const abierta = materiaAbierta === m.id;
+              const mv = mNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const mProm = avg(mv);
               return (
                 <Box key={m.id}>
-                  {/* Fila resumen — click para abrir/cerrar */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
-                    onClick={() => setMateriaAbierta(abierta ? null : m.id)}>
+                  {/* Cabecera materia */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 38, height: 38, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📚</div>
+                      <div style={{ width: 38, height: 38, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📚</div>
                       <div>
                         <div style={{ color: C.text, fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
-                        <div style={{ color: C.muted, fontSize: 12 }}>{alsMat.length} alumnos · {mNotas.length} notas</div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <div style={{ color: C.muted, fontSize: 12 }}>{alsMat.length} alumnos · {mNotas.length} notas</div> </div> </div> <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: 26, fontWeight: 900, color: nc(mProm) }}>{mProm ?? "—"}</div>
-                        <div style={{ fontSize: 11, color: C.muted }}>promedio</div>
-                      </div>
-                      <div style={{ color: C.accentL, fontSize: 18, transition: "transform .2s", transform: abierta ? "rotate(90deg)" : "rotate(0deg)" }}>›</div>
-                    </div>
-                  </div>
-
-                  {/* Detalle expandido */}
-                  {abierta && (
-                    <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
-                      {alsMat.length === 0
-                        ? <div style={{ color: C.muted, fontSize: 13 }}>Sin alumnos inscriptos.</div>
-                        : <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            {alsMat.map(al => {
-                              const alNotas = mNotas.filter(n => n.alumnoId === al.id).sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
-                              const alVals  = alNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
-                              const alProm  = avg(alVals);
-                              return (
-                                <div key={al.id}
-                                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
-                                  onClick={() => setDetalleAlumno(al.id)}
-                                  onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
-                                  onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                                  <div style={{ color: C.text, fontSize: 14, fontWeight: 600 }}>{al.apellido}, {al.nombre}</div>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                    <div style={{ display: "flex", gap: 4 }}>
-                                      {alNotas.slice(0, 5).map(n => (
-                                        <div key={n.id} title={`${n.tipo}: ${n.nota}`}
-                                          style={{ width: 30, height: 30, borderRadius: 8, background: nc(n.nota) + "18", border: `1px solid ${nc(n.nota)}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: nc(n.nota) }}>{n.nota}</div>
-                                      ))}
-                                    </div>
-                                    <div style={{ textAlign: "right", minWidth: 44 }}>
-                                      <div style={{ fontSize: 20, fontWeight: 900, color: nc(alProm) }}>{alProm ?? "—"}</div>
-                                      <div style={{ fontSize: 10, color: C.muted }}>prom.</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                      }
-                      <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
-                        <Btn v="ghost" sm onClick={() => setDetalleMateria(m.id)}>Ver materia completa →</Btn>
-                      </div>
-                    </div>
-                  )}
-                </Box>
-              );
+                        <div style={{ fontSize: 28, fontWeight: 900, color: nc(mProm) }}>{mProm ?? "—"}</div>
+                        <div style={{ fontSize: 11, color: C.muted }}>promedio</div></div>
+                      <Btn v="ghost" sm onClick={() => setDetalleMateria(m.id)}>Ver materia →</Btn>
+                    </div></div>
+                  {/* Alumnos con sus notas en esta materia */}
+                  {alsMat.length === 0 ? (
+                    <div style={{ color: C.muted, fontSize: 13, padding: "8px 0" }}>Sin alumnos inscriptos.</div> ) : ( <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {alsMat.map(al => {
+                        const alMatNotas = mNotas.filter(n => n.alumnoId === al.id);
+                        const alVals = alMatNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+                        const alProm = avg(alVals);
+                        return (
+                          <div key={al.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
+                            onClick={() => setDetalleAlumno(al.id)}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
+                            <div style={{ color: C.text, fontSize: 14, fontWeight: 600 }}>{al.apellido}, {al.nombre}</div> <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                              {/* mini chips de notas */}
+                              <div style={{ display: "flex", gap: 4 }}>
+                                {alMatNotas.slice(-5).map(n => (
+                                  <div key={n.id} title={`${n.tipo}: ${n.nota}`} style={{ width: 30, height: 30, borderRadius: 8, background: nc(n.nota) + "18", border: `1px solid ${nc(n.nota)}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: nc(n.nota) }}>{n.nota}</div>
+                                ))}</div>
+                              <div style={{ textAlign: "right", minWidth: 44 }}>
+                                <div style={{ fontSize: 20, fontWeight: 900, color: nc(alProm) }}>{alProm ?? "—"}</div>
+                                <div style={{ fontSize: 10, color: C.muted }}>prom.</div></div>
+                            </div>
+                          </div> );
+                      })}
+                    </div> )}
+                </Box> );
             })}
-          </div>
-        )}
-      </div>
-    );
-  }
+          </div> )}
+      </div> ); }
   if (vista === "promedio") {
     return (
       <div>
@@ -586,155 +445,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                 </Box> );
             })}
           </div> )}
-      </div>
-    );
-  }
-  if (vista === "historial-feed") {
-    const feedCompleto = [
-      ...acts.map(a => ({ ...a, _src: "actividad", _fecha: a.fecha || "" })),
-      ...notas.map(n => ({ ...n, _src: "nota", _fecha: n.fecha || "" })),
-      ...eventos.map(e => ({ ...e, _src: "evento", _fecha: e.fecha || "" })),
-      ...inasistencias.map(i => ({ ...i, _src: "inasistencia", _fecha: i.fecha || "" })),
-      ...recentDocs.map(d => ({ ...d, _src: "documento", _fecha: d.createdAt || d.fecha || "" })),
-      ...mats.map(m => ({ ...m, _src: "materia", _fecha: m.createdAt || "" })),
-      ...als.map(a => ({ ...a, _src: "alumno", _fecha: a.createdAt || "" })),
-    ].filter(x => x._fecha).sort((a, b) => new Date(b._fecha) - new Date(a._fecha));
-
-    const tipoActColor = { positiva: C.green, negativa: C.red, neutral: C.yellow, participacion: C.blue, observacion: C.dim };
-
-    return (
-      <div>
-        <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Toda la actividad" }]} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>🕐 Toda la actividad</h2>
-          <span style={{ color: C.dim, fontSize: 13 }}>{feedCompleto.length} registros</span>
-        </div>
-        <Box>
-          {feedCompleto.length === 0
-            ? <Empty icon="🕐" msg="No hay actividad registrada aún." />
-            : feedCompleto.map((item, idx) => {
-                const al  = als.find(a => a.id === item.alumnoId);
-                const mat = mats.find(m => m.id === item.materiaId);
-                const isLast = idx === feedCompleto.length - 1;
-                const row = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: isLast ? "none" : `1px solid ${C.border}`, gap: 10 };
-
-                if (item._src === "actividad") {
-                  const tc = tipoActColor[item.tipo] || C.dim;
-                  return (
-                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.alumnoId)}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: tc + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>⚡</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
-                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
-                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={tc}>{item.tipo}</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-                if (item._src === "nota") {
-                  const nc2 = nc(parseFloat(item.nota));
-                  return (
-                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.alumnoId)}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: nc2 + "18", border: `1.5px solid ${nc2}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: nc2, flexShrink: 0 }}>{item.nota}</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
-                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
-                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion || item.tipo}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={C.blue}>📝 {item.tipo}</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-                if (item._src === "inasistencia") {
-                  return (
-                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.alumnoId)}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.red + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🚫</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
-                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.tipoInasist || "Inasistencia"}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={C.red}>Inasistencia</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-                if (item._src === "evento") {
-                  return (
-                    <div key={item.id} style={{ ...row }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.blue + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🗓️</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.titulo || item.nombre}</span>
-                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>
-                        </div>
-                      </div>
-                      <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmt(item._fecha)}</span>
-                    </div>
-                  );
-                }
-                if (item._src === "documento") {
-                  return (
-                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => item.url && window.open(item.url, "_blank")}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.accent + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📎</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
-                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
-                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.nombre || item.tipo}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={C.accent}>doc</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-                if (item._src === "materia") {
-                  return (
-                    <div key={item.id} style={{ ...row }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.blue + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📚</div>
-                        <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>Materia creada: {item.nombre}</span>
-                      </div>
-                      <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmt(item._fecha)}</span>
-                    </div>
-                  );
-                }
-                if (item._src === "alumno") {
-                  return (
-                    <div key={item.id} style={{ ...row, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.id)}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.accentDim, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>👤</div>
-                        <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>Alumno registrado: {item.apellido}, {item.nombre}</span>
-                      </div>
-                      <span style={{ color: C.muted, fontSize: 11, flexShrink: 0 }}>{fmt(item._fecha)}</span>
-                    </div>
-                  );
-                }
-                return null;
-              })
-          }
-        </Box>
-      </div>
-    );
-  }
-
+      </div> ); }
   if (vista === "agenda") {
     const TIPOS = [
       { id: "examen",  label: "Examen",             icon: "📝", color: C.red    },
@@ -748,21 +459,14 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
       { id: "calificado", label: "Calificado", color: C.green  },
     ];
     const agendaAll = (data.agenda || []).filter(e => e.colegioId === colegioId);
-    const popOpen      = agendaPopOpen;
-    const setPopOpen   = setAgendaPopOpen;
-    const editId       = agendaEditId;
-    const setEditId    = setAgendaEditId;
-    const adjFile      = agendaAdjFile;
-    const setAdjFile   = setAgendaAdjFile;
-    const uploading    = agendaUploading;
-    const setUploading = setAgendaUploading;
-    const filtroMat    = agendaFiltroMat;
-    const setFiltroMat = setAgendaFiltroMat;
-    const filtroEstado = agendaFiltroEstado;
-    const setFiltroEstado = setAgendaFiltroEstado;
-    const emptyForm    = agendaEmptyForm;
-    const form         = agendaForm;
-    const setForm      = setAgendaForm;
+    const popOpen = agendaPopOpen; const setPopOpen = setAgendaPopOpen;
+    const editId = agendaEditId; const setEditId = setAgendaEditId;
+    const adjFile = agendaAdjFile; const setAdjFile = setAgendaAdjFile;
+    const uploading = agendaUploading; const setUploading = setAgendaUploading;
+    const filtroMat = agendaFiltroMat; const setFiltroMat = setAgendaFiltroMat;
+    const filtroEstado = agendaFiltroEst; const setFiltroEstado = setAgendaFiltroEst;
+    const form = agendaForm; const setForm = setAgendaForm;
+    const emptyForm = agendaEmpty;
     const today = new Date().toISOString().slice(0,10);
     const lista = agendaAll
       .filter(e => (!filtroMat || e.materiaId === filtroMat) && (!filtroEstado || e.estado === filtroEstado))
@@ -892,7 +596,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                 <Sel label="Tipo *" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo:e.target.value }))}>
                   {TIPOS.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
                 </Sel>
-                <Inp label="Fecha de entrega *" type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha:e.target.value }))} />
+                <Inp label="Fecha *" type="date" value={form.fecha} onChange={e => setForm(f => ({ ...f, fecha:e.target.value }))} />
               </div>
               <Sel label="Materia (opcional)" value={form.materiaId} onChange={e => setForm(f => ({ ...f, materiaId:e.target.value }))}>
                 <option value="">— Sin materia específica —</option>
@@ -928,6 +632,105 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
       </div>
     );
   }
+  if (vista === "actividades") {
+    const materiasConActs = mats.filter(m => acts.some(a => a.materiaId === m.id));
+    const actsSinMateria  = acts.filter(a => !a.materiaId || !mats.find(m => m.id === a.materiaId));
+    const materiasVista   = matFiltro ? mats.filter(m => m.id === matFiltro) : materiasConActs;
+    const conteo = (tipo, lista) => lista.filter(a => a.tipo === tipo).length;
+    return (
+      <div>
+        <Breadcrumb items={[{ label: "Inicio", onClick: goInicio }, { label: "Actividades" }]} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>⚡ Actividades por Materia</h2>
+          <div style={{ fontSize: 13, color: C.muted }}>{acts.length} actividades registradas</div>
+        </div>
+        {acts.length === 0 ? <Empty icon="⚡" msg="No hay actividades registradas." /> : (
+          <>
+            {/* Filtro rápido por materia */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 22 }}>
+              <button onClick={() => setMatFiltro(null)}
+                style={{ padding: "7px 14px", borderRadius: 20, border: `1px solid ${!matFiltro ? C.accent : C.border}`, background: !matFiltro ? C.accentDim : "transparent", color: !matFiltro ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Todas las materias
+              </button>
+              {materiasConActs.map(m => (
+                <button key={m.id} onClick={() => setMatFiltro(m.id)}
+                  style={{ padding: "7px 14px", borderRadius: 20, border: `1px solid ${matFiltro === m.id ? C.accent : C.border}`, background: matFiltro === m.id ? C.accentDim : "transparent", color: matFiltro === m.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  {m.nombre} ({acts.filter(a => a.materiaId === m.id).length})
+                </button>
+              ))}</div>
+            {/* Bloque por materia */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {materiasVista.map(m => {
+                const actsM = acts.filter(a => a.materiaId === m.id).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                if (actsM.length === 0) return null;
+                return (
+                  <Box key={m.id}>
+                    {/* Cabecera materia */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ width: 38, height: 38, background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📚</div>
+                        <div>
+                          <div style={{ color: C.text, fontWeight: 800, fontSize: 15 }}>{m.nombre}</div>
+                          <div style={{ color: C.muted, fontSize: 12 }}>{actsM.length} actividades</div> </div> </div> {/* Contadores de tipo */} <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {conteo("positiva", actsM)   > 0 && <Tag color={C.green}>✅ {conteo("positiva", actsM)}</Tag>}
+                        {conteo("negativa", actsM)   > 0 && <Tag color={C.red}>❌ {conteo("negativa", actsM)}</Tag>}
+                        {conteo("participacion", actsM) > 0 && <Tag color={C.blue}>🙋 {conteo("participacion", actsM)}</Tag>}
+                        {conteo("tardanza", actsM)   > 0 && <Tag color={C.yellow}>🕐 {conteo("tardanza", actsM)}</Tag>}
+                        {conteo("observacion", actsM)> 0 && <Tag color={C.dim}>📌 {conteo("observacion", actsM)}</Tag>}
+                      </div></div>
+                    {/* Lista actividades de esa materia */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                      {actsM.map(act => {
+                        const al = als.find(a => a.id === act.alumnoId);
+                        const tc = tipoActColor[act.tipo] || C.dim;
+                        return (
+                          <div key={act.id}
+                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
+                            onClick={() => setDetalleAlumno(act.alumnoId)}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              <div style={{ width: 4, height: 40, background: tc, borderRadius: 3, flexShrink: 0 }} />
+                              <div>
+                                <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
+                                <div style={{ color: C.dim, fontSize: 12, marginTop: 2 }}>{act.descripcion}</div>
+                                <div style={{ color: C.muted, fontSize: 11, marginTop: 1 }}>📅 {fmt(act.fecha)}{act.hora ? ` · 🕐 ${act.hora}` : ""}</div>
+                              </div></div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                              <Tag color={tc}>{act.tipo}</Tag>
+                              <span style={{ color: C.accentL, fontSize: 11, fontWeight: 700 }}>ver →</span>
+                            </div>
+                          </div> );
+                      })}</div>
+                  </Box> );
+              })}
+              {/* Actividades sin materia */}
+              {!matFiltro && actsSinMateria.length > 0 && (
+                <Box>
+                  <div style={{ color: C.dim, fontWeight: 700, fontSize: 14, marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
+                    Sin materia asignada ({actsSinMateria.length})</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                    {actsSinMateria.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).map(act => {
+                      const al = als.find(a => a.id === act.alumnoId); const tc = tipoActColor[act.tipo] || C.dim;
+                      return (
+                        <div key={act.id}
+                          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: C.bg, borderRadius: 10, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border .15s" }}
+                          onClick={() => setDetalleAlumno(act.alumnoId)}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = C.accent + "55"}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ width: 4, height: 40, background: tc, borderRadius: 3 }} />
+                            <div>
+                              <div style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</div>
+                              <div style={{ color: C.dim, fontSize: 12 }}>{act.descripcion}</div>
+                              <div style={{ color: C.muted, fontSize: 11 }}>📅 {fmt(act.fecha)}</div>
+                            </div></div>
+                          <Tag color={tc}>{act.tipo}</Tag>
+                        </div> );
+                    })}</div>
+                </Box> )}</div>
+          </> )}
+      </div> ); }
   const resAlumnos = busLower
     ? als.filter(a => `${a.nombre} ${a.apellido} ${a.dni || ""} ${a.curso || ""}`.toLowerCase().includes(busLower))
     : [];
@@ -1083,7 +886,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
         <SC label="Alumnos"         value={als.length}    color={C.accentL} onClick={() => setVista("alumnos")}    sub="click para ver" />
         <SC label="Notas por curso" value={notas.length}  color={C.yellow} onClick={() => setVista("notas")}       sub="click para ver" />
         <SC label="Promedio por mat." value={prom ?? "—"} color={nc(prom)} onClick={() => setVista("promedio")}    sub="click para ver" />
-        <SC label="Agenda" value={(data.agenda||[]).filter(e=>e.colegioId===colegioId).length} color={C.yellow} onClick={() => setVista("agenda")} sub="click para ver" />
+        <SC label="Actividades"     value={acts.length}   color={C.dim}    onClick={() => setVista("actividades")} sub="click para ver" />
       </div>}
       {/* Resumen rápido por materia */}
       {!busLower && mats.length > 0 && (
@@ -1104,174 +907,31 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab, initialVista }) => {
                 </Box> );
             })}</div>
         </> )}
-      {/* Feed unificado: actividades + notas + eventos + inasistencias + documentos */}
-      {!busLower && (() => {
-        const feed = [
-          ...acts.map(a => ({ ...a, _src: "actividad", _fecha: a.fecha || "" })),
-          ...notas.map(n => ({ ...n, _src: "nota", _fecha: n.fecha || "" })),
-          ...eventos.map(e => ({ ...e, _src: "evento", _fecha: e.fecha || "" })),
-          ...inasistencias.map(i => ({ ...i, _src: "inasistencia", _fecha: i.fecha || "" })),
-          ...recentDocs.map(d => ({ ...d, _src: "documento", _fecha: d.createdAt || d.fecha || "" })),
-          ...mats.map(m => ({ ...m, _src: "materia", _fecha: m.createdAt || "" })),
-          ...als.map(a => ({ ...a, _src: "alumno", _fecha: a.createdAt || "" })),
-        ].filter(x => x._fecha).sort((a, b) => new Date(b._fecha || 0) - new Date(a._fecha || 0)).slice(0, 10);
-
-        if (feed.length === 0) return null;
-        return (
-          <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Actividad reciente</h3>
-              <button onClick={() => setVista("historial-feed")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>Ver todo →</button>
-            </div>
-            <Box>
-              {feed.map((item, idx) => {
-                const al  = als.find(a => a.id === item.alumnoId);
-                const mat = mats.find(m => m.id === item.materiaId);
-                const isLast = idx === feed.length - 1;
-                const rowStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: isLast ? "none" : `1px solid ${C.border}`, gap: 10 };
-
-                if (item._src === "actividad") {
-                  const tc = tipoActColor[item.tipo] || C.dim;
-                  return (
-                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => { setDetalleAlumno(item.alumnoId); }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: tc + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>⚡</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
-                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
-                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={tc}>{item.tipo}</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item._src === "nota") {
-                  const nc2 = nc(item.nota);
-                  return (
-                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => setDetalleAlumno(item.alumnoId)}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: nc2 + "18", border: `1.5px solid ${nc2}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: nc2, flexShrink: 0 }}>{item.nota}</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
-                          {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
-                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion || item.tipo}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={C.blue}>📝 {item.tipo}</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item._src === "evento") {
-                  const tipoEv = item.tipo === "plenaria" ? C.accent : C.yellow;
-                  return (
-                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("eventos")}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: tipoEv + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📅</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.titulo}</span>
-                          {item.hora && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{item.hora}hs</span>}
-                          {item.descripcion && <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={tipoEv}>{item.tipo}</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item._src === "inasistencia") {
-                  return (
-                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("eventos")}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.red + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🗓️</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.docente || item.nombre || "Docente"}</span>
-                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>Inasistencia · {item.tipoInasist || item.tipo || "—"}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={C.red}>inasistencia</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item._src === "documento") {
-                  const alDoc = als.find(a => a.id === item.alumnoId);
-                  const matDoc = mats.find(m => m.id === item.materiaId);
-                  return (
-                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("documentos")}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.yellow + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📁</div>
-                        <div>
-                          {alDoc && <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{alDoc.nombre} {alDoc.apellido}</span>}
-                          {matDoc && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{matDoc.nombre}</span>}
-                          <div style={{ fontSize: 12, color: C.dim, marginTop: 1, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.nombre || item.url || "Archivo subido"}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={C.yellow}>📁 doc</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item._src === "materia") {
-                  return (
-                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("materias")}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.accent + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📚</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.nombre}</span>
-                          {item.descripcion && <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.descripcion}</div>}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={C.accent}>nueva materia</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item._src === "alumno") {
-                  return (
-                    <div key={item.id} style={{ ...rowStyle, cursor: "pointer" }} onClick={() => onChangeTab && onChangeTab("alumnos")}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: C.blue + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>👤</div>
-                        <div>
-                          <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{item.nombre} {item.apellido}</span>
-                          {item.curso && <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{item.curso}</div>}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <Tag color={C.blue}>nuevo alumno</Tag>
-                        <span style={{ color: C.muted, fontSize: 11 }}>{fmt(item._fecha)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })}
-            </Box>
-          </>
-        );
-      })()}
-    </div>
-  ); };
+      {/* Últimas actividades */}
+      {!busLower && acts.length > 0 && (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <h3 style={{ color: C.dim, fontSize: 12, fontWeight: 700, margin: 0, textTransform: "uppercase", letterSpacing: 1.2 }}>Últimas actividades</h3>
+            <button onClick={() => setVista("actividades")} style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>ver todas →</button>
+          </div>
+          <Box>
+            {acts.slice(-6).reverse().map(act => {
+              const al  = als.find(a => a.id === act.alumnoId);
+              const mat = mats.find(m => m.id === act.materiaId); const tc  = tipoActColor[act.tipo] || C.dim;
+              return (
+                <div key={act.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}
+                  onClick={() => { setDetalleAlumno(act.alumnoId); setVista("actividades"); }}>
+                  <div>
+                    <span style={{ color: C.text, fontWeight: 600, fontSize: 14 }}>{al?.nombre} {al?.apellido}</span>
+                    {mat && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{mat.nombre}</span>}
+                    <div style={{ fontSize: 12, color: C.dim, marginTop: 1 }}>{act.descripcion}</div> </div> <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Tag color={tc}>{act.tipo}</Tag>
+                    <span style={{ color: C.muted, fontSize: 11 }}>{fmt(act.fecha)}</span></div>
+                </div> );
+            })}
+          </Box>
+        </> )}
+    </div> ); };
 const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const alumno = data.alumnos.find(a => a.id === alumnoId);
   const materia = data.materias.find(m => m.id === materiaId);
@@ -1325,10 +985,6 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
       .then(({ data: docs }) => setDocsAlumno(docs || []));
   }, [alumnoId]);
   const acts       = data.actividades.filter(a => a.alumnoId === alumnoId && a.materiaId === materiaId);
-  // Eventos de agenda: los asignados a este alumno específico, O los de esta materia sin alumno específico
-  const agendaItems = (data.agenda || []).filter(e =>
-    (e.alumnoId === alumnoId) || (!e.alumnoId && e.materiaId === materiaId)
-  ).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const asistencias = (data.asistencias || []).filter(a => a.alumnoId === alumnoId && a.materiaId === materiaId);
   const vals = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom = avg(vals);
   const totalClases   = asistencias.length;
@@ -1342,14 +998,13 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
     const v = parseFloat(formNota.nota);
     if (isNaN(v) || v < 0 || v > 10) { alert("Nota debe ser entre 0 y 10"); return; }
     if (editNotaId) {
-      const updated = { ...data.notas.find(n => n.id === editNotaId), ...formNota };
-      setData(d => ({ ...d, notas: d.notas.map(n => n.id === editNotaId ? updated : n) }));
-      await upsertRow("notas", updated);
+      setData(d => ({ ...d, notas: d.notas.map(n => n.id === editNotaId ? { ...n, ...formNota } : n) }));
+      await supabase.from("notas").update(formNota).eq("id", editNotaId);
       await registrarHistorial(alumnoId, "Nota editada", `${formNota.tipo} — ${formNota.descripcion || ""} — Nota: ${formNota.nota}`);
     } else {
       const nueva = { id: uid(), alumnoId, materiaId, ...formNota };
       setData(d => ({ ...d, notas: [...d.notas, nueva] }));
-      await upsertRow("notas", nueva);
+      await supabase.from("notas").insert(nueva);
       await registrarHistorial(alumnoId, "Nota agregada", `${formNota.tipo} — ${formNota.descripcion || ""} — Nota: ${formNota.nota}`);
     }
     setPopNota(false); setEditNotaId(null); setFormNota(emptyNota); };
@@ -1386,34 +1041,9 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
 
   const editNota = (n) => { setFormNota({ nota: n.nota, tipo: n.tipo, descripcion: n.descripcion || "", fecha: n.fecha }); setEditNotaId(n.id); setPopNota(true); };
 
-  const saveAct = async () => {
+  const saveAct = () => {
     if (!formAct.descripcion.trim()) return;
-    const nueva = { id: uid(), alumnoId, materiaId, ...formAct };
-    setData(d => ({ ...d, actividades: [...d.actividades, nueva] }));
-    // Guardar en Supabase con solo las columnas seguras (hora puede no existir en la tabla)
-    const { error } = await supabase.from("actividades").upsert({
-      id: nueva.id,
-      alumno_id: alumnoId,
-      materia_id: materiaId,
-      tipo: nueva.tipo,
-      descripcion: nueva.descripcion,
-      fecha: nueva.fecha,
-    }, { onConflict: "id" });
-    if (error) {
-      console.error("Error guardando actividad:", error);
-      // Intentar con hora también por si la columna existe
-      const { error: error2 } = await supabase.from("actividades").upsert({
-        id: nueva.id, alumno_id: alumnoId, materia_id: materiaId,
-        tipo: nueva.tipo, descripcion: nueva.descripcion, fecha: nueva.fecha, hora: nueva.hora,
-      }, { onConflict: "id" });
-      if (error2) {
-        console.error("Error guardando actividad (con hora):", error2);
-        alert("Error al guardar la actividad: " + error2.message);
-        setData(d => ({ ...d, actividades: d.actividades.filter(a => a.id !== nueva.id) }));
-        return;
-      }
-    }
-    await registrarHistorial(alumnoId, "Actividad agregada", `${formAct.tipo} — ${formAct.descripcion} — ${formAct.fecha}`);
+    setData(d => ({ ...d, actividades: [...d.actividades, { id: uid(), alumnoId, materiaId, ...formAct }] }));
     setPopAct(false); setFormAct(emptyAct); };
   const delAct = async (id) => {
     if (!confirm("¿Eliminar actividad?")) return;
@@ -1423,15 +1053,10 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
     setData(d => ({ ...d, actividades: d.actividades.filter(a => a.id !== id) }));
   };
 
-  const saveAsist = async () => {
-    const nueva = { id: uid(), alumnoId, materiaId, ...formAsist };
-    setData(d => ({ ...d, asistencias: [...(d.asistencias || []), nueva] }));
-    await upsertRow("asistencias", nueva);
+  const saveAsist = () => {
+    setData(d => ({ ...d, asistencias: [...(d.asistencias || []), { id: uid(), alumnoId, materiaId, ...formAsist }] }));
     setPopAsist(false); setFormAsist(emptyAsist); };
-  const delAsist = async (id) => {
-    if (!confirm("¿Eliminar registro?")) return;
-    setData(d => ({ ...d, asistencias: (d.asistencias || []).filter(a => a.id !== id) }));
-    await deleteRow("asistencias", id); };
+  const delAsist = (id) => { if (!confirm("¿Eliminar registro?")) return; setData(d => ({ ...d, asistencias: (d.asistencias || []).filter(a => a.id !== id) })); };
 
   const tipoActColor  = { positiva: C.green, negativa: C.red, neutral: C.yellow, participacion: C.blue, observacion: C.dim };
 
@@ -1441,7 +1066,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
 
   const SUBTABS = [
     { id: "notas",       icon: "📝", label: `Notas (${notas.length})` },
-    { id: "actividades", icon: "⚡", label: `Actividades (${acts.length + agendaItems.length})` },
+    { id: "actividades", icon: "⚡", label: `Actividades (${acts.length})` },
     { id: "asistencia",  icon: "📅", label: `Asistencia (${totalClases})` },
     { id: "archivos",    icon: "📁", label: `Archivos` }, ];
   return (
@@ -1554,7 +1179,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               <div><div style={{ fontSize: 11, color: C.muted, marginBottom: 4, fontWeight: 700 }}>ASISTENCIA</div><div style={{ fontSize: 28, fontWeight: 900, color: asistColor }}>{pctAsist !== null ? `${pctAsist}%` : "—"}</div></div>
             </Box>
             {notas.length >= 1 && (() => {
-              const tipoColors = { parcial: "#22c55e", final: "#f97316", trabajo: "#34d399", oral: "#fbbf24", recuperatorio: "#fb923c", otro: "#60a5fa" };
+              const tipoColors = { parcial: "#6c63ff", final: "#f87171", trabajo: "#2dd4bf", oral: "#fbbf24", recuperatorio: "#f97316", otro: "#60a5fa" };
               const cuatri1 = notas.filter(n => { const m = new Date(n.fecha+"T12:00:00").getMonth()+1; return m>=3&&m<=6; });
               const cuatri2 = notas.filter(n => { const m = new Date(n.fecha+"T12:00:00").getMonth()+1; return m>=8&&m<=11; });
               const tiposPresentes = [...new Set(notas.map(n=>n.tipo).filter(Boolean))];
@@ -1613,56 +1238,49 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
       {/* ── ACTIVIDADES ── */}
       {subTab === "actividades" && (
         <div>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-            <Btn onClick={() => { setFormAct(emptyAct); setPopAct(true); }}>+ Registrar Actividad</Btn>
-          </div>
-
-          {/* Exámenes y TPs de Agenda asignados a este alumno/materia */}
-          {agendaItems.length > 0 && (() => {
-            const TIPOS_AG = { examen:"📝", tp:"📋", rendir:"🎯", otro:"📌" };
-            const LABEL_AG = { examen:"Examen", tp:"Trabajo Práctico", rendir:"Examen para Rendir", otro:"Otro" };
-            const EST_COLOR = { pendiente: C.yellow, entregado: C.blue, calificado: C.green };
+          {/* Exámenes/TPs de agenda para este alumno */}
+          {(() => {
+            const agendaItems = (data.agenda || []).filter(e =>
+              (e.alumnoId === alumnoId) || (!e.alumnoId && e.materiaId === materiaId)
+            ).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
             const today = new Date().toISOString().slice(0,10);
+            if (agendaItems.length === 0) return null;
             return (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 11, color: C.yellow, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>📅 Exámenes y TPs programados</div>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 11, color: C.accentL, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>📅 Exámenes y TPs programados</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {agendaItems.map(ev => {
                     const dias = Math.ceil((new Date(ev.fecha + "T12:00:00") - new Date()) / 86400000);
                     const urgente = dias >= 0 && dias <= 3;
                     const vencido = dias < 0;
-                    const estColor = EST_COLOR[ev.estado] || C.dim;
+                    const tipoColor = { examen: C.red, tp: C.blue, rendir: C.yellow, otro: C.dim };
+                    const color = tipoColor[ev.tipo] || C.dim;
                     return (
-                      <Box key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", border: `1.5px solid ${urgente ? C.red + "55" : C.border}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          <div style={{ width: 38, height: 38, borderRadius: 11, background: C.yellow + "18", border: `1px solid ${C.yellow}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                            {TIPOS_AG[ev.tipo] || "📌"}
+                      <div key={ev.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", background: C.card2, border: `1px solid ${urgente ? C.red+"44" : C.border}`, borderRadius: 12 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                            <span style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{ev.titulo}</span>
+                            {urgente && !vencido && <span style={{ background: C.red+"22", color: C.red, border: `1px solid ${C.red}44`, borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>⚠️ {dias===0?"¡Hoy!":`${dias}d`}</span>}
                           </div>
-                          <div>
-                            <div style={{ color: C.text, fontWeight: 700, fontSize: 14 }}>{ev.titulo}</div>
-                            <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4, flexWrap: "wrap" }}>
-                              <Tag color={C.yellow}>{LABEL_AG[ev.tipo] || ev.tipo}</Tag>
-                              <span style={{ color: C.muted, fontSize: 12 }}>📅 {fmt(ev.fecha)}</span>
-                              {urgente && !vencido && <span style={{ color: C.red, fontSize: 11, fontWeight: 700 }}>{dias === 0 ? "¡Hoy!" : `¡${dias}d!`}</span>}
-                              {vencido  && <span style={{ color: C.dim, fontSize: 11 }}>Vencido</span>}
-                            </div>
-                            {ev.descripcion && <div style={{ color: C.dim, fontSize: 12, marginTop: 3 }}>{ev.descripcion}</div>}
-                            {ev.archivoUrl && <a href={ev.archivoUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 4, color: C.accentL, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>📎 {ev.archivoNombre || "Ver archivo"}</a>}
+                          <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center" }}>
+                            <Tag color={color}>{ev.tipo}</Tag>
+                            <span style={{ color: C.muted, fontSize: 12 }}>📅 {fmt(ev.fecha)}{vencido?" · vencido":""}</span>
+                            {ev.archivoUrl && <a href={ev.archivoUrl} target="_blank" rel="noreferrer" style={{ color: C.accentL, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>📎 {ev.archivoNombre||"Ver archivo"}</a>}
                           </div>
                         </div>
-                        <Tag color={estColor}>{ev.estado}</Tag>
-                      </Box>
+                        <Tag color={ev.estado==="calificado"?C.green:ev.estado==="entregado"?C.blue:C.yellow}>{ev.estado}</Tag>
+                      </div>
                     );
                   })}
                 </div>
               </div>
             );
           })()}
-
-          {/* Actividades de conducta/participación */}
-          {acts.length > 0 && <div style={{ fontSize: 11, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>⚡ Actividades registradas</div>}
-          {acts.length === 0 && agendaItems.length === 0 ? <Empty icon="⚡" msg="No hay actividades registradas para este alumno en esta materia." /> : (
-            acts.length === 0 ? null :
+          <div style={{ fontSize: 11, color: C.dim, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>⚡ Actividades registradas</div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+            <Btn onClick={() => { setFormAct(emptyAct); setPopAct(true); }}>+ Registrar Actividad</Btn>
+          </div>
+          {acts.length === 0 ? <Empty icon="⚡" msg="No hay actividades registradas para este alumno en esta materia." /> : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {acts.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).map(act => {
                 const tc = tipoActColor[act.tipo] || C.dim;
@@ -1676,8 +1294,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                       <Btn v="danger" sm onClick={() => delAct(act.id)}>🗑️</Btn></div>
                   </Box> );
               })}
-            </div>
-          )}
+            </div> )}
         </div> )}
       {/* ── ASISTENCIA ── */}
       {subTab === "asistencia" && (
@@ -1821,8 +1438,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
               <Btn v="ghost" onClick={() => setPopAsist(false)}>Cancelar</Btn>
               <Btn onClick={saveAsist}>💾 Registrar</Btn></div></div>
         </Pop> )}
-    </div>
-  ); };
+    </div> ); };
 const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
   const materia = data.materias.find(m => m.id === materiaId);
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null); const [popAgregarAlumno, setPopAgregarAlumno] = useState(false); const [busqueda, setBusqueda] = useState("");
@@ -1835,43 +1451,36 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
   const [tipoMasivo, setTipoMasivo] = useState("parcial");
   const [fechaMasiva, setFechaMasiva] = useState(new Date().toISOString().slice(0,10));
   const [descMasiva, setDescMasiva] = useState("");
-  const [tabMasiva, setTabMasiva] = useState("notas");
-  const [tipoAct, setTipoAct] = useState({});
-  const [descAct, setDescAct] = useState("");
-  const [fechaAct, setFechaAct] = useState(new Date().toISOString().slice(0,10));
-  const [horaAct, setHoraAct] = useState("");
+  // Estados para MasivaModal (nivel componente, no dentro de IIFE)
+  const [tabMasiva,  setTabMasiva]  = useState("notas");
+  const [tipoAct,    setTipoAct]    = useState({});
+  const [descAct,    setDescAct]    = useState("");
+  const [fechaAct,   setFechaAct]   = useState(new Date().toISOString().slice(0,10));
+  const [horaAct,    setHoraAct]    = useState("");
   const alumnosColegio = data.alumnos.filter(a => a.colegioId === colegioId);
   const inscriptos = data.inscripciones
     ? data.inscripciones.filter(i => i.materiaId === materiaId).map(i => i.alumnoId)
     : [];
   const alumnosMateria = alumnosColegio.filter(a => inscriptos.includes(a.id));
   const disponibles = alumnosColegio.filter(a => !inscriptos.includes(a.id) && `${a.nombre} ${a.apellido} ${a.dni || ""}`.toLowerCase().includes(busqueda.toLowerCase()));
-  const agregarAlumno = async (alumnoId) => {
-    const insc = { id: uid(), materiaId, alumnoId };
-    setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), insc] }));
-    await upsertRow("inscripciones", insc); };
-  const crearYAgregarAlumno = async () => {
+  const agregarAlumno = (alumnoId) => {
+    setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), { id: uid(), materiaId, alumnoId }] })); };
+  const crearYAgregarAlumno = () => {
     if (!formNuevo.nombre.trim() || !formNuevo.apellido.trim()) return;
     const nuevoId = uid();
-    const nuevoAlumno = { id: nuevoId, colegioId, ...formNuevo };
-    const insc = { id: uid(), materiaId, alumnoId: nuevoId };
     setData(d => ({
       ...d,
-      alumnos: [...d.alumnos, nuevoAlumno],
-      inscripciones: [...(d.inscripciones || []), insc],
+      alumnos: [...d.alumnos, { id: nuevoId, colegioId, ...formNuevo }],
+      inscripciones: [...(d.inscripciones || []), { id: uid(), materiaId, alumnoId: nuevoId }],
     }));
-    await upsertRow("alumnos", nuevoAlumno);
-    await upsertRow("inscripciones", insc);
     setFormNuevo(emptyForm);
     setCreandoNuevo(false);
     setBusqueda(""); };
-  const quitarAlumno = async (alumnoId) => {
+  const quitarAlumno = (alumnoId) => {
     if (!confirm("¿Quitar este alumno de la materia?")) return;
-    const insc = (data.inscripciones || []).find(i => i.materiaId === materiaId && i.alumnoId === alumnoId);
     setData(d => ({ ...d, inscripciones: (d.inscripciones || []).filter(i => !(i.materiaId === materiaId && i.alumnoId === alumnoId)) }));
-    if (insc?.id) await deleteRow("inscripciones", insc.id);
   };
-  const saveMasiva = async () => {
+  const saveMasiva = () => {
     const nuevasNotas = [];
     for (const [alumnoId, nota] of Object.entries(notasMasivas)) {
       const v = parseFloat(nota);
@@ -1881,7 +1490,6 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
     }
     if (nuevasNotas.length === 0) { alert("No ingresaste ninguna nota válida."); return; }
     setData(d => ({ ...d, notas: [...d.notas, ...nuevasNotas] }));
-    for (const nota of nuevasNotas) { await upsertRow("notas", nota); }
     setPopMasiva(false); setNotasMasivas({}); setDescMasiva("");
     alert(`✅ Se guardaron ${nuevasNotas.length} notas.`);
   };
@@ -1896,25 +1504,17 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           { label: `${al?.nombre} ${al?.apellido}` },
         ]} />
         <AlumnoDetalle data={data} setData={setData} alumnoId={alumnoSeleccionado} materiaId={materiaId} onBack={() => setAlumnoSeleccionado(null)} />
-      </div>
-    );
-  }
+      </div> ); }
   const saveActividades = async () => {
     if (!descAct.trim()) { alert("Ingresá una descripción."); return; }
     const nuevas = alumnosMateria.map(al => ({ id: uid(), alumnoId: al.id, materiaId, tipo: tipoAct[al.id]||"positiva", descripcion: descAct, fecha: fechaAct, hora: horaAct }));
-    setData(d => ({ ...d, actividades: [...d.actividades, ...nuevas] }));
-    let errCount = 0;
     for (const act of nuevas) {
-      const { error } = await supabase.from("actividades").upsert({ id: act.id, alumno_id: act.alumnoId, materia_id: act.materiaId, tipo: act.tipo, descripcion: act.descripcion, fecha: act.fecha }, { onConflict: "id" });
-      if (error) {
-        const { error: e2 } = await supabase.from("actividades").upsert({ id: act.id, alumno_id: act.alumnoId, materia_id: act.materiaId, tipo: act.tipo, descripcion: act.descripcion, fecha: act.fecha, hora: act.hora }, { onConflict: "id" });
-        if (e2) { errCount++; }
-      }
+      await upsertRow("actividades", act, setData);
     }
-    setPopMasiva(false); setDescAct(""); setHoraAct("");
-    if (errCount > 0) alert(`⚠️ Se guardaron ${nuevas.length - errCount}/${nuevas.length} actividades.`);
-    else alert(`✅ Se registraron ${nuevas.length} actividades.`);
+    setPopMasiva(false); setDescAct(""); setHoraAct(""); setTipoAct({});
+    alert(`✅ Se registraron ${nuevas.length} actividades.`);
   };
+
   return (
     <div>
       <Breadcrumb items={[{ label: "Materias", onClick: onBack }, { label: materia?.nombre }]} />
@@ -2000,7 +1600,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                     <input type="number" min="0" max="10" step="0.1" placeholder="—"
                       value={notasMasivas[al.id] || ""}
                       onChange={e => setNotasMasivas(n => ({ ...n, [al.id]: e.target.value }))}
-                      style={{ width: 70, background: "#07101e", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
+                      style={{ width: 70, background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 15, fontWeight: 700, textAlign: "center", outline: "none" }}
                       onFocus={e => e.target.style.borderColor = C.accent}
                       onBlur={e => e.target.style.borderColor = C.border} />
                   </div>
@@ -2029,7 +1629,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
                       {al.curso && <span style={{ color: C.muted, fontSize: 12, marginLeft: 8 }}>{al.curso}</span>}
                     </div>
                     <select value={tipoAct[al.id]||"positiva"} onChange={e => setTipoAct(t => ({...t, [al.id]: e.target.value}))}
-                      style={{ background: "#07101e", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                      style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
                       <option value="positiva">✅ Positiva</option>
                       <option value="negativa">❌ Negativa</option>
                       <option value="participacion">🙋 Participación</option>
@@ -2048,7 +1648,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           </div>
           )}
         </Pop>
-      )}
+        )}
       {/* Pop agregar alumno */}
       {popAgregarAlumno && (
         <Pop title={creandoNuevo ? `➕ Nuevo alumno en ${materia?.nombre}` : `Agregar alumno a ${materia?.nombre}`} onClose={() => { setPopAgregarAlumno(false); setCreandoNuevo(false); setBusqueda(""); setFormNuevo(emptyForm); }} wide>
@@ -2129,38 +1729,20 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
               </div>
             </> )}
         </Pop> )}
-    </div>
-  ); };
+    </div> ); };
 const Materias = ({ data, setData, colegioId }) => {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "" });
   const [editId, setEditId] = useState(null);
-  const materias = data.materias.filter(m => m.colegioId === colegioId)
-    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  const materias = data.materias.filter(m => m.colegioId === colegioId);
   if (materiaSeleccionada) {
     return <MateriaDetalle data={data} setData={setData} materiaId={materiaSeleccionada} colegioId={colegioId} onBack={() => setMateriaSeleccionada(null)} />;
   }
-  const save = async () => {
+  const save = () => {
     if (!form.nombre.trim()) return;
-    if (editId) {
-      const updated = { ...data.materias.find(m => m.id === editId), ...form };
-      setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? updated : m) }));
-      await upsertRow("materias", updated);
-    } else {
-      const nueva = { id: uid(), colegioId, createdAt: new Date().toISOString(), ...form };
-      setData(d => ({ ...d, materias: [...d.materias, nueva] }));
-      const { error } = await supabase.from("materias").upsert({ id: nueva.id, colegio_id: colegioId, nombre: nueva.nombre, descripcion: nueva.descripcion || "" }, { onConflict: "id" });
-      if (error) {
-        console.error("Error guardando materia:", error);
-        alert("Error al guardar la materia: " + error.message);
-        setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== nueva.id) }));
-        return;
-      }
-    }
+    if (editId) setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? { ...m, ...form } : m) }));
+    else setData(d => ({ ...d, materias: [...d.materias, { id: uid(), colegioId, ...form }] }));
     setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "" }); };
-  const del = async (id) => {
-    if (!confirm("¿Eliminar materia?")) return;
-    setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) }));
-    await deleteRow("materias", id); };
+  const del = (id) => { if (!confirm("¿Eliminar materia?")) return; setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) })); };
 
   const edit = (m) => { setForm({ nombre: m.nombre, descripcion: m.descripcion || "" }); setEditId(m.id); setPop(true); };
   return (
@@ -2205,8 +1787,7 @@ const Materias = ({ data, setData, colegioId }) => {
               <Btn v="ghost" onClick={() => { setPop(false); setEditId(null); }}>Cancelar</Btn>
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
-    </div>
-  ); };
+    </div> ); };
 const imprimirBoletin = (data, alumnoId, colegioId) => {
   const alumno = data.alumnos.find(a => a.id === alumnoId);
   const colegio = data.colegios.find(c => c.id === colegioId);
@@ -2347,42 +1928,20 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
               materiaId={materiaActiva}
               onBack={onBack} /> )}
         </> )}
-    </div>
-  ); };
+    </div> ); };
 const Alumnos = ({ data, setData, colegioId }) => {
   const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); const [editId, setEditId] = useState(null);
   const [filtro, setFiltro] = useState(""); const [alumnoViendo, setAlumnoViendo] = useState(null);
   const alumnos = data.alumnos.filter(a => a.colegioId === colegioId);
   const cursos = [...new Set(alumnos.map(a => a.curso).filter(Boolean))].sort();
   const [filtroCurso, setFiltroCurso] = useState("");
-  const save = async () => {
+  const save = () => {
     if (!form.nombre.trim() || !form.apellido.trim()) return;
-    if (editId) {
-      const updated = { ...data.alumnos.find(a => a.id === editId), ...form };
-      setData(d => ({ ...d, alumnos: d.alumnos.map(a => a.id === editId ? updated : a) }));
-      await upsertRow("alumnos", updated);
-    } else {
-      const nuevo = { id: uid(), colegioId, createdAt: new Date().toISOString(), ...form };
-      setData(d => ({ ...d, alumnos: [...d.alumnos, nuevo] }));
-      const { error } = await supabase.from("alumnos").upsert({
-        id: nuevo.id, colegio_id: colegioId,
-        nombre: nuevo.nombre, apellido: nuevo.apellido,
-        dni: nuevo.dni || null, fecha_nac: nuevo.fechaNac || null,
-        curso: nuevo.curso || null, email: nuevo.email || null, telefono: nuevo.telefono || null
-      }, { onConflict: "id" });
-      if (error) {
-        console.error("Error guardando alumno:", error);
-        alert("Error al guardar el alumno: " + error.message);
-        setData(d => ({ ...d, alumnos: d.alumnos.filter(a => a.id !== nuevo.id) }));
-        return;
-      }
-    }
+    if (editId) setData(d => ({ ...d, alumnos: d.alumnos.map(a => a.id === editId ? { ...a, ...form } : a) }));
+    else setData(d => ({ ...d, alumnos: [...d.alumnos, { id: uid(), colegioId, ...form }] }));
     setPop(false); setEditId(null);
     setForm({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); };
-  const del = async (id) => {
-    if (!confirm("¿Eliminar alumno?")) return;
-    setData(d => ({ ...d, alumnos: d.alumnos.filter(a => a.id !== id) }));
-    await deleteRow("alumnos", id); };
+  const del = (id) => { if (!confirm("¿Eliminar alumno?")) return; setData(d => ({ ...d, alumnos: d.alumnos.filter(a => a.id !== id) })); };
 
   const edit = (a) => {
     setForm({ nombre: a.nombre, apellido: a.apellido, dni: a.dni || "", fechaNac: a.fechaNac || "", curso: a.curso || "", email: a.email || "", telefono: a.telefono || "" });
@@ -2472,8 +2031,7 @@ const Alumnos = ({ data, setData, colegioId }) => {
               <Btn v="ghost" onClick={() => { setPop(false); setEditId(null); }}>Cancelar</Btn>
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
         </Pop> )}
-    </div>
-  ); };
+    </div> ); };
 const TIPOS_INASIST = [
   { id: "enfermedad",    label: "Enfermedad",           icon: "🤒", color: "#f87171" },
   { id: "particular",   label: "Razones particulares",  icon: "👤", color: "#60a5fa" },
@@ -2514,39 +2072,21 @@ const Eventos = ({ data, setData, colegioId }) => {
 
   const openEdit = ev => { setForm({titulo:ev.titulo,fecha:ev.fecha,hora:ev.hora||"",participantes:ev.participantes||"",descripcion:ev.descripcion||"",tipo:ev.tipo}); setEditId(ev.id); setPop(true); };
 
-  const save = async () => {
+  const save = () => {
     if (!form.titulo.trim()) return;
-    if (editId) {
-      const updated = { ...(data.eventos||[]).find(e => e.id===editId), ...form };
-      setData(d => ({...d, eventos: (d.eventos||[]).map(e => e.id===editId ? updated : e)}));
-      await upsertRow("eventos", updated);
-    } else {
-      const nuevo = { id: uid(), colegioId, ...form };
-      setData(d => ({...d, eventos: [...(d.eventos||[]), nuevo]}));
-      await upsertRow("eventos", nuevo);
-    }
+    if (editId) setData(d => ({...d, eventos: (d.eventos||[]).map(e => e.id===editId ? {...e,...form} : e)}));
+    else        setData(d => ({...d, eventos: [...(d.eventos||[]), {id:uid(), colegioId, ...form}]}));
     setPop(false); setEditId(null); setForm(emptyForm); };
-  const del = async id => {
+  const del = id => {
     if (!confirm("Eliminar evento?")) return;
     setData(d => ({...d, eventos: (d.eventos||[]).filter(e => e.id!==id)}));
-    await deleteRow("eventos", id);
     if (verId===id) setVerId(null); };
-  const saveInasist = async () => {
+  const saveInasist = () => {
     if (!formInasist.persona.trim()) return;
-    if (editInasistId) {
-      const updated = { ...(data.inasistencias||[]).find(i => i.id===editInasistId), ...formInasist };
-      setData(d => ({...d, inasistencias: (d.inasistencias||[]).map(i => i.id===editInasistId ? updated : i)}));
-      await upsertRow("inasistencias", updated);
-    } else {
-      const nuevo = { id: uid(), colegioId, ...formInasist };
-      setData(d => ({...d, inasistencias: [...(d.inasistencias||[]), nuevo]}));
-      await upsertRow("inasistencias", nuevo);
-    }
+    if (editInasistId) setData(d => ({...d, inasistencias: (d.inasistencias||[]).map(i => i.id===editInasistId ? {...i,...formInasist} : i)}));
+    else               setData(d => ({...d, inasistencias: [...(d.inasistencias||[]), {id:uid(), colegioId, ...formInasist}]}));
     setPopInasist(false); setEditInasistId(null); setFormInasist(emptyInasist); };
-  const delInasist = async id => {
-    if (!confirm("Eliminar pedido?")) return;
-    setData(d => ({...d, inasistencias: (d.inasistencias||[]).filter(i => i.id!==id)}));
-    await deleteRow("inasistencias", id); };
+  const delInasist    = id => { if (!confirm("Eliminar pedido?")) return; setData(d => ({...d, inasistencias: (d.inasistencias||[]).filter(i => i.id!==id)})); };
 
   const editInasistFn = i  => { setFormInasist({persona:i.persona,fecha:i.fecha,tipoInasist:i.tipoInasist,descripcion:i.descripcion||"",estado:i.estado||"pendiente"}); setEditInasistId(i.id); setPopInasist(true); };
 
@@ -2569,7 +2109,7 @@ const Eventos = ({ data, setData, colegioId }) => {
           {ev.descripcion ? <div style={{color:C.text,fontSize:14,lineHeight:1.8,background:C.card2,borderRadius:10,padding:"16px 18px",whiteSpace:"pre-wrap"}}>{ev.descripcion}</div> : <div style={{color:C.muted,fontSize:13,fontStyle:"italic"}}>Sin descripcion registrada.</div>}
         </div>
       </Box>
-    );
+    </div> );
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
@@ -2689,7 +2229,7 @@ const Eventos = ({ data, setData, colegioId }) => {
             <Inp label="Participantes" value={form.participantes} onChange={e=>setForm(f=>({...f,participantes:e.target.value}))} placeholder="Ej: Directivos, docentes, padres..." />
             <div style={{display:"flex",flexDirection:"column",gap:5}}>
               <label style={{fontSize:11,color:C.dim,fontWeight:700,textTransform:"uppercase",letterSpacing:1.1}}>Descripcion / Lo sucedido</label>
-              <textarea value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Describí lo que ocurrio, acuerdos, temas..." rows={6} style={{background:"#07101e",border:"1px solid "+C.border,borderRadius:10,padding:"10px 14px",color:C.text,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.7}} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border} />
+              <textarea value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Describí lo que ocurrio, acuerdos, temas..." rows={6} style={{background:"#090b12",border:"1px solid "+C.border,borderRadius:10,padding:"10px 14px",color:C.text,fontSize:14,outline:"none",resize:"vertical",fontFamily:"inherit",lineHeight:1.7}} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border} />
             </div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
               <Btn v="ghost" onClick={()=>{setPop(false);setEditId(null);}}>Cancelar</Btn>
@@ -2718,8 +2258,7 @@ const Eventos = ({ data, setData, colegioId }) => {
               <Btn v="ghost" onClick={()=>{setPopInasist(false);setEditInasistId(null);}}>Cancelar</Btn>
               <Btn onClick={saveInasist}>💾 Guardar pedido</Btn></div></div>
         </Pop> )}
-    </div>
-  ); };
+    </div> ); };
 const exportarExcel = (data, colegioId) => {
   const col    = data.colegios.find(c => c.id === colegioId);
   const als    = data.alumnos.filter(a => a.colegioId === colegioId);
@@ -2897,7 +2436,7 @@ const Reportes = ({ data, setData, onClose }) => {
   const [form, setForm] = useState({ titulo: "", descripcion: "", prioridad: "media" });
   const reportes = [...(data.reportes||[])].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
   const prioColor = { alta: "#f87171", media: "#fbbf24", baja: "#2dd4bf" };
-  const estadoColor = { pendiente: "#f97316", "en revision": "#22c55e", resuelto: "#34d399" };
+  const estadoColor = { pendiente: "#fbbf24", "en revision": "#6c63ff", resuelto: "#2dd4bf" };
 
   const save = () => {
     if (!form.titulo.trim() || !form.descripcion.trim()) { alert("Completá título y descripción."); return; }
@@ -3065,8 +2604,7 @@ const Documentos = ({ data, setData, colegioId }) => {
   const [procesando, setProcesando] = useState(false);
   const [filtroAlumno, setFiltroAlumno] = useState("");
   const [filtroMateria, setFiltroMateria] = useState("");
-  const [editDoc, setEditDoc] = useState(null); // doc que se está editando
-  const [editForm, setEditForm] = useState({});
+  const [showResumen, setShowResumen] = useState(false);
   const alumnos = data.alumnos.filter(a => a.colegioId === colegioId);
   const materias = data.materias.filter(m => m.colegioId === colegioId);
 
@@ -3132,7 +2670,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     setProcesando(false);
   };
 
-  const confirmarYSubir = async (item, alumnoId, tipo, notaOverride, materiaIdParam) => {
+  const confirmarYSubir = async (item, alumnoId, tipo, notaOverride) => {
     setSubiendo(true);
     try {
       const base64 = await new Promise((resolve) => {
@@ -3152,19 +2690,19 @@ const Documentos = ({ data, setData, colegioId }) => {
       const doc = { id: crypto.randomUUID(), alumno_id: alumnoId || null, colegio_id: colegioId, nombre: item.file.name, tipo, url: uploadData.url, storage_path: uploadData.publicId || "", fecha: new Date().toISOString().slice(0,10) };
       const { error: docErr } = await supabase.from("documentos").insert(doc);
       console.log("doc insert result:", docErr ? JSON.stringify(docErr) : "OK", "doc.id:", doc.id);
-      // Save nota — usar materia seleccionada por usuario, o fallback a primera inscripción
+      // Save nota if provided
       const notaFinal = notaOverride !== undefined ? notaOverride : item.notaDetectada;
       if (notaFinal && alumnoId) {
-        let materiaId = materiaIdParam || item.materiaId || "";
-        if (!materiaId) {
-          const inscripciones = data.inscripciones.filter(i => i.alumnoId === alumnoId);
-          materiaId = inscripciones.length > 0 ? inscripciones[0].materiaId : "";
-        }
-        const nota = { id: crypto.randomUUID(), alumnoId, materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
+        const inscripciones = data.inscripciones.filter(i => i.alumnoId === alumnoId);
+        const materiaId = inscripciones.length > 0 ? inscripciones[0].materiaId : "";
+        const nota = { id: crypto.randomUUID(), alumno_id: alumnoId, materia_id: materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
         console.log("Saving nota:", JSON.stringify(nota));
-        setData(d => ({ ...d, notas: [...d.notas, nota] }));
-        await upsertRow("notas", nota);
-        await registrarHistorial(alumnoId, "Nota agregada", `${tipo} — ${item.file.name} — Nota: ${notaFinal}`);
+        const { error: notaErr } = await supabase.from("notas").insert(nota);
+        if (notaErr) console.error("nota insert error:", notaErr);
+        else {
+          setData(d => ({ ...d, notas: [...d.notas, nota] }));
+          await registrarHistorial(alumnoId, "Nota agregada", `${tipo} — ${item.file.name} — Nota: ${notaFinal}`);
+        }
       }
       setArchivos(a => [doc, ...a]);
       setConfirmQueue(q => q.filter(x => x !== item));
@@ -3178,7 +2716,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     setShowResumen(false);
     setSubiendo(true);
     for (const item of [...confirmQueue]) {
-      await confirmarYSubir(item, item.alumnoId, item.tipoSeleccionado || item.analisis.tipo || item.analisis.descripcion || "documento", item.notaDetectada, item.materiaId);
+      await confirmarYSubir(item, item.alumnoId, item.tipoSeleccionado || item.analisis.tipo || item.analisis.descripcion || "documento", item.notaDetectada);
     }
     setSubiendo(false);
   };
@@ -3210,19 +2748,6 @@ const Documentos = ({ data, setData, colegioId }) => {
     setArchivos(a => a.filter(x => x.id !== doc.id));
   };
 
-  const guardarEdicionDoc = async () => {
-    if (!editDoc) return;
-    const { error } = await supabase.from("documentos").update({
-      nombre: editForm.nombre,
-      tipo: editForm.tipo,
-      alumno_id: editForm.alumno_id || null,
-      materia_id: editForm.materia_id || null,
-      fecha: editForm.fecha,
-    }).eq("id", editDoc.id);
-    if (error) { alert("Error al guardar: " + error.message); return; }
-    setArchivos(a => a.map(x => x.id === editDoc.id ? { ...x, ...editForm } : x));
-    setEditDoc(null);
-  };
   const getAlumnoMaterias = (alumnoId) => {
     return data.inscripciones.filter(i => i.alumnoId === alumnoId).map(i => i.materiaId);
   };
@@ -3239,7 +2764,7 @@ const Documentos = ({ data, setData, colegioId }) => {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>📁 Archivos y Documentos</h2>
-        <label style={{ background: C.grad, color: "#fff", padding: "10px 18px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
+        <label style={{ background: `linear-gradient(135deg, ${C.accent}, #8b3dff)`, color: "#fff", padding: "10px 18px", borderRadius: 12, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
           {procesando ? "🔍 Analizando..." : "⬆️ Subir archivos"}
           <input type="file" multiple accept="image/*,.pdf" style={{ display: "none" }} onChange={e => subirArchivos(e.target.files)} disabled={procesando} />
         </label>
@@ -3257,30 +2782,18 @@ const Documentos = ({ data, setData, colegioId }) => {
                     <div style={{ color: C.text, fontWeight: 700, fontSize: 14, marginBottom: 4 }}>📄 {item.file.name}</div>
                     {item.analisis.descripcion && <div style={{ color: C.muted, fontSize: 12, marginBottom: 8 }}>IA detectó: {item.analisis.descripcion}</div>}
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                      {/* Fila 1: Alumno + Tipo */}
                       <select value={item.alumnoId} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, alumnoId: e.target.value} : x))}
-                        style={{ background: "#07101e", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
                         <option value="">— Sin alumno asignado —</option>
                         {alumnos.map(a => <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
                       </select>
                       <select value={item.analisis.tipo||"documento"} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, tipoSeleccionado: e.target.value, analisis:{...x.analisis, tipo: e.target.value, descripcion: e.target.value}} : x))}
-                        style={{ background: "#07101e", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
+                        style={{ background: "#090b12", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", color: C.text, fontSize: 13, outline: "none" }}>
                         <option value="examen">📝 Examen</option>
                         <option value="trabajo">📋 Trabajo práctico</option>
                         <option value="documento">📄 Documento</option>
                         <option value="dni">🪪 DNI/Documentación</option>
                       </select>
-                    </div>
-                    {/* Fila 2: Materia - destacada */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-                      <span style={{ fontSize: 12, color: C.dim, fontWeight: 700, whiteSpace: "nowrap" }}>📚 Materia:</span>
-                      <select value={item.materiaId || ""}
-                        onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, materiaId: e.target.value} : x))}
-                        style={{ background: "#07101e", border: `1.5px solid ${item.materiaId ? C.accent+"88" : C.yellow+"66"}`, borderRadius: 8, padding: "7px 12px", color: item.materiaId ? C.text : C.yellow, fontSize: 13, outline: "none", minWidth: 180, fontWeight: item.materiaId ? 400 : 700 }}>
-                        <option value="">⚠️ Seleccionar materia...</option>
-                        {data.materias.filter(m => m.colegioId === colegioId).map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-                      </select>
-                      {!item.materiaId && <span style={{ fontSize: 11, color: C.yellow, fontWeight: 700 }}>Recomendado</span>}
                     </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, background: item.notaDetectada ? C.green+"22" : C.accentDim, border: `1px solid ${item.notaDetectada ? C.green+"44" : C.accent+"44"}`, borderRadius: 10, padding: "6px 12px" }}>
                         <span style={{ fontSize: 12, color: C.dim, fontWeight: 700 }}>📊 Nota:</span>
@@ -3293,7 +2806,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                     {item.alumnoSugerido && <div style={{ color: C.accentL, fontSize: 12, marginTop: 6 }}>✨ IA sugirió: {item.alumnoSugerido.apellido}, {item.alumnoSugerido.nombre}</div>}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <Btn onClick={() => confirmarYSubir(item, item.alumnoId, item.analisis.tipo||"documento", undefined, item.materiaId)} disabled={subiendo}>✓ Confirmar</Btn>
+                    <Btn onClick={() => confirmarYSubir(item, item.alumnoId, item.analisis.tipo||"documento")} disabled={subiendo}>✓ Confirmar</Btn>
                     <Btn v="ghost" onClick={() => setConfirmQueue(q => q.filter((_,j) => j!==i))}>✕</Btn>
                   </div>
                 </div>
@@ -3398,60 +2911,17 @@ const Documentos = ({ data, setData, colegioId }) => {
                     {al && <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>👤 {al.apellido}, {al.nombre}</div>}
                     <div style={{ color: C.dim, fontSize: 11, marginTop: 2 }}>{doc.fecha}</div>
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => { setEditDoc(doc); setEditForm({ nombre: doc.nombre, tipo: doc.tipo, alumno_id: doc.alumno_id, materia_id: doc.materia_id, fecha: doc.fecha }); }}
-                      style={{ background: C.blue+"22", border: `1px solid ${C.blue}44`, color: C.blue, borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontSize: 13 }}>✏️</button>
-                    <button onClick={() => eliminarDoc(doc)} style={{ background: C.red+"22", border: `1px solid ${C.red}44`, color: C.red, borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontSize: 13 }}>🗑</button>
-                  </div>
+                  <button onClick={() => eliminarDoc(doc)} style={{ background: C.red+"22", border: `1px solid ${C.red}44`, color: C.red, borderRadius: 8, padding: "6px 8px", cursor: "pointer", fontSize: 13 }}>🗑</button>
                 </div>
               </div>
             </Box>
           );
         })}
       </div>}
-      {/* Modal edición documento */}
-      {editDoc && (
-        <Pop title="✏️ Editar documento" onClose={() => setEditDoc(null)}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <Inp label="Nombre / Descripción" value={editForm.nombre} onChange={e => setEditForm(f => ({ ...f, nombre: e.target.value }))} />
-            <Sel label="Tipo" value={editForm.tipo} onChange={e => setEditForm(f => ({ ...f, tipo: e.target.value }))}>
-              <option value="examen">📝 Examen</option>
-              <option value="trabajo">📋 Trabajo práctico</option>
-              <option value="documento">📄 Documento</option>
-              <option value="dni">🪪 DNI/Documentación</option>
-            </Sel>
-            <Sel label="Alumno" value={editForm.alumno_id || ""} onChange={e => setEditForm(f => ({ ...f, alumno_id: e.target.value }))}>
-              <option value="">— Sin alumno —</option>
-              {[...alumnos].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => (
-                <option key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>
-              ))}
-            </Sel>
-            <Sel label="Materia" value={editForm.materia_id || ""} onChange={e => setEditForm(f => ({ ...f, materia_id: e.target.value }))}>
-              <option value="">— Sin materia —</option>
-              {materias.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-            </Sel>
-            <Inp label="Fecha" type="date" value={editForm.fecha || ""} onChange={e => setEditForm(f => ({ ...f, fecha: e.target.value }))} />
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
-              <Btn v="ghost" onClick={() => setEditDoc(null)}>Cancelar</Btn>
-              <Btn onClick={guardarEdicionDoc}>💾 Guardar</Btn>
-            </div>
-          </div>
-        </Pop>
-      )}
     </div>
   );
-}; 
-
-const SideBtn = ({ icon, label, active, onClick, color, danger }) => {
-  const activeColor = color || C.accentL;
-  const [h, setH] = useState(false);
-  return (
-    <button onClick={onClick} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 14px", borderRadius: 11, border: active ? `1.5px solid ${C.accent}40` : "none", cursor: "pointer", fontSize: 13.5, fontWeight: active ? 700 : 500, transition: "all .15s", background: active ? C.accentDim : h ? C.card2 : "transparent", color: active ? activeColor : h ? (danger ? C.red : C.text) : C.dim, width: "100%", textAlign: "left", fontFamily: "inherit" }}>
-      <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>{icon}</span>{label}
-    </button>
-  );
 };
+
 
 const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [tab, setTab] = useState(() => localStorage.getItem("lastTab") || "dashboard");
@@ -3464,23 +2934,30 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const isMobile = useIsMobile();
   const col = data.colegios.find(c => c.id === colegioId);
   const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos };
-  const View = views[tab] || Dashboard;
+  // Agenda tab -> Dashboard con vista="agenda" preseleccionada
+  const handleAgendaTab = () => {
+    setTab("dashboard"); setDashKey(k => k+1); setMenuOpen(false);
+    // Brief delay so Dashboard mounts, then setVista via initialVista prop
+  };
+  const View = views[tab];
   const [tabKey, setTabKey] = useState(0);
-  const [dashVista, setDashVista] = useState(null);
   const goInicio = () => {
-    setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false); setDashVista(null);
+    setTab("dashboard"); setDashKey(k => k + 1); setMenuOpen(false);
     window.history.pushState({ tab: "dashboard" }, "", "#");
     localStorage.setItem("lastTab", "dashboard");
   };
   const handleTab = (id) => {
-    if (id === "dashboard") { goInicio(); }
-    else if (id === "agenda") {
-      setTab("dashboard"); setDashKey(k => k + 1); setDashVista("agenda"); setMenuOpen(false);
+    if (id === "agenda") {
+      setTab("dashboard"); setDashKey(k => k+1); setMenuOpen(false);
       localStorage.setItem("lastTab", "dashboard");
+      // Signal Dashboard to open agenda vista via dashKey change
+      setTimeout(() => window.__openAgenda?.(), 50);
+      return;
     }
+    if (id === "dashboard") { goInicio(); }
     else if (id === tab) { setTabKey(k => k + 1); setMenuOpen(false); }
     else {
-      setTab(id); setTabKey(k => k + 1); setMenuOpen(false); setDashVista(null);
+      setTab(id); setTabKey(k => k + 1); setMenuOpen(false);
       window.history.pushState({ tab: id }, "", "#" + id);
       localStorage.setItem("lastTab", id);
     }
@@ -3501,9 +2978,6 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
     setExportando(true);
     setTimeout(() => { exportarExcel(data, colegioId); setExportando(false); }, 100);
   };
-
-  // Tab activo para el sidebar/nav — agenda se muestra activo cuando el dashboard está en vista agenda
-  const activeTab = (tab === "dashboard" && dashVista === "agenda") ? "agenda" : tab;
 
   // ── MOBILE LAYOUT ──────────────────────────────────────────────────────────
   if (isMobile) return (
@@ -3529,7 +3003,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
         <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4, zIndex: 99 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: activeTab === t.id ? 700 : 500, background: activeTab === t.id ? C.accentDim : "transparent", color: activeTab === t.id ? C.accentL : C.dim, textAlign: "left" }}>
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: tab === t.id ? 700 : 500, background: tab === t.id ? C.accentDim : "transparent", color: tab === t.id ? C.accentL : C.dim, textAlign: "left" }}>
               <span style={{ fontSize: 20 }}>{t.icon}</span>{t.label}
             </button>
           ))}
@@ -3558,63 +3032,98 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
 
       {/* Contenido principal móvil */}
       <main style={{ flex: 1, padding: "16px 14px", overflowY: "auto" }}>
-        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} initialVista={dashVista} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
+        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
 
       {/* Tab bar inferior móvil */}
       <nav style={{ background: C.card, borderTop: `1px solid ${C.border}`, display: "flex", position: "sticky", bottom: 0, zIndex: 100 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => handleTab(t.id)}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px", border: "none", cursor: "pointer", background: "transparent", color: activeTab === t.id ? C.accentL : C.dim, borderTop: `2px solid ${activeTab === t.id ? C.accent : "transparent"}` }}>
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px", border: "none", cursor: "pointer", background: "transparent", color: tab === t.id ? C.accentL : C.dim, borderTop: `2px solid ${tab === t.id ? C.accent : "transparent"}` }}>
             <span style={{ fontSize: 20 }}>{t.icon}</span>
-            <span style={{ fontSize: 10, fontWeight: activeTab === t.id ? 700 : 500 }}>{t.label}</span>
+            <span style={{ fontSize: 10, fontWeight: tab === t.id ? 700 : 500 }}>{t.label}</span>
           </button>
         ))}
       </nav>
-      {/* Modals FUERA del nav sticky para evitar z-index bloqueado */}
-      {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
-      {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
     </div>
   );
 
   // ── DESKTOP LAYOUT ─────────────────────────────────────────────────────────
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: C.bg }}>
-      <aside style={{ width: 228, background: C.card, borderRight: `1.5px solid ${C.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
-        {/* Logo/School header */}
-        <div style={{ padding: "20px 16px 16px", borderBottom: `1.5px solid ${C.border}`, cursor: "pointer" }} onClick={goInicio}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, background: C.accentDim, border: `1.5px solid ${C.accent}35`, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>🎓</div>
-            <div>
-              <div style={{ fontSize: 9, color: C.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.4, marginBottom: 3 }}>Colegio activo</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: C.text, lineHeight: 1.3, maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{col?.nombre}</div>
-            </div>
-          </div>
+      <aside style={{ width: 220, background: C.card, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
+        <div style={{ padding: "18px 16px 14px", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }} onClick={goInicio}>
+          <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>Colegio activo</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: C.text, lineHeight: 1.3 }}>{col?.nombre}</div>
         </div>
-        {/* Main nav */}
-        <nav style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+        <nav style={{ flex: 1, padding: "12px 9px", display: "flex", flexDirection: "column", gap: 3 }}>
           {TABS.map(t => (
-            <SideBtn key={t.id} icon={t.icon} label={t.label} active={activeTab === t.id} onClick={() => handleTab(t.id)} />
+            <button key={t.id} onClick={() => handleTab(t.id)}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: tab === t.id ? 700 : 500, transition: "all .15s", background: tab === t.id ? C.accentDim : "transparent", color: tab === t.id ? C.accentL : C.dim }}>
+              <span style={{ fontSize: 16 }}>{t.icon}</span>{t.label}
+            </button>
           ))}
         </nav>
-        {/* Bottom actions */}
-        <div style={{ padding: "8px 8px 12px", borderTop: `1.5px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 2 }}>
-          <SideBtn icon={exportando ? "⏳" : "📊"} label={exportando ? "Generando..." : "Exportar Excel"} onClick={handleExport} color="#4ade80" />
-          <SideBtn icon="←" label="Cambiar colegio" onClick={onSalir} danger />
-          <SideBtn icon="🐛" label="Reportar falla" onClick={() => setShowReporte(true)} />
-          {isAdmin && <SideBtn icon="📋" label="Ver fallas" onClick={() => setShowPanel(true)} />}
-          <SideBtn icon="🚪" label="Cerrar sesión" onClick={onLogout} danger />
+        <div style={{ padding: "10px 9px", borderTop: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 6 }}>
+          <button onClick={handleExport} disabled={exportando}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: `1px solid #22c55e33`, cursor: exportando ? "wait" : "pointer", fontSize: 13, fontWeight: 700, background: "#22c55e12", color: "#22c55e", transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#22c55e22"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#22c55e12"; }}>
+            <span style={{ fontSize: 15 }}>{exportando ? "⏳" : "📊"}</span>
+            {exportando ? "Generando..." : "Exportar Excel"}
+          </button>
+          <button onClick={onSalir}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
+            ← Cambiar colegio
+          </button>
+          <button onClick={() => setShowReporte(true)}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.yellow; }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
+            🐛 Reportar falla
+          </button>
+          {isAdmin && (
+          <button onClick={() => setShowPanel(true)}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.accent; }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
+            📋 Ver fallas
+          </button>
+          )}
+          <button onClick={onLogout}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: C.muted, transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
+            🚪 Cerrar sesión
+          </button>
+          {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
+          {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
         </div>
       </aside>
-      <main style={{ flex: 1, padding: "32px 36px", overflowY: "auto", background: C.bg }}>
-        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} initialVista={dashVista} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
+      <main style={{ flex: 1, padding: 32, overflowY: "auto" }}>
+        <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
-      {/* Modals renderizados FUERA del aside para evitar z-index bloqueado por position:sticky */}
-      {showReporte && <FormReporte user={user} tab={tab} onClose={() => setShowReporte(false)} />}
-      {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
     </div>
   );
 };
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(err) { return { hasError: true, error: err }; }
+  componentDidCatch(err, info) { console.error("🔴 App Error:", err, info); }
+  render() {
+    if (this.state.hasError) {
+      return React.createElement("div", { style: { padding: 40, fontFamily: "monospace", color: "#ef4444", background: "#0b0f1a", minHeight: "100vh" } },
+        React.createElement("h2", null, "🔴 Error en la app"),
+        React.createElement("pre", { style: { fontSize: 13, overflowX: "auto" } }, String(this.state.error)),
+        React.createElement("button", { onClick: () => this.setState({ hasError: false }), style: { marginTop: 20, padding: "10px 20px", background: "#22c55e", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" } }, "Reintentar")
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [screen, setScreen] = useState("login"); 
   const [colegioId, setColegioId] = useState(() => localStorage.getItem("lastColegioId") || null);
@@ -3670,7 +3179,7 @@ export default function App() {
 
   if (loading) return (
     <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", color: C.muted, fontSize: 16 }}>Cargando...</div>
-    );
+  );
   return (
     <ErrorBoundary>
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
@@ -3679,4 +3188,5 @@ export default function App() {
       {screen === "colegios" && <ColegioSelector data={data} setData={setData} onSelect={id => { setColegioId(id); setScreen("app"); localStorage.setItem("lastColegioId", id); window.history.pushState({ screen: "app" }, "", "#app"); }} onBack={() => setScreen("welcome")} />}
       {screen === "app" && colegioId && <AppInterna data={data} setData={setData} colegioId={colegioId} user={user} onSalir={() => { setColegioId(null); setScreen("colegios"); localStorage.removeItem("lastColegioId"); localStorage.removeItem("lastTab"); }} onLogout={handleLogout} />}
     </div>
-    </ErrorBoundary> ); }
+    </ErrorBoundary>
+  ); }
