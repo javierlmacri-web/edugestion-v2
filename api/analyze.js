@@ -34,42 +34,49 @@ export default async function handler(req, res) {
     const lines = fullText.split("\n").map(l => l.trim()).filter(Boolean);
     const multiline = fullText.replace(/\n/g, " ");
 
-    // Patrones en orden de confianza:
-    // 1. NOTA / CALIF seguido de número con punto o coma
-    const p1 = multiline.match(/(?:[Nn][Oo][Tt][Aa]|[Cc][Aa][Ll][Ii][Ff])[\s:.\-]*([0-9]+[.,][0-9]+)/);
-    if (p1) nota = p1[1].replace(",", ".");
+    const tryNota = (raw) => {
+      if (!raw) return "";
+      const s = raw.replace(",", ".").trim();
+      // "7S" o "7s" → "7.5"
+      const mS = s.match(/^([0-9])[Ss]$/);
+      if (mS) return mS[1] + ".5";
+      // "75" → "7.5" solo si 2 dígitos y conocido
+      if (/^[0-9]{2}$/.test(s) && ["65","75","85","95"].includes(s)) return s[0] + "." + s[1];
+      const n = parseFloat(s);
+      if (!isNaN(n) && n >= 0 && n <= 10) return String(n);
+      return "";
+    };
 
-    // 2. NOTA seguido de número entero
+    // 1. NOTA/CALIF seguido de número (con o sin separador) en una sola línea
+    const p1 = multiline.match(/(?:NOTA|nota|Nota|CALIF|calif)[\s:.\/\-]*([0-9]+[.,][0-9]+|[0-9][Ss]|[0-9]{1,2})/);
+    if (p1) nota = tryNota(p1[1]);
+
+    // 2. Línea que empieza con NOTA o termina con número después de NOTA
     if (!nota) {
-      const p2 = multiline.match(/(?:[Nn][Oo][Tt][Aa]|[Cc][Aa][Ll][Ii][Ff])[\s:.\-]*([0-9]+)/);
-      if (p2) nota = p2[1];
-    }
-
-    // 3. Corrección OCR: "7S" o "7s" → "7.5" (Vision confunde .5 manuscrito con S)
-    if (!nota || nota.length === 1) {
-      const p3 = multiline.match(/(?:[Nn][Oo][Tt][Aa]|[Cc][Aa][Ll][Ii][Ff])[\s:.\-]*([0-9])[\s]*[Ss5]/);
-      if (p3) nota = p3[1] + ".5";
-    }
-
-    // 4. Corrección OCR: "75" después de NOTA sin separador → puede ser "7.5"
-    if (!nota) {
-      const p4 = multiline.match(/(?:[Nn][Oo][Tt][Aa]|[Cc][Aa][Ll][Ii][Ff])[\s:.\-]*(7[5]|8[5]|9[5]|6[5])\b/);
-      if (p4) nota = p4[1][0] + "." + p4[1][1];
-    }
-
-    // 5. Buscar número en la misma línea que contiene "NOTA" o "CALIF"
-    if (!nota) {
-      for (const line of lines) {
-        const lnorm = line.toLowerCase();
-        if (lnorm.includes("nota") || lnorm.includes("calif")) {
-          const numMatch = line.match(/([0-9]+[.,][0-9]+|[0-9]+)/g);
-          if (numMatch) {
-            for (const nm of numMatch) {
-              const n = parseFloat(nm.replace(",", "."));
-              if (!isNaN(n) && n >= 0 && n <= 10) { nota = String(n); break; }
-              if (nm.length === 2 && ["65","75","85","95"].includes(nm)) { nota = nm[0] + "." + nm[1]; break; }
-            }
+      for (let idx = 0; idx < lines.length; idx++) {
+        const l = lines[idx];
+        if (/nota|calif/i.test(l)) {
+          // número en la misma línea
+          const inline = l.match(/([0-9]+[.,][0-9]+|[0-9][Ss]|[0-9]{1,2})/g);
+          if (inline) {
+            for (const nm of inline) { nota = tryNota(nm); if (nota) break; }
           }
+          // número en la línea siguiente
+          if (!nota && lines[idx + 1]) {
+            const next = lines[idx + 1].match(/^([0-9]+[.,][0-9]+|[0-9][Ss]|[0-9]{1,2})$/);
+            if (next) nota = tryNota(next[1]);
+          }
+          if (nota) break;
+        }
+      }
+    }
+
+    // 3. Esquina superior derecha: última línea corta que sea número (los maestros escriben la nota arriba a la derecha)
+    if (!nota) {
+      for (const l of lines.slice(0, 5)) {
+        if (/^([0-9]+[.,][0-9]+|[0-9][Ss]|[0-9]{1,2})$/.test(l.trim())) {
+          nota = tryNota(l.trim());
+          if (nota) break;
         }
       }
     }
