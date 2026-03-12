@@ -2753,7 +2753,8 @@ const Documentos = ({ data, setData, colegioId }) => {
   };
 
   const abrirEditar = (doc) => {
-    setEditForm({ tipo: doc.tipo || "documento", alumno_id: doc.alumno_id || "", materia_id: doc.materia_id || "", nombre: doc.nombre || "" });
+    const notaAsoc = data.notas.find(n => n.alumnoId === doc.alumno_id && n.descripcion === doc.nombre);
+    setEditForm({ tipo: doc.tipo || "documento", alumno_id: doc.alumno_id || "", materia_id: doc.materia_id || "", nombre: doc.nombre || "", nota: notaAsoc?.nota || "", notaId: notaAsoc?.id || null, notaMateriaId: notaAsoc?.materiaId || "" });
     setEditDoc(doc);
   };
 
@@ -2765,6 +2766,22 @@ const Documentos = ({ data, setData, colegioId }) => {
       nombre: editForm.nombre,
     }).eq("id", editDoc.id);
     if (error) { alert("Error: " + error.message); return; }
+    // Update or create nota asociada
+    if (editForm.nota && editForm.alumno_id) {
+      const materiaId = editForm.materia_id || editForm.notaMateriaId || (data.inscripciones.find(i => i.alumnoId === editForm.alumno_id)?.materiaId || "");
+      if (editForm.notaId) {
+        await supabase.from("notas").update({ nota: editForm.nota, tipo: editForm.tipo, materia_id: materiaId || null, alumno_id: editForm.alumno_id }).eq("id", editForm.notaId);
+        setData(d => ({ ...d, notas: d.notas.map(n => n.id === editForm.notaId ? { ...n, nota: editForm.nota, tipo: editForm.tipo, materiaId, alumnoId: editForm.alumno_id } : n) }));
+      } else {
+        const nuevaNota = { id: crypto.randomUUID(), alumno_id: editForm.alumno_id, materia_id: materiaId || null, nota: editForm.nota, tipo: editForm.tipo, descripcion: editForm.nombre, fecha: editDoc.fecha || new Date().toISOString().slice(0,10) };
+        await supabase.from("notas").insert(nuevaNota);
+        setData(d => ({ ...d, notas: [...d.notas, { ...nuevaNota, alumnoId: editForm.alumno_id, materiaId }] }));
+      }
+    } else if (!editForm.nota && editForm.notaId) {
+      // nota was cleared - delete it
+      await supabase.from("notas").delete().eq("id", editForm.notaId);
+      setData(d => ({ ...d, notas: d.notas.filter(n => n.id !== editForm.notaId) }));
+    }
     setArchivos(a => a.map(x => x.id === editDoc.id ? { ...x, ...editForm } : x));
     setEditDoc(null);
   };
@@ -2914,22 +2931,39 @@ const Documentos = ({ data, setData, colegioId }) => {
         {docsFiltrados.map(doc => {
           const al = alumnos.find(a => a.id === doc.alumno_id);
           const isImg = doc.url?.match(/\.(jpg|jpeg|png|webp|gif)$/i);
+          const notaDoc = data.notas.find(n => n.alumnoId === doc.alumno_id && n.descripcion === doc.nombre);
+          const notaVal = notaDoc?.nota;
+          const notaColor = notaVal >= 7 ? C.green : notaVal >= 4 ? C.yellow : C.red;
           return (
             <Box key={doc.id} style={{ padding: 0, overflow: "hidden" }}>
-              {isImg ? (
-                <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                  <img src={doc.url} alt={doc.nombre} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
-                </a>
-              ) : (
-                <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 100, background: C.bg, textDecoration: "none" }}>
-                  <span style={{ fontSize: 40 }}>📄</span>
-                </a>
-              )}
+              {/* Imagen o ícono */}
+              <div style={{ position: "relative" }}>
+                {isImg ? (
+                  <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                    <img src={doc.url} alt={doc.nombre} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
+                  </a>
+                ) : (
+                  <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 100, background: C.bg, textDecoration: "none" }}>
+                    <span style={{ fontSize: 40 }}>📄</span>
+                  </a>
+                )}
+                {/* Nota badge sobre la imagen */}
+                {notaVal !== undefined && notaVal !== "" && (
+                  <div style={{ position: "absolute", top: 8, right: 8, background: notaColor, color: "#fff", borderRadius: 10, padding: "4px 10px", fontWeight: 900, fontSize: 15, boxShadow: "0 2px 8px #0006" }}>
+                    {notaVal}
+                  </div>
+                )}
+              </div>
               <div style={{ padding: "12px 14px" }}>
                 <div style={{ color: C.text, fontWeight: 700, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.nombre}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <span style={{ background: C.accentDim, color: C.accentL, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{tipoLabel[doc.tipo] || doc.tipo}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <span style={{ background: C.accentDim, color: C.accentL, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{tipoLabel[doc.tipo] || doc.tipo}</span>
+                      {notaVal !== undefined && notaVal !== "" && (
+                        <span style={{ background: notaColor+"22", color: notaColor, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700, border: `1px solid ${notaColor}44` }}>📝 Nota: {notaVal}</span>
+                      )}
+                    </div>
                     {al && <div style={{ color: C.muted, fontSize: 12, marginTop: 4 }}>👤 {al.apellido}, {al.nombre}</div>}
                     <div style={{ color: C.dim, fontSize: 11, marginTop: 2 }}>{doc.fecha}</div>
                   </div>
@@ -2956,6 +2990,7 @@ const Documentos = ({ data, setData, colegioId }) => {
             <option value="documento">📄 Documento</option>
             <option value="dni">🪪 DNI/Documentación</option>
           </Sel>
+          <Inp label="Nota (opcional, 0-10)" type="number" min="0" max="10" step="0.1" value={editForm.nota || ""} onChange={e => setEditForm(f => ({ ...f, nota: e.target.value }))} placeholder="Ej: 8.5 — dejá vacío para no registrar nota" />
           <Sel label="Alumno" value={editForm.alumno_id} onChange={e => setEditForm(f => ({ ...f, alumno_id: e.target.value }))}>
             <option value="">— Sin alumno —</option>
             {[...alumnos].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => (
