@@ -2782,6 +2782,7 @@ const Documentos = ({ data, setData, colegioId }) => {
   });
 
   return (
+    <>
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 800 }}>📁 Archivos y Documentos</h2>
@@ -2972,6 +2973,7 @@ const Documentos = ({ data, setData, colegioId }) => {
         </div>
       </Pop>
     )}
+    </>
   );
 };
 
