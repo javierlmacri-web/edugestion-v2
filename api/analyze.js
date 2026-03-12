@@ -104,7 +104,7 @@ export default async function handler(req, res) {
       if (key.some(k => lowerNorm.includes(k))) { materiaDetectada = nombre; break; }
     }
 
-    console.log("Detectado → nota:", nota, "| tipo:", tipo, "| materia:", materiaDetectada);
+    console.log("Detectado → nota:", nota, "| tipo:", tipo, "| materia:", materiaDetectada, "| texto (100):", fullText.slice(0,100));
     res.status(200).json({ text: fullText, nota, tipo, materiaDetectada });
 
   } catch (error) {
