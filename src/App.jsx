@@ -1790,10 +1790,33 @@ const Materias = ({ data, setData, colegioId }) => {
   if (materiaSeleccionada) {
     return <MateriaDetalle data={data} setData={setData} materiaId={materiaSeleccionada} colegioId={colegioId} onBack={() => setMateriaSeleccionada(null)} />;
   }
-  const save = () => {
+  const save = async () => {
     if (!form.nombre.trim()) return;
+    const materiaId = editId || uid();
+    const materia = { id: materiaId, colegioId, ...form };
     if (editId) setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? { ...m, ...form } : m) }));
-    else setData(d => ({ ...d, materias: [...d.materias, { id: uid(), colegioId, ...form }] }));
+    else setData(d => ({ ...d, materias: [...d.materias, materia] }));
+
+    // Auto-inscribir alumnos que coincidan con la división de la materia
+    if (form.division) {
+      setData(d => {
+        const alsColegio = d.alumnos.filter(a => a.colegioId === colegioId && a.curso === form.division);
+        const inscActuales = new Set((d.inscripciones || []).filter(i => i.materiaId === materiaId).map(i => i.alumnoId));
+        const nuevasInsc = alsColegio
+          .filter(a => !inscActuales.has(a.id))
+          .map(a => ({ id: crypto.randomUUID(), materiaId, alumnoId: a.id }));
+        if (nuevasInsc.length === 0) return d;
+        // Guardar en Supabase en background
+        Promise.all(nuevasInsc.map(i =>
+          supabase.from("inscripciones").insert({ id: i.id, materia_id: materiaId, alumno_id: i.alumnoId })
+        )).then(results => {
+          const errs = results.filter(r => r.error);
+          if (errs.length) console.error("Inscripcion auto error:", errs);
+          else if (nuevasInsc.length > 0) alert(`✅ ${nuevasInsc.length} alumno(s) inscripto(s) automáticamente en "${form.nombre}" (División: ${form.division}).`);
+        });
+        return { ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] };
+      });
+    }
     setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "", division: "" }); };
   const del = (id) => { if (!confirm("¿Eliminar materia?")) return; setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) })); };
 
@@ -2009,8 +2032,33 @@ const Alumnos = ({ data, setData, colegioId }) => {
   const [filtroCurso, setFiltroCurso] = useState("");
   const save = () => {
     if (!form.nombre.trim() || !form.apellido.trim()) return;
-    if (editId) setData(d => ({ ...d, alumnos: d.alumnos.map(a => a.id === editId ? { ...a, ...form } : a) }));
-    else setData(d => ({ ...d, alumnos: [...d.alumnos, { id: uid(), colegioId, ...form }] }));
+    const alumnoId = editId || uid();
+    if (editId) {
+      setData(d => ({ ...d, alumnos: d.alumnos.map(a => a.id === editId ? { ...a, ...form } : a) }));
+    } else {
+      const alumno = { id: alumnoId, colegioId, ...form };
+      setData(d => {
+        // Auto-inscribir en materias que coincidan con el curso del alumno
+        const nuevasInsc = [];
+        if (form.curso) {
+          const matsDiv = d.materias.filter(m => m.colegioId === colegioId && m.division === form.curso);
+          const inscActuales = new Set((d.inscripciones || []).filter(i => i.alumnoId === alumnoId).map(i => i.materiaId));
+          matsDiv.filter(m => !inscActuales.has(m.id)).forEach(m => {
+            nuevasInsc.push({ id: crypto.randomUUID(), materiaId: m.id, alumnoId });
+          });
+        }
+        if (nuevasInsc.length) {
+          Promise.all(nuevasInsc.map(i =>
+            supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: alumnoId })
+          )).then(results => {
+            const errs = results.filter(r => r.error);
+            if (errs.length) console.error("Inscripcion auto alumno error:", errs);
+            else if (nuevasInsc.length > 0) alert(`✅ ${form.nombre} ${form.apellido} inscripto/a automáticamente en ${nuevasInsc.length} materia(s) del curso "${form.curso}".`);
+          });
+        }
+        return { ...d, alumnos: [...d.alumnos, alumno], inscripciones: [...(d.inscripciones || []), ...nuevasInsc] };
+      });
+    }
     setPop(false); setEditId(null);
     setForm({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); };
   const del = (id) => { if (!confirm("¿Eliminar alumno?")) return; setData(d => ({ ...d, alumnos: d.alumnos.filter(a => a.id !== id) })); };
