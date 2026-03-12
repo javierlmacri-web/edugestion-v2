@@ -267,6 +267,28 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [detalleMateria, setDetalleMateria] = useState(null); const [detalleAlumno, setDetalleAlumno] = useState(null); const [matFiltro, setMatFiltro] = useState(null);
   const [materiaAbierta, setMateriaAbierta] = useState(null);
   const [reloadTick, setReloadTick] = useState(0);
+
+  const sincronizarInscripciones = async () => {
+    if (!confirm("¿Sincronizar inscripciones? Inscribe automáticamente a todos los alumnos en las materias que coincidan con su curso/división.")) return;
+    const alsColegio = data.alumnos.filter(a => a.colegioId === colegioId && a.curso);
+    const matsDiv = data.materias.filter(m => m.colegioId === colegioId && m.division);
+    const nuevasInsc = [];
+    for (const mat of matsDiv) {
+      const alsDiv = alsColegio.filter(a => a.curso === mat.division);
+      const inscActuales = new Set((data.inscripciones || []).filter(i => i.materiaId === mat.id).map(i => i.alumnoId));
+      for (const al of alsDiv) {
+        if (!inscActuales.has(al.id)) nuevasInsc.push({ id: crypto.randomUUID(), materiaId: mat.id, alumnoId: al.id });
+      }
+    }
+    if (nuevasInsc.length === 0) { alert("✅ Todo ya estaba sincronizado."); return; }
+    const results = await Promise.all(nuevasInsc.map(i =>
+      supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId, colegio_id: colegioId })
+    ));
+    const errs = results.filter(r => r.error);
+    if (errs.length) { alert("❌ Error: " + JSON.stringify(errs[0].error)); return; }
+    setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] }));
+    alert(`✅ Sincronización completada: ${nuevasInsc.length} inscripción(es) nueva(s).`);
+  };
   // Agenda states (nivel componente para cumplir reglas de hooks)
   const [agendaPopOpen,    setAgendaPopOpen]    = useState(false);
   const [agendaEditId,     setAgendaEditId]     = useState(null);
@@ -911,13 +933,20 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
             </div> )}
         </div> )}
       {/* Stats cards — solo si no hay búsqueda activa */}
-      {!busLower && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 28 }}>
-        <SC label="Materias"        value={mats.length}   color={C.blue}   onClick={() => setVista("materias")}    sub="click para ver" />
-        <SC label="Alumnos"         value={als.length}    color={C.accentL} onClick={() => setVista("alumnos")}    sub="click para ver" />
-        <SC label="Notas por curso" value={notas.length}  color={C.yellow} onClick={() => setVista("notas")}       sub="click para ver" />
-        <SC label="Promedio por mat." value={prom ?? "—"} color={nc(prom)} onClick={() => setVista("promedio")}    sub="click para ver" />
-        <SC label="Actividades"     value={acts.length}   color={C.dim}    onClick={() => setVista("actividades")} sub="click para ver" />
-      </div>}
+      {!busLower && <>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
+          <SC label="Materias"        value={mats.length}   color={C.blue}   onClick={() => setVista("materias")}    sub="click para ver" />
+          <SC label="Alumnos"         value={als.length}    color={C.accentL} onClick={() => setVista("alumnos")}    sub="click para ver" />
+          <SC label="Notas por curso" value={notas.length}  color={C.yellow} onClick={() => setVista("notas")}       sub="click para ver" />
+          <SC label="Promedio por mat." value={prom ?? "—"} color={nc(prom)} onClick={() => setVista("promedio")}    sub="click para ver" />
+          <SC label="Actividades"     value={acts.length}   color={C.dim}    onClick={() => setVista("actividades")} sub="click para ver" />
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+          <button onClick={sincronizarInscripciones} style={{ background: "#1c1410", color: "#fb923c", border: "none", borderRadius: 10, padding: "8px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            🔄 Sincronizar inscripciones
+          </button>
+        </div>
+      </>}
       {/* Resumen rápido por materia */}
       {!busLower && mats.length > 0 && (
         <>
@@ -1822,39 +1851,11 @@ const Materias = ({ data, setData, colegioId }) => {
 
   const edit = (m) => { setForm({ nombre: m.nombre, descripcion: m.descripcion || "", division: m.division || "" }); setEditId(m.id); setPop(true); };
 
-  const sincronizar = async () => {
-    if (!confirm("¿Sincronizar inscripciones? Esto va a inscribir automáticamente a todos los alumnos en las materias que coincidan con su curso/división.")) return;
-    const alsColegio = data.alumnos.filter(a => a.colegioId === colegioId && a.curso);
-    const matsDiv = materias.filter(m => m.division);
-    let total = 0;
-    const nuevasInsc = [];
-    for (const mat of matsDiv) {
-      const alsDiv = alsColegio.filter(a => a.curso === mat.division);
-      const inscActuales = new Set((data.inscripciones || []).filter(i => i.materiaId === mat.id).map(i => i.alumnoId));
-      for (const al of alsDiv) {
-        if (!inscActuales.has(al.id)) {
-          nuevasInsc.push({ id: crypto.randomUUID(), materiaId: mat.id, alumnoId: al.id, colegioId });
-          total++;
-        }
-      }
-    }
-    if (total === 0) { alert("✅ Todo ya estaba sincronizado, no hay inscripciones nuevas."); return; }
-    const results = await Promise.all(nuevasInsc.map(i =>
-      supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId, colegio_id: colegioId })
-    ));
-    const errs = results.filter(r => r.error);
-    if (errs.length) { console.error("Sync error:", JSON.stringify(errs[0].error)); alert("❌ Error al sincronizar: " + JSON.stringify(errs[0].error)); return; }
-    setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] }));
-    alert(`✅ Sincronización completada: ${total} inscripción(es) nueva(s) creada(s).`);
-  };
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h2 style={{ color: "#1c1410", margin: 0, fontSize: 22, fontWeight: 800 }}>📚 Materias</h2>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn v="ghost" onClick={sincronizar}>🔄 Sincronizar</Btn>
-          <Btn onClick={() => { setForm({ nombre: "", descripcion: "", division: "" }); setEditId(null); setPop(true); }}>+ Nueva Materia</Btn>
-        </div>
+        <Btn onClick={() => { setForm({ nombre: "", descripcion: "", division: "" }); setEditId(null); setPop(true); }}>+ Nueva Materia</Btn>
       </div>
       {materias.length === 0 ? (
         <Empty icon="📚" msg="No hay materias en este colegio. Creá la primera para empezar." />
