@@ -71,12 +71,34 @@ export default async function handler(req, res) {
       }
     }
 
-    // 3. Esquina superior derecha: última línea corta que sea número (los maestros escriben la nota arriba a la derecha)
+    // 3. Esquina superior: número suelto en las primeras 6 líneas
     if (!nota) {
-      for (const l of lines.slice(0, 5)) {
-        if (/^([0-9]+[.,][0-9]+|[0-9][Ss]|[0-9]{1,2})$/.test(l.trim())) {
-          nota = tryNota(l.trim());
+      for (const l of lines.slice(0, 6)) {
+        const t = l.trim();
+        if (/^([0-9]+[.,][0-9]+|[0-9][Ss]|[0-9]{1,2})$/.test(t)) {
+          nota = tryNota(t);
           if (nota) break;
+        }
+      }
+    }
+
+    // 4. Número de 2 dígitos > 10 suelto, priorizando los que están cerca de "NOTA"
+    if (!nota) {
+      // Buscar índice donde aparece "nota" en las líneas
+      const notaIdx = lines.findIndex(l => /nota|calif/i.test(l));
+      // Ventana: si hay "NOTA" mirar ±3 líneas, si no mirar las primeras 8
+      const ventana = notaIdx >= 0
+        ? lines.slice(Math.max(0, notaIdx - 2), notaIdx + 4)
+        : lines.slice(0, 8);
+      for (const l of ventana) {
+        const t = l.trim();
+        if (/^[0-9]{2}$/.test(t)) {
+          const n = parseInt(t);
+          // Evitar números que parezcan "N°2", "N°12" etc — si la línea anterior tiene N° o Parcial, saltar
+          const idx2 = lines.indexOf(l);
+          const prev = idx2 > 0 ? lines[idx2-1] : "";
+          if (/parcial|examen|n[°º]/i.test(prev)) continue;
+          if (n > 10 && n <= 99) { nota = t[0] + "." + t[1]; break; }
         }
       }
     }
