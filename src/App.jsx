@@ -2922,7 +2922,7 @@ const Documentos = ({ data, setData, colegioId }) => {
                         <option style={{ background: "#fff8f0", color: "#1c1410" }} value="documento">📄 Documento</option>
                         <option style={{ background: "#fff8f0", color: "#1c1410" }} value="dni">🪪 DNI/Documentación</option>
                       </select>
-                      {item.alumnoId && data.inscripciones.filter(i => i.alumnoId === item.alumnoId).length > 1 && (
+                      {item.alumnoId && (
                         <select value={item.materiaId || ""} onChange={e => setConfirmQueue(q => q.map((x,j) => j===i ? {...x, materiaId: e.target.value} : x))}
                           style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
                           <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Seleccionar materia —</option>
@@ -2932,10 +2932,6 @@ const Documentos = ({ data, setData, colegioId }) => {
                           })}
                         </select>
                       )}
-                      {item.alumnoId && data.inscripciones.filter(i => i.alumnoId === item.alumnoId).length === 1 && (() => {
-                        const mat = data.materias.find(m => m.id === item.materiaId);
-                        return mat ? <span style={{ fontSize: 12, color: "#92400e", fontWeight: 600, padding: "7px 10px", background: "#f9731618", borderRadius: 8 }}>📚 {mat.nombre}</span> : null;
-                      })()}
                     </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, background: item.notaDetectada ? C.green+"22" : C.accentDim, border: `1px solid ${item.notaDetectada ? C.green+"44" : C.accent+"44"}`, borderRadius: 10, padding: "6px 12px" }}>
                         <span style={{ fontSize: 12, color: "#b45309", fontWeight: 700 }}>📊 Nota:</span>
