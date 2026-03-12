@@ -2749,16 +2749,30 @@ const Documentos = ({ data, setData, colegioId }) => {
       console.log("Alumno encontrado:", alumnoEncontrado?.apellido, alumnoEncontrado?.nombre, "| texto:", analisis.nombre?.slice(0,30));
       const alumnoIns = alumnoEncontrado ? data.inscripciones.filter(i => i.alumnoId === alumnoEncontrado.id) : [];
       // Buscar materia por nombre detectado
+      // Buscar materia: usar texto OCR completo para comparar contra materias registradas
       let materiaIdSugerida = "";
-      if (analisis.materiaDetectada) {
+      const textoOCR = (analisis.nombre || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      // 1. Buscar por nombre exacto de materia dentro del texto OCR
+      for (const mat of data.materias) {
+        const mn = (mat.nombre || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+        if (mn.length >= 4 && textoOCR.includes(mn.slice(0, Math.min(mn.length, 6)))) {
+          // Verificar que el alumno está inscripto en esa materia
+          if (!alumnoEncontrado || alumnoIns.some(i => i.materiaId === mat.id)) {
+            materiaIdSugerida = mat.id;
+            break;
+          }
+        }
+      }
+      // 2. Si no matcheó y API devolvió una sugerencia, intentar con eso
+      if (!materiaIdSugerida && analisis.materiaDetectada) {
         const nombreDet = analisis.materiaDetectada.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
         const matEncontrada = data.materias.find(m => {
           const mn = (m.nombre || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-          return mn.includes(nombreDet.slice(0,5)) || nombreDet.includes(mn.slice(0,5));
+          return mn.includes(nombreDet.slice(0, 4)) || nombreDet.includes(mn.slice(0, 4));
         });
         if (matEncontrada) materiaIdSugerida = matEncontrada.id;
       }
-      // Si no se encontró por nombre pero el alumno tiene una sola materia, usarla
+      // 3. Si solo tiene una materia inscripta, usarla
       if (!materiaIdSugerida && alumnoIns.length === 1) materiaIdSugerida = alumnoIns[0].materiaId;
       queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "", notaDetectada: analisis.nota || "", materiaId: materiaIdSugerida, materiaSugerida: analisis.materiaDetectada });
     }
