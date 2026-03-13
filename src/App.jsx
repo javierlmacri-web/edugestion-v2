@@ -3290,7 +3290,7 @@ const Entregas = ({ data, setData, colegioId }) => {
   const [notaCorr, setNotaCorr]         = useState("");
   const [comentCorr, setComentCorr]     = useState("");
 
-  const emptyForm = { titulo: "", descripcion: "", materiaId: "", fechaLimite: new Date(Date.now() + 7*86400000).toISOString().slice(0,10) };
+  const emptyForm = { titulo: "", descripcion: "", materiaId: "", fechaLimite: new Date(Date.now() + 7*86400000).toISOString().slice(0,10), tipo: "trabajo" };
   const [form, setForm] = useState(emptyForm);
 
   // Crear asignación y generar link
@@ -3300,7 +3300,7 @@ const Entregas = ({ data, setData, colegioId }) => {
     const nueva = { id, colegioId, materiaId: form.materiaId, titulo: form.titulo, descripcion: form.descripcion, fechaLimite: form.fechaLimite, estado: "abierta", archivoUrl: "", archivoNombre: "", nota: "", comentarioProfesor: "" };
     const { error } = await supabase.from("entregas").insert({
       id, colegio_id: colegioId, materia_id: form.materiaId, titulo: form.titulo,
-      descripcion: form.descripcion, fecha_limite: form.fechaLimite, estado: "abierta"
+      descripcion: form.descripcion, fecha_limite: form.fechaLimite, estado: "abierta", tipo: form.tipo
     });
     if (error) { alert("❌ Error: " + error.message); return; }
     setData(d => ({ ...d, entregas: [...(d.entregas || []), nueva] }));
@@ -3322,7 +3322,7 @@ ${link}
     if (error) { alert("❌ Error: " + error.message); return; }
     // Guardar como nota en la ficha del alumno si tiene alumno asignado
     if (entrega.alumnoId && nota) {
-      const notaRow = { id: crypto.randomUUID(), alumno_id: entrega.alumnoId, materia_id: entrega.materiaId, nota, tipo: "trabajo", descripcion: entrega.titulo, fecha: new Date().toISOString().slice(0,10) };
+      const notaRow = { id: crypto.randomUUID(), alumno_id: entrega.alumnoId, materia_id: entrega.materiaId, nota, tipo: entrega.tipo || "trabajo", descripcion: entrega.titulo, fecha: new Date().toISOString().slice(0,10) };
       await supabase.from("notas").insert(notaRow);
       setData(d => ({ ...d, notas: [...d.notas, { ...notaRow, alumnoId: notaRow.alumno_id, materiaId: notaRow.materia_id }] }));
     }
@@ -3428,10 +3428,19 @@ ${link}
           <div style={{ fontSize: 18, fontWeight: 800, color: "#1c1410", marginBottom: 18 }}>📝 Nueva asignación</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
             <Inp label="Título *" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} placeholder="Ej: Trabajo Práctico N°2 — Contabilidad" />
-            <Sel label="Materia *" value={form.materiaId} onChange={e => setForm(f => ({ ...f, materiaId: e.target.value }))}>
-              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Seleccionar materia —</option>
-              {materias.map(m => <option key={m.id} value={m.id} style={{ background: "#fff8f0", color: "#1c1410" }}>{m.nombre}{m.division ? ` · ${m.division}` : ""}</option>)}
-            </Sel>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Sel label="Materia *" value={form.materiaId} onChange={e => setForm(f => ({ ...f, materiaId: e.target.value }))}>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Seleccionar materia —</option>
+                {materias.map(m => <option key={m.id} value={m.id} style={{ background: "#fff8f0", color: "#1c1410" }}>{m.nombre}{m.division ? ` · ${m.division}` : ""}</option>)}
+              </Sel>
+              <Sel label="Tipo" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="trabajo">📋 Trabajo Práctico</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="examen">📝 Examen</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="tarea">📌 Tarea</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="proyecto">🗂️ Proyecto</option>
+                <option style={{ background: "#fff8f0", color: "#1c1410" }} value="documento">📄 Documento</option>
+              </Sel>
+            </div>
             <Inp label="Fecha límite" type="date" value={form.fechaLimite} onChange={e => setForm(f => ({ ...f, fechaLimite: e.target.value }))} />
             <div>
               <label style={{ fontSize: 12, color: "#92400e", fontWeight: 700, display: "block", marginBottom: 5 }}>Consigna / Descripción</label>
