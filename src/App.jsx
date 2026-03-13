@@ -41,7 +41,7 @@ const S = {
   grid2:  { display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 },
   upper:  { fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1.1 },
   ellip:  { whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }, };
-const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [], reportes: [], agenda: [] };
+const INIT = { colegios: [], materias: [], alumnos: [], inscripciones: [], notas: [], actividades: [], asistencias: [], eventos: [], inasistencias: [], reportes: [], agenda: [], entregas: [] };
 
 const uid = () => crypto.randomUUID();
 
@@ -57,9 +57,9 @@ const fmtT = (d) => new Date(d).toLocaleTimeString("es-AR", { hour: "2-digit", m
 const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : null;
 const nc = (n) => { if (n === null || n === undefined) return C.muted; const v = parseFloat(n); return v >= 7 ? C.green : v >= 5 ? C.yellow : C.red; };
 
-const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial",agenda:"agenda"};
-const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",archivo_url:"archivoUrl",archivo_nombre:"archivoNombre",created_at:"createdAt"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
-const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac",archivoUrl:"archivo_url",archivoNombre:"archivo_nombre"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue; out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
+const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial",agenda:"agenda",entregas:"entregas"};
+const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",archivo_url:"archivoUrl",archivo_nombre:"archivoNombre",created_at:"createdAt",fecha_limite:"fechaLimite",comentario_profesor:"comentarioProfesor"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
+const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac",archivoUrl:"archivo_url",archivoNombre:"archivo_nombre",fechaLimite:"fecha_limite",comentarioProfesor:"comentario_profesor"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue; out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
 const saveD = async () => {};
 const upsertRow = async (table, obj) => { 
@@ -260,7 +260,8 @@ const TABS = [
   { id: "alumnos",   icon: "👤", label: "Alumnos" },
   { id: "eventos",   icon: "📅", label: "Eventos del Colegio" },
   { id: "agenda",    icon: "🗓️", label: "Agenda" },
-  { id: "documentos", icon: "📁", label: "Archivos/Docs" }, ];
+  { id: "documentos", icon: "📁", label: "Archivos/Docs" },
+  { id: "entregas",   icon: "📬", label: "Entregas" }, ];
 const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
   const [vista, setVista] = useState(null); // null | "materias" | "alumnos" | "notas" | "promedio" | "actividades"
@@ -3246,6 +3247,234 @@ const Documentos = ({ data, setData, colegioId }) => {
 };
 
 
+
+// ─────────────────────────────────────────────────────────────
+// ENTREGAS
+// ─────────────────────────────────────────────────────────────
+const Entregas = ({ data, setData, colegioId }) => {
+  const alumnos  = data.alumnos.filter(a => a.colegioId === colegioId);
+  const materias = data.materias.filter(m => m.colegioId === colegioId);
+  const entregas = (data.entregas || []).filter(e => {
+    const mat = materias.find(m => m.id === e.materiaId);
+    return !!mat;
+  });
+
+  const [vista, setVista]         = useState("bandeja"); // bandeja | nueva | detalle
+  const [entregaViendo, setEntregaViendo] = useState(null);
+  const [filtroEst, setFiltroEst] = useState("todos");
+  const [subiendo, setSubiendo]   = useState(false);
+
+  const emptyForm = { titulo: "", descripcion: "", materiaId: "", fechaLimite: new Date(Date.now() + 7*86400000).toISOString().slice(0,10) };
+  const [form, setForm] = useState(emptyForm);
+
+  // Crear asignación y generar link
+  const crearAsignacion = async () => {
+    if (!form.titulo.trim() || !form.materiaId) { alert("Completá título y materia."); return; }
+    const id = crypto.randomUUID();
+    const nueva = { id, colegioId, materiaId: form.materiaId, titulo: form.titulo, descripcion: form.descripcion, fechaLimite: form.fechaLimite, estado: "abierta", archivoUrl: "", archivoNombre: "", nota: "", comentarioProfesor: "" };
+    const { error } = await supabase.from("entregas").insert({
+      id, colegio_id: colegioId, materia_id: form.materiaId, titulo: form.titulo,
+      descripcion: form.descripcion, fecha_limite: form.fechaLimite, estado: "abierta"
+    });
+    if (error) { alert("❌ Error: " + error.message); return; }
+    setData(d => ({ ...d, entregas: [...(d.entregas || []), nueva] }));
+    setForm(emptyForm);
+    setVista("bandeja");
+    // Mostrar link de entrega
+    const link = `${window.location.origin}/entrega/${id}`;
+    alert(`✅ Asignación creada.
+
+Link para compartir con alumnos:
+${link}
+
+(Copialo y mandalo por WhatsApp, mail, etc.)`);
+  };
+
+  // Corregir entrega: guardar nota y comentario
+  const guardarCorreccion = async (entrega, nota, comentario) => {
+    const { error } = await supabase.from("entregas").update({ nota, comentario_profesor: comentario, estado: "corregida" }).eq("id", entrega.id);
+    if (error) { alert("❌ Error: " + error.message); return; }
+    // Guardar como nota en la ficha del alumno si tiene alumno asignado
+    if (entrega.alumnoId && nota) {
+      const notaRow = { id: crypto.randomUUID(), alumno_id: entrega.alumnoId, materia_id: entrega.materiaId, nota, tipo: "trabajo", descripcion: entrega.titulo, fecha: new Date().toISOString().slice(0,10) };
+      await supabase.from("notas").insert(notaRow);
+      setData(d => ({ ...d, notas: [...d.notas, { ...notaRow, alumnoId: notaRow.alumno_id, materiaId: notaRow.materia_id }] }));
+    }
+    setData(d => ({ ...d, entregas: d.entregas.map(e => e.id === entrega.id ? { ...e, nota, comentarioProfesor: comentario, estado: "corregida" } : e) }));
+    alert("✅ Corrección guardada y nota registrada en la ficha del alumno.");
+    setVista("bandeja");
+  };
+
+  const colEst = { abierta: C.blue, entregada: C.yellow, corregida: C.green, vencida: C.red };
+  const labEst = { abierta: "📬 Abierta", entregada: "📥 Entregada", corregida: "✅ Corregida", vencida: "⏰ Vencida" };
+
+  // ── DETALLE DE ENTREGA ──────────────────────────────────────
+  if (vista === "detalle" && entregaViendo) {
+    const e = entregas.find(x => x.id === entregaViendo);
+    if (!e) { setVista("bandeja"); return null; }
+    const mat = materias.find(m => m.id === e.materiaId);
+    const al  = alumnos.find(a => a.id === e.alumnoId);
+    const [nota, setNota]         = useState(e.nota || "");
+    const [comentario, setComentario] = useState(e.comentarioProfesor || "");
+    const link = `${window.location.origin}/entrega/${e.id}`;
+    return (
+      <div>
+        <Breadcrumb items={[{ label: "Entregas", onClick: () => setVista("bandeja") }, { label: e.titulo }]} />
+        <Box style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#1c1410", marginBottom: 4 }}>📬 {e.titulo}</div>
+              <div style={{ fontSize: 13, color: "#92400e" }}>📚 {mat?.nombre} · 📅 Límite: {e.fechaLimite || "—"}</div>
+              {e.descripcion && <div style={{ fontSize: 13, color: "#b45309", marginTop: 8 }}>{e.descripcion}</div>}
+            </div>
+            <Tag color={colEst[e.estado] || C.dim}>{labEst[e.estado] || e.estado}</Tag>
+          </div>
+          {/* Link para compartir */}
+          <div style={{ marginTop: 14, background: "#f9731618", border: "1px solid #f9731640", borderRadius: 10, padding: "10px 14px" }}>
+            <div style={{ fontSize: 11, color: "#92400e", fontWeight: 700, marginBottom: 4 }}>🔗 LINK DE ENTREGA</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, color: "#1c1410", wordBreak: "break-all", flex: 1 }}>{link}</span>
+              <Btn sm onClick={() => { navigator.clipboard.writeText(link); alert("✅ Link copiado"); }}>📋 Copiar</Btn>
+            </div>
+          </div>
+        </Box>
+
+        {/* Archivo entregado */}
+        {e.archivoUrl ? (
+          <Box style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c1410", marginBottom: 10 }}>📎 Archivo entregado</div>
+            {al && <div style={{ fontSize: 13, color: "#92400e", marginBottom: 8 }}>👤 {al.apellido}, {al.nombre} {al.email ? `· ${al.email}` : ""}</div>}
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <a href={e.archivoUrl} target="_blank" rel="noreferrer">
+                <Btn>👁️ Ver archivo</Btn>
+              </a>
+              <span style={{ fontSize: 12, color: "#92400e" }}>{e.archivoNombre}</span>
+            </div>
+          </Box>
+        ) : (
+          <Box style={{ marginBottom: 16, textAlign: "center", padding: "28px 16px" }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
+            <div style={{ color: "#92400e", fontSize: 14 }}>El alumno aún no realizó la entrega.</div>
+            <div style={{ fontSize: 12, color: "#b45309", marginTop: 4 }}>Compartí el link para que pueda subir su trabajo.</div>
+          </Box>
+        )}
+
+        {/* Corrección */}
+        {e.archivoUrl && e.estado !== "corregida" && (
+          <Box>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1c1410", marginBottom: 12 }}>✏️ Corregir entrega</div>
+            <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 12, marginBottom: 12 }}>
+              <Inp label="Nota (0-10)" type="number" min="0" max="10" step="0.1" value={nota} onChange={e2 => setNota(e2.target.value)} placeholder="7.5" />
+              <Inp label="Comentario para el alumno" value={comentario} onChange={e2 => setComentario(e2.target.value)} placeholder="Muy buen trabajo, pero..." />
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <Btn v="ghost" onClick={() => setVista("bandeja")}>Cancelar</Btn>
+              <Btn onClick={() => guardarCorreccion(e, nota, comentario)}>💾 Guardar corrección</Btn>
+            </div>
+          </Box>
+        )}
+        {e.estado === "corregida" && (
+          <Box style={{ background: "#16a34a18", border: "1px solid #16a34a44" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#16a34a", marginBottom: 6 }}>✅ Entrega corregida</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#16a34a" }}>Nota: {e.nota}</div>
+            {e.comentarioProfesor && <div style={{ fontSize: 13, color: "#1c1410", marginTop: 6 }}>💬 {e.comentarioProfesor}</div>}
+          </Box>
+        )}
+      </div>
+    );
+  }
+
+  // ── NUEVA ASIGNACIÓN ────────────────────────────────────────
+  if (vista === "nueva") {
+    return (
+      <div>
+        <Breadcrumb items={[{ label: "Entregas", onClick: () => setVista("bandeja") }, { label: "Nueva asignación" }]} />
+        <Box>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#1c1410", marginBottom: 18 }}>📝 Nueva asignación</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+            <Inp label="Título *" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} placeholder="Ej: Trabajo Práctico N°2 — Contabilidad" />
+            <Sel label="Materia *" value={form.materiaId} onChange={e => setForm(f => ({ ...f, materiaId: e.target.value }))}>
+              <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">— Seleccionar materia —</option>
+              {materias.map(m => <option key={m.id} value={m.id} style={{ background: "#fff8f0", color: "#1c1410" }}>{m.nombre}{m.division ? ` · ${m.division}` : ""}</option>)}
+            </Sel>
+            <Inp label="Fecha límite" type="date" value={form.fechaLimite} onChange={e => setForm(f => ({ ...f, fechaLimite: e.target.value }))} />
+            <div>
+              <label style={{ fontSize: 12, color: "#92400e", fontWeight: 700, display: "block", marginBottom: 5 }}>Consigna / Descripción</label>
+              <textarea value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
+                placeholder="Describí qué deben entregar los alumnos..."
+                style={{ width: "100%", minHeight: 100, background: "#fff8f0", border: "1px solid #f9731640", borderRadius: 10, padding: "10px 14px", color: "#1c1410", fontSize: 13, resize: "vertical", outline: "none", fontFamily: "inherit" }} />
+            </div>
+            <div style={{ background: "#f9731618", border: "1px solid #f9731640", borderRadius: 10, padding: "12px 16px", fontSize: 12, color: "#92400e" }}>
+              💡 Al crear la asignación se genera un <strong>link único</strong> que podés compartir con los alumnos por WhatsApp, mail, etc. Los alumnos entran al link y suben su trabajo directamente.
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <Btn v="ghost" onClick={() => setVista("bandeja")}>Cancelar</Btn>
+              <Btn onClick={crearAsignacion}>🔗 Crear y generar link</Btn>
+            </div>
+          </div>
+        </Box>
+      </div>
+    );
+  }
+
+  // ── BANDEJA ─────────────────────────────────────────────────
+  const filtradas = filtroEst === "todos" ? entregas : entregas.filter(e => e.estado === filtroEst);
+  const pendCorreccion = entregas.filter(e => e.estado === "entregada").length;
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <h2 style={{ color: "#1c1410", margin: 0, fontSize: 22, fontWeight: 800 }}>📬 Entregas</h2>
+          {pendCorreccion > 0 && <div style={{ fontSize: 12, color: C.red, fontWeight: 700, marginTop: 2 }}>⚠️ {pendCorreccion} entrega(s) esperando corrección</div>}
+        </div>
+        <Btn onClick={() => setVista("nueva")}>+ Nueva asignación</Btn>
+      </div>
+
+      {/* Filtros */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+        {["todos", "abierta", "entregada", "corregida"].map(est => (
+          <button key={est} onClick={() => setFiltroEst(est)}
+            style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroEst === est ? C.accent : C.border}`, background: filtroEst === est ? C.accentDim : "transparent", color: filtroEst === est ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            {est === "todos" ? "Todas" : labEst[est]}
+            {est === "entregada" && pendCorreccion > 0 && <span style={{ marginLeft: 5, background: C.red, color: "#fff", borderRadius: 10, padding: "1px 6px", fontSize: 10 }}>{pendCorreccion}</span>}
+          </button>
+        ))}
+      </div>
+
+      {filtradas.length === 0 ? (
+        <Empty icon="📬" msg={filtroEst === "todos" ? "No hay asignaciones creadas. Creá la primera para compartir con tus alumnos." : "No hay entregas en este estado."} />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {filtradas.map(e => {
+            const mat = materias.find(m => m.id === e.materiaId);
+            const al  = alumnos.find(a => a.id === e.alumnoId);
+            return (
+              <Box key={e.id} hi style={{ cursor: "pointer" }} onClick={() => { setEntregaViendo(e.id); setVista("detalle"); }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#1c1410", marginBottom: 4 }}>{e.titulo}</div>
+                    <div style={{ fontSize: 12, color: "#92400e" }}>
+                      📚 {mat?.nombre || "—"}
+                      {e.fechaLimite && ` · 📅 Límite: ${e.fechaLimite}`}
+                      {al && ` · 👤 ${al.apellido}, ${al.nombre}`}
+                    </div>
+                    {e.descripcion && <div style={{ fontSize: 12, color: "#b45309", marginTop: 4 }}>{e.descripcion.slice(0, 80)}{e.descripcion.length > 80 ? "..." : ""}</div>}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                    <Tag color={colEst[e.estado] || C.dim}>{labEst[e.estado] || e.estado}</Tag>
+                    {e.nota && <span style={{ fontSize: 16, fontWeight: 900, color: nc(e.nota) }}>{e.nota}</span>}
+                  </div>
+                </div>
+              </Box>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [tab, setTab] = useState(() => localStorage.getItem("lastTab") || "dashboard");
   const [dashVista, setDashVista] = useState(null);
@@ -3259,7 +3488,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useIsMobile();
   const col = data.colegios.find(c => c.id === colegioId);
-  const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos };
+  const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos, entregas: Entregas };
   // Agenda tab -> Dashboard con vista="agenda" preseleccionada
   const handleAgendaTab = () => {
     setTab("dashboard"); setDashKey(k => k+1); setMenuOpen(false);
@@ -3500,7 +3729,147 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// PÁGINA PÚBLICA DE ENTREGA (alumno sube su trabajo)
+// ─────────────────────────────────────────────────────────────
+const EntregaPublica = ({ entregaId }) => {
+  const [entrega, setEntrega] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [nombre, setNombre]   = useState("");
+  const [email, setEmail]     = useState("");
+  const [archivo, setArchivo] = useState(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [enviado, setEnviado]   = useState(false);
+
+  useEffect(() => {
+    supabase.from("entregas").select("*").eq("id", entregaId).single()
+      .then(({ data, error }) => {
+        if (!error && data) setEntrega(data);
+        setLoading(false);
+      });
+  }, [entregaId]);
+
+  const enviar = async () => {
+    if (!nombre.trim()) { alert("Ingresá tu nombre completo."); return; }
+    if (!archivo) { alert("Seleccioná un archivo para entregar."); return; }
+    setSubiendo(true);
+    try {
+      // Subir archivo a Cloudinary via API
+      const base64 = await new Promise(res => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result.split(",")[1]);
+        r.readAsDataURL(archivo);
+      });
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mimeType: archivo.type, fileName: archivo.name })
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadData.url) { alert("Error al subir archivo."); setSubiendo(false); return; }
+
+      // Buscar alumno por email o nombre en Supabase
+      let alumnoId = null;
+      if (email) {
+        const { data: als } = await supabase.from("alumnos").select("id,nombre,apellido,email").ilike("email", email.trim());
+        if (als?.length) alumnoId = als[0].id;
+      }
+      if (!alumnoId) {
+        const partes = nombre.trim().split(" ");
+        const { data: als } = await supabase.from("alumnos").select("id,nombre,apellido")
+          .or(partes.map(p => `nombre.ilike.%${p}%,apellido.ilike.%${p}%`).join(","));
+        if (als?.length === 1) alumnoId = als[0].id;
+      }
+
+      // Actualizar entrega en Supabase
+      await supabase.from("entregas").update({
+        estado: "entregada",
+        archivo_url: uploadData.url,
+        archivo_nombre: archivo.name,
+        alumno_id: alumnoId || null,
+        descripcion: (entrega.descripcion || "") + (nombre ? `
+[Entregado por: ${nombre}${email ? ` <${email}>` : ""}]` : "")
+      }).eq("id", entregaId);
+
+      setEnviado(true);
+    } catch(e) { alert("Error inesperado: " + e.message); }
+    setSubiendo(false);
+  };
+
+  if (loading) return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg,#fde68a,#fb923c,#f97316)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ color: "#1c1410", fontSize: 18 }}>⏳ Cargando...</div>
+    </div>
+  );
+
+  if (!entrega) return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg,#fde68a,#fb923c,#f97316)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#ffffffee", borderRadius: 20, padding: 40, textAlign: "center" }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#1c1410" }}>Link no válido</div>
+        <div style={{ fontSize: 14, color: "#92400e", marginTop: 8 }}>Este link de entrega no existe o fue eliminado.</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg,#fde68a,#fb923c,#f97316)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#ffffffee", borderRadius: 20, padding: 36, maxWidth: 500, width: "100%", boxShadow: "0 20px 60px #f9731640" }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ fontSize: 48, marginBottom: 8 }}>📬</div>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: "#1c1410", margin: "0 0 6px" }}>{entrega.titulo}</h1>
+          {entrega.descripcion && <p style={{ fontSize: 14, color: "#92400e", margin: 0, lineHeight: 1.6 }}>{entrega.descripcion.split("[Entregado")[0]}</p>}
+          {entrega.fecha_limite && <div style={{ fontSize: 12, color: "#b45309", marginTop: 8 }}>📅 Fecha límite: {entrega.fecha_limite}</div>}
+        </div>
+
+        {enviado ? (
+          <div style={{ textAlign: "center", padding: "28px 0" }}>
+            <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#16a34a" }}>¡Entrega enviada!</div>
+            <div style={{ fontSize: 14, color: "#92400e", marginTop: 8 }}>Tu trabajo fue recibido correctamente. El profesor te va a dar la nota pronto.</div>
+          </div>
+        ) : entrega.estado === "corregida" ? (
+          <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>✅</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#1c1410" }}>Esta asignación ya fue corregida.</div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "#92400e", display: "block", marginBottom: 5 }}>Nombre completo *</label>
+              <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Juan García"
+                style={{ width: "100%", background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "#1c1410", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "#92400e", display: "block", marginBottom: 5 }}>Email (opcional — para identificarte)</label>
+              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="juan@email.com" type="email"
+                style={{ width: "100%", background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "#1c1410", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "#92400e", display: "block", marginBottom: 5 }}>Archivo a entregar *</label>
+              <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                onChange={e => setArchivo(e.target.files[0])}
+                style={{ width: "100%", background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#1c1410", boxSizing: "border-box" }} />
+              {archivo && <div style={{ fontSize: 12, color: "#16a34a", marginTop: 4 }}>✅ {archivo.name}</div>}
+            </div>
+            <button onClick={enviar} disabled={subiendo}
+              style={{ background: "#1c1410", color: "#fb923c", border: "none", borderRadius: 12, padding: "14px", fontWeight: 900, fontSize: 15, cursor: subiendo ? "wait" : "pointer", marginTop: 6 }}>
+              {subiendo ? "⏳ Enviando..." : "📤 Enviar entrega"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
+  // Detectar ruta pública de entrega
+  const hashPath = window.location.pathname;
+  const entregaMatch = hashPath.match(/\/entrega\/([a-z0-9\-]+)/i);
+  if (entregaMatch) return <EntregaPublica entregaId={entregaMatch[1]} />;
+
   const [screen, setScreen] = useState("login"); 
   const [colegioId, setColegioId] = useState(() => localStorage.getItem("lastColegioId") || null);
   const [data, setDataRaw] = useState(INIT);
