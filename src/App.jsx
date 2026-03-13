@@ -3818,8 +3818,13 @@ const EntregaPublica = ({ entregaId }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageBase64: base64, mimeType: archivo.type, fileName: archivo.name })
       });
-      const uploadData = await uploadRes.json();
-      if (!uploadData.url) { alert("Error al subir archivo."); setSubiendo(false); return; }
+      let uploadData;
+      try { uploadData = await uploadRes.json(); } catch(e) { alert("Error al subir: respuesta inválida del servidor (status " + uploadRes.status + ")"); setSubiendo(false); return; }
+      if (!uploadData.url) { 
+        alert("Error al subir archivo.
+Detalle: " + (uploadData.error || uploadData.detail?.error?.message || JSON.stringify(uploadData)));
+        setSubiendo(false); return; 
+      }
 
       // Buscar alumno por email o nombre en Supabase
       let alumnoId = null;
