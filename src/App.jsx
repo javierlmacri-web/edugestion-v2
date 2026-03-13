@@ -3282,10 +3282,13 @@ const Entregas = ({ data, setData, colegioId }) => {
     return !!mat;
   });
 
-  const [vista, setVista]         = useState("bandeja"); // bandeja | nueva | detalle
+  const [vista, setVista]               = useState("bandeja");
   const [entregaViendo, setEntregaViendo] = useState(null);
-  const [filtroEst, setFiltroEst] = useState("todos");
-  const [subiendo, setSubiendo]   = useState(false);
+  const [filtroEst, setFiltroEst]       = useState("todos");
+  const [subiendo, setSubiendo]         = useState(false);
+  // Detalle states — siempre al top level
+  const [notaCorr, setNotaCorr]         = useState("");
+  const [comentCorr, setComentCorr]     = useState("");
 
   const emptyForm = { titulo: "", descripcion: "", materiaId: "", fechaLimite: new Date(Date.now() + 7*86400000).toISOString().slice(0,10) };
   const [form, setForm] = useState(emptyForm);
@@ -3332,13 +3335,22 @@ ${link}
   const labEst = { abierta: "📬 Abierta", entregada: "📥 Entregada", corregida: "✅ Corregida", vencida: "⏰ Vencida" };
 
   // ── DETALLE DE ENTREGA ──────────────────────────────────────
+  // Sync nota/comentario cuando cambia la entrega seleccionada
+  const entregaActual = entregas.find(x => x.id === entregaViendo);
+  React.useEffect(() => {
+    if (entregaActual) {
+      setNotaCorr(entregaActual.nota || "");
+      setComentCorr(entregaActual.comentarioProfesor || "");
+    }
+  }, [entregaViendo]);
+
   if (vista === "detalle" && entregaViendo) {
-    const e = entregas.find(x => x.id === entregaViendo);
+    const e = entregaActual;
     if (!e) { setVista("bandeja"); return null; }
     const mat = materias.find(m => m.id === e.materiaId);
     const al  = alumnos.find(a => a.id === e.alumnoId);
-    const [nota, setNota]         = useState(e.nota || "");
-    const [comentario, setComentario] = useState(e.comentarioProfesor || "");
+    const nota = notaCorr; const setNota = setNotaCorr;
+    const comentario = comentCorr; const setComentario = setComentCorr;
     const link = `${window.location.origin}/entrega/${e.id}`;
     return (
       <div>
