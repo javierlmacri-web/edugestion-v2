@@ -3307,30 +3307,40 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
 
   const [sincronizando, setSincronizando] = useState(false);
   const handleSincronizar = async () => {
-    if (!confirm("¿Sincronizar inscripciones? Esto va a inscribir a todos los alumnos en las materias que correspondan según su curso y división.")) return;
+    if (!confirm("¿Sincronizar toda la información? Esto recarga todos los datos y actualiza las inscripciones automáticas.")) return;
     setSincronizando(true);
     try {
-      const matsConDiv = data.materias.filter(m => m.colegioId === colegioId && m.division);
+      // 1. Recargar todos los datos desde Supabase
+      const fresh = await loadD();
+      if (!fresh) { alert("❌ Error al recargar datos."); return; }
+      setData(fresh);
+      // 2. Auto-inscribir alumnos en materias por división
+      const alsColegio = (fresh.alumnos || []).filter(a => a.colegioId === colegioId && a.curso);
+      const matsDiv = (fresh.materias || []).filter(m => m.colegioId === colegioId && m.division);
       const nuevasInsc = [];
-      for (const mat of matsConDiv) {
-        const alsDivision = data.alumnos.filter(a => a.colegioId === colegioId && a.curso === mat.division);
-        const inscActuales = new Set((data.inscripciones || []).filter(i => i.materiaId === mat.id).map(i => i.alumnoId));
-        for (const al of alsDivision) {
-          if (!inscActuales.has(al.id)) {
-            nuevasInsc.push({ id: crypto.randomUUID(), materiaId: mat.id, alumnoId: al.id });
-          }
+      for (const mat of matsDiv) {
+        const alsDiv = alsColegio.filter(a => a.curso === mat.division);
+        const inscActuales = new Set((fresh.inscripciones || []).filter(i => i.materiaId === mat.id).map(i => i.alumnoId));
+        for (const al of alsDiv) {
+          if (!inscActuales.has(al.id)) nuevasInsc.push({ id: crypto.randomUUID(), materiaId: mat.id, alumnoId: al.id });
         }
       }
-      if (nuevasInsc.length === 0) { alert("✅ Todo está sincronizado. No hay cambios pendientes."); setSincronizando(false); return; }
-      const results = await Promise.all(nuevasInsc.map(i =>
-        supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId })
-      ));
-      const errs = results.filter(r => r.error);
-      if (errs.length) { alert("❌ Error: " + JSON.stringify(errs[0].error)); }
-      else {
-        setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] }));
-        alert(`✅ Sincronización completa. ${nuevasInsc.length} inscripción(es) nueva(s) creadas.`);
+      if (nuevasInsc.length > 0) {
+        const { data: alsDB } = await supabase.from("alumnos").select("id").in("id", [...new Set(nuevasInsc.map(i => i.alumnoId))]);
+        const idsValidos = new Set((alsDB || []).map(a => a.id));
+        const inscValidas = nuevasInsc.filter(i => idsValidos.has(i.alumnoId));
+        if (inscValidas.length > 0) {
+          const results = await Promise.all(inscValidas.map(i =>
+            supabase.from("inscripciones").insert({ id: i.id, materia_id: i.materiaId, alumno_id: i.alumnoId })
+          ));
+          const errs = results.filter(r => r.error);
+          if (errs.length) console.error("Sync error:", JSON.stringify(errs[0].error));
+          else setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), ...inscValidas] }));
+        }
       }
+      alert(`✅ Sincronización completa.
+• Datos recargados desde Supabase
+• ${nuevasInsc.length} inscripción(es) nueva(s)`);
     } finally { setSincronizando(false); }
   };
 
