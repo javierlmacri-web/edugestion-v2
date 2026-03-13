@@ -3248,6 +3248,29 @@ const Documentos = ({ data, setData, colegioId }) => {
 
 
 
+// Botón copiar link reutilizable
+const CopyLinkBtn = ({ link }) => {
+  const [copiado, setCopiado] = useState(false);
+  const copiar = () => {
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    });
+  };
+  return (
+    <button onClick={copiar} style={{
+      display: "flex", alignItems: "center", gap: 6,
+      background: copiado ? "#16a34a" : "#1c1410",
+      color: copiado ? "#fff" : "#fb923c",
+      border: "none", borderRadius: 8, padding: "5px 12px",
+      fontSize: 12, fontWeight: 700, cursor: "pointer",
+      transition: "all .2s"
+    }}>
+      {copiado ? "✅ Link copiado" : "📋 Copiar link"}
+    </button>
+  );
+};
+
 // ─────────────────────────────────────────────────────────────
 // ENTREGAS
 // ─────────────────────────────────────────────────────────────
@@ -3449,9 +3472,12 @@ ${link}
           {filtradas.map(e => {
             const mat = materias.find(m => m.id === e.materiaId);
             const al  = alumnos.find(a => a.id === e.alumnoId);
+            const link = `${window.location.origin}/entrega/${e.id}`;
             return (
-              <Box key={e.id} hi style={{ cursor: "pointer" }} onClick={() => { setEntregaViendo(e.id); setVista("detalle"); }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+              <Box key={e.id} style={{ padding: "16px 18px" }}>
+                {/* Fila principal — clickeable para ver detalle */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, cursor: "pointer", marginBottom: 12 }}
+                  onClick={() => { setEntregaViendo(e.id); setVista("detalle"); }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#1c1410", marginBottom: 4 }}>{e.titulo}</div>
                     <div style={{ fontSize: 12, color: "#92400e" }}>
@@ -3459,12 +3485,26 @@ ${link}
                       {e.fechaLimite && ` · 📅 Límite: ${e.fechaLimite}`}
                       {al && ` · 👤 ${al.apellido}, ${al.nombre}`}
                     </div>
-                    {e.descripcion && <div style={{ fontSize: 12, color: "#b45309", marginTop: 4 }}>{e.descripcion.slice(0, 80)}{e.descripcion.length > 80 ? "..." : ""}</div>}
+                    {e.descripcion && <div style={{ fontSize: 12, color: "#b45309", marginTop: 4 }}>{e.descripcion.split("[Entregado")[0].slice(0, 90)}{e.descripcion.length > 90 ? "..." : ""}</div>}
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
                     <Tag color={colEst[e.estado] || C.dim}>{labEst[e.estado] || e.estado}</Tag>
-                    {e.nota && <span style={{ fontSize: 16, fontWeight: 900, color: nc(e.nota) }}>{e.nota}</span>}
+                    {e.nota && <span style={{ fontSize: 18, fontWeight: 900, color: nc(e.nota) }}>{e.nota}</span>}
                   </div>
+                </div>
+                {/* Barra de acciones */}
+                <div style={{ display: "flex", gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 10, flexWrap: "wrap" }}
+                  onClick={ev => ev.stopPropagation()}>
+                  <CopyLinkBtn link={link} />
+                  <Btn sm v="ghost" onClick={() => { setEntregaViendo(e.id); setVista("detalle"); }}>
+                    {e.estado === "entregada" ? "✏️ Corregir" : "👁️ Ver detalle"}
+                  </Btn>
+                  <Btn sm v="danger" onClick={async () => {
+                    if (!confirm(`¿Eliminar la asignación "${e.titulo}"? Esta acción no se puede deshacer.`)) return;
+                    const { error } = await supabase.from("entregas").delete().eq("id", e.id);
+                    if (error) { alert("❌ Error: " + error.message); return; }
+                    setData(d => ({ ...d, entregas: d.entregas.filter(x => x.id !== e.id) }));
+                  }}>🗑️ Eliminar</Btn>
                 </div>
               </Box>
             );
