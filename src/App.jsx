@@ -3821,8 +3821,7 @@ const EntregaPublica = ({ entregaId }) => {
       let uploadData;
       try { uploadData = await uploadRes.json(); } catch(e) { alert("Error al subir: respuesta inválida del servidor (status " + uploadRes.status + ")"); setSubiendo(false); return; }
       if (!uploadData.url) { 
-        alert("Error al subir archivo.
-Detalle: " + (uploadData.error || uploadData.detail?.error?.message || JSON.stringify(uploadData)));
+        alert("Error: " + (uploadData.error || JSON.stringify(uploadData)));
         setSubiendo(false); return; 
       }
 
