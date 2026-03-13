@@ -1,5 +1,14 @@
 import crypto from "crypto";
 
+// Aumentar límite de body para permitir PDFs y documentos grandes
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "20mb",
+    },
+  },
+};
+
 export default async function handler(req, res) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
