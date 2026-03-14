@@ -3112,14 +3112,19 @@ const Documentos = ({ data, setData, colegioId }) => {
     setEditDoc(null);
   };
 
+  // Materia de un doc: usar materia_id del doc si existe, sino null (sin carpeta)
+  const getDocMateria = (doc) => doc.materia_id || null;
+
+  // Compatibilidad hacia atrás para filtro alumno
   const getAlumnoMaterias = (alumnoId) => {
     return data.inscripciones.filter(i => i.alumnoId === alumnoId).map(i => i.materiaId);
   };
+
   const docsFiltrados = archivos.filter(d => {
     if (filtroAlumno && d.alumno_id !== filtroAlumno) return false;
     if (filtroMateria) {
-      const alumnoMaterias = getAlumnoMaterias(d.alumno_id);
-      if (!alumnoMaterias.includes(filtroMateria)) return false;
+      if (filtroMateria === "__sin__") return !d.materia_id;
+      return d.materia_id === filtroMateria;
     }
     return true;
   });
@@ -3237,16 +3242,13 @@ const Documentos = ({ data, setData, colegioId }) => {
         <div>
           {/* Carpeta "Sin materia" */}
           {(() => {
-            const sinMateria = archivos.filter(d => {
-              const mats = getAlumnoMaterias(d.alumno_id);
-              return mats.length === 0;
-            });
+            const sinMateria = archivos.filter(d => !d.materia_id);
             const todasLasCarpetas = [
               ...materias.map(m => ({
                 id: m.id,
                 nombre: m.nombre,
                 division: m.division,
-                docs: archivos.filter(d => getAlumnoMaterias(d.alumno_id).includes(m.id))
+                docs: archivos.filter(d => d.materia_id === m.id)
               })),
               ...(sinMateria.length > 0 ? [{ id: "__sin__", nombre: "Sin materia", division: "", docs: sinMateria }] : [])
             ];
@@ -3289,8 +3291,8 @@ const Documentos = ({ data, setData, colegioId }) => {
           {/* Filtro alumno dentro de carpeta */}
           {(() => {
             const alsEnCarpeta = filtroMateria === "__sin__"
-              ? alumnos.filter(a => getAlumnoMaterias(a.id).length === 0 && archivos.some(d => d.alumno_id === a.id))
-              : alumnos.filter(a => data.inscripciones.some(i => i.alumnoId === a.id && i.materiaId === filtroMateria));
+              ? alumnos.filter(a => archivos.some(d => d.alumno_id === a.id && !d.materia_id))
+              : alumnos.filter(a => archivos.some(d => d.alumno_id === a.id && d.materia_id === filtroMateria));
             if (alsEnCarpeta.length === 0) return null;
             return (
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
