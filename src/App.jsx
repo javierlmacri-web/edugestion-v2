@@ -3090,6 +3090,7 @@ const Documentos = ({ data, setData, colegioId }) => {
       tipo: editForm.tipo,
       alumno_id: editForm.alumno_id || null,
       nombre: editForm.nombre,
+      materia_id: editForm.materia_id || null,
     }).eq("id", editDoc.id);
     if (error) { alert("Error: " + error.message); return; }
     // Update or create nota asociada
@@ -3108,7 +3109,7 @@ const Documentos = ({ data, setData, colegioId }) => {
       await supabase.from("notas").delete().eq("id", editForm.notaId);
       setData(d => ({ ...d, notas: d.notas.filter(n => n.id !== editForm.notaId) }));
     }
-    setArchivos(a => a.map(x => x.id === editDoc.id ? { ...x, ...editForm } : x));
+    setArchivos(a => a.map(x => x.id === editDoc.id ? { ...x, tipo: editForm.tipo, alumno_id: editForm.alumno_id || null, nombre: editForm.nombre, materia_id: editForm.materia_id || null } : x));
     setEditDoc(null);
   };
 
