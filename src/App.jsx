@@ -3230,45 +3230,87 @@ const Documentos = ({ data, setData, colegioId }) => {
         </div>
       )}
 
-      {/* Filtros - solo si hay archivos */}
-      {/* Filtro Materia - siempre visible */}
-      {materias.length > 0 && (
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Materia:</div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {materias.map(m => (
-            <button key={m.id} onClick={() => { setFiltroMateria(filtroMateria===m.id ? "" : m.id); setFiltroAlumno(""); }}
-              style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroMateria===m.id ? C.accent : C.border}`, background: filtroMateria===m.id ? C.accentDim : "transparent", color: filtroMateria===m.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-              {m.nombre}
-            </button>
-          ))}
-        </div>
-      </div>
-      )}
-      {/* Filtro Alumno - solo si hay materia seleccionada */}
-      {filtroMateria && (
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>Alumno:</div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button onClick={() => setFiltroAlumno("")}
-            style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${!filtroAlumno ? C.accent : C.border}`, background: !filtroAlumno ? C.accentDim : "transparent", color: !filtroAlumno ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-            Todos
-          </button>
-          {alumnos.filter(a => data.inscripciones.some(i => i.alumnoId === a.id && i.materiaId === filtroMateria)).map(a => (
-            <button key={a.id} onClick={() => setFiltroAlumno(a.id)}
-              style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtroAlumno===a.id ? C.accent : C.border}`, background: filtroAlumno===a.id ? C.accentDim : "transparent", color: filtroAlumno===a.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-              {a.apellido}, {a.nombre}
-            </button>
-          ))}
-        </div>
-      </div>
-      )}
-
-      {/* Lista de archivos */}
+      {/* Vista de carpetas por materia */}
       {loading ? <div style={{ color: "#92400e", textAlign: "center", padding: 40 }}>Cargando...</div> :
-      docsFiltrados.length === 0 ? <Empty icon="📁" msg="No hay archivos subidos todavía." /> :
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
-        {docsFiltrados.map(doc => {
+      !filtroMateria ? (
+        // ── VISTA CARPETAS ───────────────────────────────────────
+        <div>
+          {/* Carpeta "Sin materia" */}
+          {(() => {
+            const sinMateria = archivos.filter(d => {
+              const mats = getAlumnoMaterias(d.alumno_id);
+              return mats.length === 0;
+            });
+            const todasLasCarpetas = [
+              ...materias.map(m => ({
+                id: m.id,
+                nombre: m.nombre,
+                division: m.division,
+                docs: archivos.filter(d => getAlumnoMaterias(d.alumno_id).includes(m.id))
+              })),
+              ...(sinMateria.length > 0 ? [{ id: "__sin__", nombre: "Sin materia", division: "", docs: sinMateria }] : [])
+            ];
+            if (todasLasCarpetas.length === 0) return <Empty icon="📁" msg="No hay archivos subidos todavía." />;
+            return (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
+                {todasLasCarpetas.map(carp => (
+                  <div key={carp.id} onClick={() => { setFiltroMateria(carp.id); setFiltroAlumno(""); }}
+                    style={{ cursor: "pointer", background: C.card, borderRadius: 16, padding: "20px 18px", border: `1.5px solid ${C.border}`, transition: "all .18s", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${C.accentGlow}`; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}>
+                    <div style={{ fontSize: 52, lineHeight: 1 }}>📁</div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: "#1c1410", marginBottom: 3 }}>{carp.nombre}</div>
+                      {carp.division && <div style={{ fontSize: 11, color: "#92400e" }}>{carp.division}</div>}
+                    </div>
+                    <div style={{ fontSize: 12, color: C.accentL, fontWeight: 700, background: C.accentDim, borderRadius: 20, padding: "3px 12px" }}>
+                      {carp.docs.length} archivo{carp.docs.length !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      ) : (
+        // ── VISTA ARCHIVOS DENTRO DE CARPETA ────────────────────
+        <div>
+          {/* Breadcrumb carpeta */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <button onClick={() => { setFiltroMateria(""); setFiltroAlumno(""); }}
+              style={{ background: "none", border: "none", color: C.accentL, cursor: "pointer", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+              ← Todas las carpetas
+            </button>
+            <span style={{ color: C.muted, fontSize: 13 }}>/</span>
+            <span style={{ color: "#1c1410", fontSize: 13, fontWeight: 700 }}>
+              📁 {filtroMateria === "__sin__" ? "Sin materia" : materias.find(m => m.id === filtroMateria)?.nombre || ""}
+            </span>
+          </div>
+          {/* Filtro alumno dentro de carpeta */}
+          {(() => {
+            const alsEnCarpeta = filtroMateria === "__sin__"
+              ? alumnos.filter(a => getAlumnoMaterias(a.id).length === 0 && archivos.some(d => d.alumno_id === a.id))
+              : alumnos.filter(a => data.inscripciones.some(i => i.alumnoId === a.id && i.materiaId === filtroMateria));
+            if (alsEnCarpeta.length === 0) return null;
+            return (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+                <button onClick={() => setFiltroAlumno("")}
+                  style={{ padding: "5px 12px", borderRadius: 20, border: `1px solid ${!filtroAlumno ? C.accent : C.border}`, background: !filtroAlumno ? C.accentDim : "transparent", color: !filtroAlumno ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  Todos
+                </button>
+                {alsEnCarpeta.map(a => (
+                  <button key={a.id} onClick={() => setFiltroAlumno(a.id)}
+                    style={{ padding: "5px 12px", borderRadius: 20, border: `1px solid ${filtroAlumno===a.id ? C.accent : C.border}`, background: filtroAlumno===a.id ? C.accentDim : "transparent", color: filtroAlumno===a.id ? C.accentL : C.dim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    {a.apellido}, {a.nombre}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
+          {docsFiltrados.length === 0
+            ? <Empty icon="📄" msg="No hay archivos en esta carpeta." />
+            : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+          {docsFiltrados.map(doc => {
           const al = alumnos.find(a => a.id === doc.alumno_id);
           const isImg = doc.url?.match(/\.(jpg|jpeg|png|webp|gif)$/i);
           const notaDoc = data.notas.find(n => n.alumnoId === doc.alumno_id && n.descripcion === doc.nombre);
@@ -3316,7 +3358,10 @@ const Documentos = ({ data, setData, colegioId }) => {
             </Box>
           );
         })}
-      </div>}
+        </div>}
+        </div>
+      )
+      }
     </div>
 
     {/* Modal editar documento */}
