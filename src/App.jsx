@@ -58,8 +58,8 @@ const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).
 const nc = (n) => { if (n === null || n === undefined) return C.muted; const v = parseFloat(n); return v >= 7 ? C.green : v >= 5 ? C.yellow : C.red; };
 
 const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial",agenda:"agenda",entregas:"entregas"};
-const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",archivo_url:"archivoUrl",archivo_nombre:"archivoNombre",created_at:"createdAt",fecha_limite:"fechaLimite",comentario_profesor:"comentarioProfesor"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
-const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac",archivoUrl:"archivo_url",archivoNombre:"archivo_nombre",fechaLimite:"fecha_limite",comentarioProfesor:"comentario_profesor"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue; out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
+const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",archivo_url:"archivoUrl",archivo_nombre:"archivoNombre",created_at:"createdAt",fecha_limite:"fechaLimite",comentario_profesor:"comentarioProfesor",requiere_entrega:"requiereEntrega",entrega_id:"entregaId"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
+const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac",archivoUrl:"archivo_url",archivoNombre:"archivo_nombre",fechaLimite:"fecha_limite",comentarioProfesor:"comentario_profesor",requiereEntrega:"requiere_entrega",entregaId:"entrega_id"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue; out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
 const saveD = async () => {};
 const upsertRow = async (table, obj) => { 
@@ -260,8 +260,7 @@ const TABS = [
   { id: "alumnos",   icon: "👤", label: "Alumnos" },
   { id: "eventos",   icon: "📅", label: "Eventos del Colegio" },
   { id: "agenda",    icon: "🗓️", label: "Agenda" },
-  { id: "documentos", icon: "📁", label: "Archivos/Docs" },
-  { id: "entregas",   icon: "📬", label: "Entregas" }, ];
+  { id: "documentos", icon: "📁", label: "Archivos/Docs" }, ];
 const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
   const [vista, setVista] = useState(null); // null | "materias" | "alumnos" | "notas" | "promedio" | "actividades"
@@ -326,7 +325,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [agendaUploading,  setAgendaUploading]  = useState(false);
   const [agendaFiltroMat,  setAgendaFiltroMat]  = useState("");
   const [agendaFiltroEst,  setAgendaFiltroEst]  = useState("");
-  const agendaEmpty = { titulo:"", tipo:"examen", materiaId:"", alumnoId:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", archivoUrl:"", archivoNombre:"", estado:"pendiente" };
+  const agendaEmpty = { titulo:"", tipo:"examen", materiaId:"", alumnoId:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", archivoUrl:"", archivoNombre:"", estado:"pendiente", requiereEntrega: false, entregaId: "" };
   const [agendaForm,       setAgendaForm]       = useState(agendaEmpty);
   const goInicio = () => { setVista(null); setDetalleMateria(null); setDetalleAlumno(null); setMatFiltro(null); };
   // Expose setVista for cross-component agenda navigation
@@ -532,15 +531,22 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
     const TIPOS = [
       { id: "examen",  label: "Examen",             icon: "📝", color: C.red    },
       { id: "tp",      label: "Trabajo Práctico",   icon: "📋", color: C.blue   },
+      { id: "tarea",   label: "Tarea",              icon: "📌", color: C.yellow },
+      { id: "proyecto",label: "Proyecto",           icon: "🗂️", color: "#8b5cf6" },
       { id: "rendir",  label: "Examen para Rendir", icon: "🎯", color: C.yellow },
       { id: "otro",    label: "Otro",               icon: "📌", color: C.dim    },
     ];
     const ESTADOS = [
-      { id: "pendiente",  label: "Pendiente",  color: C.yellow },
-      { id: "entregado",  label: "Entregado",  color: C.blue   },
-      { id: "calificado", label: "Calificado", color: C.green  },
+      { id: "pendiente",  label: "⏳ Pendiente",   color: C.yellow },
+      { id: "entregado",  label: "📥 Entregado",   color: C.blue   },
+      { id: "calificado", label: "✅ Calificado",  color: C.green  },
     ];
     const agendaAll = (data.agenda || []).filter(e => e.colegioId === colegioId);
+    const entregasAll = (data.entregas || []).filter(e => {
+      const mat = mats.find(m => m.id === e.materiaId);
+      return !!mat;
+    });
+    const pendientesEntrega = entregasAll.filter(e => e.estado === "entregada").length;
     const popOpen = agendaPopOpen; const setPopOpen = setAgendaPopOpen;
     const editId = agendaEditId; const setEditId = setAgendaEditId;
     const adjFile = agendaAdjFile; const setAdjFile = setAgendaAdjFile;
@@ -573,16 +579,32 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
           else console.error("upload:", up.error);
         } catch(e) { console.error("upload:", e); }
       }
-      const row = { colegio_id: colegioId, titulo: form.titulo.trim(), tipo: form.tipo, materia_id: form.materiaId||null, alumno_id: form.alumnoId||null, fecha: form.fecha, descripcion: form.descripcion||"", archivo_url: archivoUrl||"", archivo_nombre: archivoNombre||"", estado: form.estado };
+      // Si requiere entrega y es nuevo, crear entrega asociada
+      let entregaId = form.entregaId || "";
+      if (form.requiereEntrega && !editId) {
+        entregaId = crypto.randomUUID();
+        const entregaRow = { id: entregaId, colegio_id: colegioId, materia_id: form.materiaId||null, titulo: form.titulo.trim(), descripcion: form.descripcion||"", fecha_limite: form.fecha, estado: "abierta", tipo: form.tipo };
+        const { error: eErr } = await supabase.from("entregas").insert(entregaRow);
+        if (!eErr) setData(d => ({ ...d, entregas: [...(d.entregas||[]), { ...entregaRow, materiaId: form.materiaId, fechaLimite: form.fecha, colegioId }] }));
+      }
+      const row = { colegio_id: colegioId, titulo: form.titulo.trim(), tipo: form.tipo, materia_id: form.materiaId||null, alumno_id: form.alumnoId||null, fecha: form.fecha, descripcion: form.descripcion||"", archivo_url: archivoUrl||"", archivo_nombre: archivoNombre||"", estado: form.estado, requiere_entrega: form.requiereEntrega||false, entrega_id: entregaId };
       if (editId) {
         const { error } = await supabase.from("agenda").update(row).eq("id", editId);
         if (error) { alert("Error: " + error.message); setUploading(false); return; }
-        setData(d => ({ ...d, agenda: (d.agenda||[]).map(x => x.id === editId ? { ...x, ...form, archivoUrl, archivoNombre, colegioId } : x) }));
+        setData(d => ({ ...d, agenda: (d.agenda||[]).map(x => x.id === editId ? { ...x, ...form, archivoUrl, archivoNombre, colegioId, entregaId } : x) }));
       } else {
         const id = uid();
         const { error } = await supabase.from("agenda").insert({ id, ...row });
         if (error) { alert("Error: " + error.message); setUploading(false); return; }
-        setData(d => ({ ...d, agenda: [...(d.agenda||[]), { id, colegioId, ...form, archivoUrl, archivoNombre }] }));
+        setData(d => ({ ...d, agenda: [...(d.agenda||[]), { id, colegioId, ...form, archivoUrl, archivoNombre, entregaId }] }));
+        // Mostrar link si requiere entrega
+        if (form.requiereEntrega && entregaId) {
+          const link = `${window.location.origin}/entrega/${entregaId}`;
+          setTimeout(() => alert(`✅ Evento programado con entrega.
+
+🔗 Link para compartir:
+${link}`), 100);
+        }
       }
       setUploading(false); cerrar();
     };
@@ -596,62 +618,135 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
       setData(d => ({ ...d, agenda: (d.agenda||[]).map(x => x.id === id ? { ...x, estado } : x) }));
     };
     const AgendaCard = ({ ev }) => {
-      const mat  = mats.find(m => m.id === ev.materiaId);
-      const al   = als.find(a => a.id === ev.alumnoId);
-      const tipo = TIPOS.find(t => t.id === ev.tipo) || TIPOS[3];
-      const est  = ESTADOS.find(s => s.id === ev.estado) || ESTADOS[0];
-      const dias = Math.ceil((new Date(ev.fecha + "T12:00:00") - new Date()) / 86400000);
+      const mat    = mats.find(m => m.id === ev.materiaId);
+      const al     = als.find(a => a.id === ev.alumnoId);
+      const tipo   = TIPOS.find(t => t.id === ev.tipo) || TIPOS[TIPOS.length-1];
+      const est    = ESTADOS.find(s => s.id === ev.estado) || ESTADOS[0];
+      const dias   = Math.ceil((new Date(ev.fecha + "T12:00:00") - new Date()) / 86400000);
       const urgente = dias >= 0 && dias <= 3;
       const vencido = dias < 0;
+      // Entrega asociada
+      const entrega = ev.entregaId ? entregasAll.find(e => e.id === ev.entregaId) : null;
+      const entregaLink = entrega ? `${window.location.origin}/entrega/${entrega.id}` : null;
+      const [linkCopiado, setLinkCopiado] = React.useState(false);
+      const [corriendo, setCorriendo] = React.useState(false);
+      const [notaCorr, setNotaCorr] = React.useState(entrega?.nota || "");
+      const [comentCorr, setComentCorr] = React.useState(entrega?.comentarioProfesor || "");
+      const [mostrarCorr, setMostrarCorr] = React.useState(false);
+
+      const copiarLink = () => {
+        navigator.clipboard.writeText(entregaLink);
+        setLinkCopiado(true);
+        setTimeout(() => setLinkCopiado(false), 2000);
+      };
+
+      const guardarCorreccion = async () => {
+        if (!notaCorr) { alert("Ingresá una nota."); return; }
+        setCorriendo(true);
+        await supabase.from("entregas").update({ nota: notaCorr, comentario_profesor: comentCorr, estado: "corregida" }).eq("id", entrega.id);
+        if (entrega.alumnoId) {
+          const notaRow = { id: crypto.randomUUID(), alumno_id: entrega.alumnoId, materia_id: entrega.materiaId, nota: notaCorr, tipo: ev.tipo || "trabajo", descripcion: ev.titulo, fecha: new Date().toISOString().slice(0,10) };
+          await supabase.from("notas").insert(notaRow);
+          setData(d => ({ ...d, notas: [...d.notas, { ...notaRow, alumnoId: notaRow.alumno_id, materiaId: notaRow.materia_id }] }));
+        }
+        setData(d => ({ ...d, entregas: d.entregas.map(e => e.id === entrega.id ? { ...e, nota: notaCorr, comentarioProfesor: comentCorr, estado: "corregida" } : e) }));
+        cambiarEstado(ev.id, "calificado");
+        setCorriendo(false); setMostrarCorr(false);
+      };
+
       return (
-        <div style={{ display:"flex", alignItems:"center", gap:14, padding:"15px 18px", background:C.card, border:`1.5px solid ${urgente ? C.red+"55" : C.border}`, borderRadius:14 }}>
-          <div style={{ width:46, height:46, borderRadius:13, background:tipo.color+"18", border:`1px solid ${tipo.color}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{tipo.icon}</div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
-              <span style={{ color:C.text, fontWeight:700, fontSize:15 }}>{ev.titulo}</span>
-              {urgente && <span style={{ background:C.red+"22", color:C.red, border:`1px solid ${C.red}44`, borderRadius:6, padding:"1px 8px", fontSize:11, fontWeight:700 }}>{dias===0?"¡Hoy!":`¡${dias}d!`}</span>}
-              {vencido  && <span style={{ background:C.dim+"22", color:C.dim, borderRadius:6, padding:"1px 8px", fontSize:11 }}>Vencido</span>}
+        <div style={{ background:C.card, border:`1.5px solid ${urgente ? C.red+"55" : entrega?.estado==="entregada" ? C.blue+"55" : C.border}`, borderRadius:14, overflow:"hidden" }}>
+          {/* Fila principal */}
+          <div style={{ display:"flex", alignItems:"center", gap:14, padding:"15px 18px" }}>
+            <div style={{ width:46, height:46, borderRadius:13, background:tipo.color+"18", border:`1px solid ${tipo.color}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{tipo.icon}</div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                <span style={{ color:C.text, fontWeight:700, fontSize:15 }}>{ev.titulo}</span>
+                {urgente && <span style={{ background:C.red+"22", color:C.red, border:`1px solid ${C.red}44`, borderRadius:6, padding:"1px 8px", fontSize:11, fontWeight:700 }}>{dias===0?"¡Hoy!":`¡${dias}d!`}</span>}
+                {vencido  && <span style={{ background:C.dim+"22", color:C.dim, borderRadius:6, padding:"1px 8px", fontSize:11 }}>Vencido</span>}
+                {entrega?.estado==="entregada" && <span style={{ background:C.blue+"22", color:C.blue, border:`1px solid ${C.blue}44`, borderRadius:6, padding:"1px 8px", fontSize:11, fontWeight:700 }}>📥 Entregado</span>}
+                {entrega?.estado==="corregida" && <span style={{ background:C.green+"22", color:C.green, border:`1px solid ${C.green}44`, borderRadius:6, padding:"1px 8px", fontSize:11, fontWeight:700 }}>✅ Corregido</span>}
+              </div>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
+                <Tag color={tipo.color}>{tipo.label}</Tag>
+                {mat && <Tag color={C.accent}>{mat.nombre}</Tag>}
+                {al  && <Tag color={C.blue}>{al.apellido}, {al.nombre}</Tag>}
+                <span style={{ color:C.muted, fontSize:12 }}>📅 {fmt(ev.fecha)}</span>
+                {entrega?.nota && <span style={{ fontSize:15, fontWeight:900, color:nc(entrega.nota) }}>Nota: {entrega.nota}</span>}
+              </div>
+              {ev.descripcion && <div style={{ color:C.dim, fontSize:12, marginTop:5 }}>{ev.descripcion}</div>}
+              {ev.archivoUrl  && <a href={ev.archivoUrl} target="_blank" rel="noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:6, color:C.accentL, fontSize:12, fontWeight:600, textDecoration:"none" }}>📎 {ev.archivoNombre||"Ver archivo"}</a>}
             </div>
-            <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
-              <Tag color={tipo.color}>{tipo.label}</Tag>
-              {mat && <Tag color={C.accent}>{mat.nombre}</Tag>}
-              {al  && <Tag color={C.blue}>{al.apellido}, {al.nombre}</Tag>}
-              <span style={{ color:C.muted, fontSize:12 }}>📅 {fmt(ev.fecha)}</span>
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
+              <select value={ev.estado} onChange={e => cambiarEstado(ev.id, e.target.value)}
+                style={{ background:est.color+"18", border:`1px solid ${est.color}44`, borderRadius:8, padding:"5px 10px", color:est.color, fontSize:12, fontWeight:700, cursor:"pointer", outline:"none" }}>
+                {ESTADOS.map(s => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={s.id} value={s.id}>{s.label}</option>)}
+              </select>
+              <div style={{ display:"flex", gap:6 }}>
+                <Btn v="ghost" sm onClick={() => abrirEditar(ev)}>✏️</Btn>
+                <Btn v="danger" sm onClick={() => eliminar(ev.id)}>🗑️</Btn>
+              </div>
             </div>
-            {ev.descripcion && <div style={{ color:C.dim, fontSize:12, marginTop:5 }}>{ev.descripcion}</div>}
-            {ev.archivoUrl  && <a href={ev.archivoUrl} target="_blank" rel="noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:6, color:C.accentL, fontSize:12, fontWeight:600, textDecoration:"none" }}>📎 {ev.archivoNombre||"Ver archivo"}</a>}
           </div>
-          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8, flexShrink:0 }}>
-            <select value={ev.estado} onChange={e => cambiarEstado(ev.id, e.target.value)}
-              style={{ background:est.color+"18", border:`1px solid ${est.color}44`, borderRadius:8, padding:"5px 10px", color:est.color, fontSize:12, fontWeight:700, cursor:"pointer", outline:"none" }}>
-              {ESTADOS.map(s => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={s.id} value={s.id}>{s.label}</option>)}
-            </select>
-            <div style={{ display:"flex", gap:6 }}>
-              <Btn v="ghost" sm onClick={() => abrirEditar(ev)}>✏️</Btn>
-              <Btn v="danger" sm onClick={() => eliminar(ev.id)}>🗑️</Btn>
+          {/* Barra de acciones si tiene entrega */}
+          {entregaLink && (
+            <div style={{ display:"flex", gap:8, padding:"10px 18px", borderTop:`1px solid ${C.border}`, background:"#f9731608", flexWrap:"wrap", alignItems:"center" }}>
+              <button onClick={copiarLink} style={{ display:"flex", alignItems:"center", gap:5, background: linkCopiado ? C.green : "#1c1410", color: linkCopiado ? "#fff" : "#fb923c", border:"none", borderRadius:8, padding:"5px 12px", fontSize:12, fontWeight:700, cursor:"pointer", transition:"all .2s" }}>
+                {linkCopiado ? "✅ Link copiado" : "📋 Copiar link"}
+              </button>
+              {entrega?.archivoUrl && entrega?.estado !== "corregida" && (
+                <button onClick={() => setMostrarCorr(v => !v)} style={{ display:"flex", alignItems:"center", gap:5, background: C.blue+"22", color:C.blue, border:`1px solid ${C.blue}44`, borderRadius:8, padding:"5px 12px", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                  ✏️ Corregir entrega
+                </button>
+              )}
+              {entrega?.archivoUrl && (
+                <a href={entrega.archivoUrl} target="_blank" rel="noreferrer" style={{ display:"flex", alignItems:"center", gap:5, background:"transparent", color:C.accentL, border:`1px solid ${C.accentL}44`, borderRadius:8, padding:"5px 12px", fontSize:12, fontWeight:700, textDecoration:"none" }}>
+                  👁️ Ver entrega
+                </a>
+              )}
+              {!entrega?.archivoUrl && <span style={{ fontSize:12, color:C.muted }}>⏳ Esperando entrega del alumno</span>}
             </div>
-          </div>
+          )}
+          {/* Panel de corrección inline */}
+          {mostrarCorr && entrega?.archivoUrl && (
+            <div style={{ padding:"14px 18px", borderTop:`1px solid ${C.border}`, background:"#ffffff88" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"120px 1fr auto", gap:10, alignItems:"flex-end" }}>
+                <Inp label="Nota (0-10)" type="number" min="0" max="10" step="0.1" value={notaCorr} onChange={e => setNotaCorr(e.target.value)} placeholder="7.5" />
+                <Inp label="Comentario" value={comentCorr} onChange={e => setComentCorr(e.target.value)} placeholder="Muy bien, pero revisá..." />
+                <Btn onClick={guardarCorreccion} disabled={corriendo}>{corriendo ? "⏳" : "💾 Guardar"}</Btn>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
     return (
       <div>
         <Breadcrumb items={[{ label:"Inicio", onClick:goInicio }, { label:"Agenda" }]} />
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:12 }}>
-          <h2 style={{ color:C.text, margin:0, fontSize:20, fontWeight:800 }}>📅 Agenda — Exámenes y TPs</h2>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, flexWrap:"wrap", gap:12 }}>
+          <div>
+            <h2 style={{ color:C.text, margin:0, fontSize:20, fontWeight:800 }}>📅 Agenda y Entregas</h2>
+            {pendientesEntrega > 0 && <div style={{ fontSize:12, color:C.red, fontWeight:700, marginTop:3 }}>⚠️ {pendientesEntrega} entrega(s) pendiente(s) de corrección</div>}
+          </div>
           <Btn onClick={abrirNuevo}>+ Programar</Btn>
         </div>
-        <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:22 }}>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:20 }}>
           <select value={filtroMat} onChange={e => setFiltroMat(e.target.value)}
-            style={{ background:"#07101e", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:filtroMat?C.text:C.dim, fontSize:13, outline:"none" }}>
+            style={{ background:"#fff8f0", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:"#1c1410", fontSize:13, outline:"none" }}>
             <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">📚 Todas las materias</option>
             {mats.map(m => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={m.id} value={m.id}>{m.nombre}</option>)}
           </select>
           <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
-            style={{ background:"#07101e", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:filtroEstado?C.text:C.dim, fontSize:13, outline:"none" }}>
+            style={{ background:"#fff8f0", border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 12px", color:"#1c1410", fontSize:13, outline:"none" }}>
             <option style={{ background: "#fff8f0", color: "#1c1410" }} value="">🔘 Todos los estados</option>
             {ESTADOS.map(s => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={s.id} value={s.id}>{s.label}</option>)}
           </select>
+          {pendientesEntrega > 0 && (
+            <button onClick={() => setFiltroEstado("entregado")}
+              style={{ background:C.blue+"22", color:C.blue, border:`1px solid ${C.blue}44`, borderRadius:9, padding:"7px 14px", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+              📥 Ver pendientes ({pendientesEntrega})
+            </button>
+          )}
         </div>
         {agendaAll.length === 0
           ? <Empty icon="📅" msg="No hay exámenes ni TPs programados todavía." />
@@ -689,6 +784,17 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
                 {[...als].sort((a,b) => a.apellido.localeCompare(b.apellido)).map(a => <option style={{ background: "#fff8f0", color: "#1c1410" }} key={a.id} value={a.id}>{a.apellido}, {a.nombre}</option>)}
               </Sel>
               <Inp label="Descripción / Temas" value={form.descripcion} onChange={e => setForm(f => ({ ...f, descripcion:e.target.value }))} placeholder="Ej: Unidades 1, 2 y 3 — págs. 40-80" />
+              {/* Toggle requiere entrega */}
+              <div style={{ display:"flex", alignItems:"center", gap:10, background: form.requiereEntrega ? C.blue+"18" : C.accentDim, border:`1px solid ${form.requiereEntrega ? C.blue+"44" : C.border}`, borderRadius:10, padding:"12px 16px", cursor:"pointer" }}
+                onClick={() => setForm(f => ({ ...f, requiereEntrega: !f.requiereEntrega }))}>
+                <div style={{ width:20, height:20, borderRadius:5, background: form.requiereEntrega ? C.blue : "transparent", border:`2px solid ${form.requiereEntrega ? C.blue : C.dim}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  {form.requiereEntrega && <span style={{ color:"#fff", fontSize:13, fontWeight:900 }}>✓</span>}
+                </div>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:"#1c1410" }}>📬 Requiere entrega de archivo</div>
+                  <div style={{ fontSize:11, color:"#92400e" }}>Se genera un link único para que los alumnos suban su trabajo</div>
+                </div>
+              </div>
               <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                 <label style={{ fontSize:10, color:C.dim, fontWeight:800, textTransform:"uppercase", letterSpacing:1.4 }}>📎 Archivo adjunto (opcional)</label>
                 <div style={{ background:"#070c18", border:`1.5px dashed ${adjFile?C.accent:C.border}`, borderRadius:12, padding:"14px 16px", display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}
@@ -3549,7 +3655,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useIsMobile();
   const col = data.colegios.find(c => c.id === colegioId);
-  const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos, entregas: Entregas };
+  const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos };
   // Agenda tab -> Dashboard con vista="agenda" preseleccionada
   const handleAgendaTab = () => {
     setTab("dashboard"); setDashKey(k => k+1); setMenuOpen(false);
