@@ -3957,10 +3957,17 @@ const EntregaPublica = ({ entregaId }) => {
   const [subiendo, setSubiendo] = useState(false);
   const [enviado, setEnviado]   = useState(false);
 
+  const [archivoConsigna, setArchivoConsigna] = useState(null);
+
   useEffect(() => {
     supabase.from("entregas").select("*").eq("id", entregaId).single()
-      .then(({ data, error }) => {
-        if (!error && data) setEntrega(data);
+      .then(async ({ data, error }) => {
+        if (!error && data) {
+          setEntrega(data);
+          // Buscar evento de agenda asociado para obtener archivo de consigna
+          const { data: agendaRows } = await supabase.from("agenda").select("archivo_url,archivo_nombre").eq("entrega_id", entregaId).single();
+          if (agendaRows?.archivo_url) setArchivoConsigna(agendaRows);
+        }
         setLoading(false);
       });
   }, [entregaId]);
@@ -4041,6 +4048,19 @@ const EntregaPublica = ({ entregaId }) => {
           {entrega.descripcion && <p style={{ fontSize: 14, color: "#92400e", margin: 0, lineHeight: 1.6 }}>{entrega.descripcion.split("[Entregado")[0]}</p>}
           {entrega.fecha_limite && <div style={{ fontSize: 12, color: "#b45309", marginTop: 8 }}>📅 Fecha límite: {entrega.fecha_limite}</div>}
         </div>
+
+        {/* Archivo de consigna para descargar */}
+        {archivoConsigna && (
+          <div style={{ background: "#fff3e0", border: "1px solid #f9731650", borderRadius: 12, padding: "14px 18px", marginBottom: 4 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#92400e", marginBottom: 8 }}>📎 ARCHIVO DE CONSIGNA</div>
+            <a href={archivoConsigna.archivo_url} target="_blank" rel="noreferrer" download
+              style={{ display: "flex", alignItems: "center", gap: 10, background: "#1c1410", color: "#fb923c", borderRadius: 10, padding: "10px 16px", textDecoration: "none", fontWeight: 700, fontSize: 14 }}>
+              <span style={{ fontSize: 20 }}>⬇️</span>
+              <span>Descargar: {archivoConsigna.archivo_nombre || "archivo"}</span>
+            </a>
+            <div style={{ fontSize: 11, color: "#b45309", marginTop: 8 }}>Descargá este archivo, completalo y subí tu respuesta abajo.</div>
+          </div>
+        )}
 
         {enviado ? (
           <div style={{ textAlign: "center", padding: "28px 0" }}>
