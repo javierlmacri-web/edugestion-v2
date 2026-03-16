@@ -4053,9 +4053,7 @@ const EntregaPublica = ({ entregaId }) => {
         {archivoConsigna && (
           <div style={{ background: "#fff3e0", border: "1px solid #f9731650", borderRadius: 12, padding: "14px 18px", marginBottom: 4 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: "#92400e", marginBottom: 8 }}>📎 ARCHIVO DE CONSIGNA</div>
-            <a href={`https://res.cloudinary.com/${archivoConsigna.archivo_url.match(/upload\/(?:v\d+\/)?(.+)$/)?.[1] ? archivoConsigna.archivo_url.replace('/upload/', '/upload/fl_attachment/') : archivoConsigna.archivo_url}`}
-              target="_blank" rel="noreferrer"
-              download={archivoConsigna.archivo_nombre || "archivo"}
+            <a href={archivoConsigna.archivo_url} target="_blank" rel="noreferrer"
               style={{ display: "flex", alignItems: "center", gap: 10, background: "#1c1410", color: "#fb923c", borderRadius: 10, padding: "10px 16px", textDecoration: "none", fontWeight: 700, fontSize: 14 }}>
               <span style={{ fontSize: 20 }}>⬇️</span>
               <span>Descargar: {archivoConsigna.archivo_nombre || "archivo"}</span>
