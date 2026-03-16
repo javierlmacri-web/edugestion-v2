@@ -336,8 +336,8 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   }, []);
 
   const col  = data.colegios.find(c => c.id === colegioId);
-  const als  = data.alumnos.filter(a => a.colegioId === colegioId);
-  const mats = data.materias.filter(m => m.colegioId === colegioId);
+  const als  = data.alumnos.filter(a => a.colegioId === colegioId).sort((a,b) => a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre));
+  const mats = data.materias.filter(m => m.colegioId === colegioId).sort((a,b) => a.nombre.localeCompare(b.nombre));
   const notas = data.notas.filter(n => als.some(a => a.id === n.alumnoId));
   const acts  = data.actividades.filter(a => als.some(al => al.id === a.alumnoId));
   const vals  = notas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const prom  = avg(vals);
@@ -558,7 +558,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
     const today = new Date().toISOString().slice(0,10);
     const lista = agendaAll
       .filter(e => (!filtroMat || e.materiaId === filtroMat) && (!filtroEstado || e.estado === filtroEstado))
-      .sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+      .sort((a,b) => new Date(a.fecha) - new Date(b.fecha) || a.titulo.localeCompare(b.titulo));
     const proximos = lista.filter(e => e.fecha >= today);
     const pasados  = lista.filter(e => e.fecha < today).reverse();
     const abrirNuevo  = () => { setForm(emptyForm); setEditId(null); setAdjFile(null); setPopOpen(true); };
@@ -1951,7 +1951,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
 const Materias = ({ data, setData, colegioId }) => {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "", division: "" });
   const [editId, setEditId] = useState(null);
-  const materias = data.materias.filter(m => m.colegioId === colegioId);
+  const materias = data.materias.filter(m => m.colegioId === colegioId).sort((a,b) => a.nombre.localeCompare(b.nombre));
   if (materiaSeleccionada) {
     return <MateriaDetalle data={data} setData={setData} materiaId={materiaSeleccionada} colegioId={colegioId} onBack={() => setMateriaSeleccionada(null)} />;
   }
@@ -2232,7 +2232,7 @@ const Alumnos = ({ data, setData, colegioId }) => {
   const edit = (a) => {
     setForm({ nombre: a.nombre, apellido: a.apellido, dni: a.dni || "", fechaNac: a.fechaNac || "", curso: a.curso || "", email: a.email || "", telefono: a.telefono || "" });
     setEditId(a.id); setPop(true); };
-  const filtered = alumnos.filter(a => `${a.nombre} ${a.apellido} ${a.dni || ""}`.toLowerCase().includes(filtro.toLowerCase()) && (!filtroCurso || a.curso === filtroCurso));
+  const filtered = alumnos.filter(a => `${a.nombre} ${a.apellido} ${a.dni || ""}`.toLowerCase().includes(filtro.toLowerCase()) && (!filtroCurso || a.curso === filtroCurso)).sort((a,b) => a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre));
   if (alumnoViendo) {
     return <AlumnoPerfilGlobal data={data} setData={setData} alumnoId={alumnoViendo} colegioId={colegioId} onBack={() => setAlumnoViendo(null)} />;
   }
@@ -2346,7 +2346,7 @@ const Eventos = ({ data, setData, colegioId }) => {
   const [formInasist, setFormInasist] = useState(emptyInasist);
   const eventos       = (data.eventos      || []).filter(e => e.colegioId === colegioId);
   const inasistencias = (data.inasistencias || []).filter(i => i.colegioId === colegioId);
-  const filtrados     = eventos.filter(e => e.tipo === seccion).sort((a,b) => new Date(b.fecha)-new Date(a.fecha));
+  const filtrados     = eventos.filter(e => e.tipo === seccion).sort((a,b) => new Date(b.fecha)-new Date(a.fecha) || a.titulo.localeCompare(b.titulo));
   const mesesDisp  = [...new Set(inasistencias.map(i => i.fecha && i.fecha.slice(0,7)).filter(Boolean))].sort().reverse();
   const mesActivo  = mesFiltro || mesesDisp[0] || null;
   const inasistMes = mesActivo ? inasistencias.filter(i => i.fecha && i.fecha.startsWith(mesActivo)) : inasistencias;
@@ -3245,7 +3245,7 @@ const Documentos = ({ data, setData, colegioId }) => {
           {(() => {
             const sinMateria = archivos.filter(d => !d.materia_id);
             const todasLasCarpetas = [
-              ...materias.map(m => ({
+              ...materias.sort((a,b) => a.nombre.localeCompare(b.nombre)).map(m => ({
                 id: m.id,
                 nombre: m.nombre,
                 division: m.division,
