@@ -3701,6 +3701,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [dashKey, setDashKey] = useState(0);
   const [exportando, setExportando] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const isMobile = useIsMobile();
   const col = data.colegios.find(c => c.id === colegioId);
   const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos };
@@ -3878,6 +3879,13 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
           ))}
         </nav>
         <div style={{ padding: "10px 9px", borderTop: "1px solid #2d1f14", display: "flex", flexDirection: "column", gap: 6 }}>
+          <button onClick={() => setShowAIChat(true)}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: "1px solid #8b5cf633", cursor: "pointer", fontSize: 13, fontWeight: 700, background: "#8b5cf612", color: "#a78bfa", transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#8b5cf622"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#8b5cf612"; }}>
+            <span style={{ fontSize: 15 }}>🤖</span>
+            Consultar IA
+          </button>
           <button onClick={handleExport} disabled={exportando}
             style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: `1px solid #22c55e33`, cursor: exportando ? "wait" : "pointer", fontSize: 13, fontWeight: 700, background: "#22c55e12", color: "#22c55e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#22c55e22"; }}
@@ -3925,6 +3933,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
         <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
       {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
+      {showAIChat && <AIChat data={data} colegioId={colegioId} onClose={() => setShowAIChat(false)} />}
     </div>
   );
 };
@@ -4099,6 +4108,208 @@ const EntregaPublica = ({ entregaId }) => {
             </button>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+
+// ─────────────────────────────────────────────────────────────
+// AI CHAT — Consultas sobre los datos del colegio
+// ─────────────────────────────────────────────────────────────
+const AIChat = ({ data, colegioId, onClose }) => {
+  const [mensajes, setMensajes] = useState([
+    { rol: "assistant", texto: "¡Hola! Soy tu asistente IA. Podés preguntarme cualquier cosa sobre los alumnos, notas, asistencias, materias o entregas del colegio. Por ejemplo:\n\n• ¿Quiénes desaprobaron en Contabilidad?\n• ¿Cuál es el promedio general de 2° año?\n• ¿Qué alumnos tienen más faltas este mes?\n• ¿Cuántas entregas están pendientes de corrección?" }
+  ]);
+  const [input, setInput] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const bottomRef = React.useRef(null);
+  const inputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [mensajes]);
+
+  // Construir contexto compacto de los datos del colegio
+  const buildContext = () => {
+    const alumnos   = data.alumnos.filter(a => a.colegioId === colegioId);
+    const materias  = data.materias.filter(m => m.colegioId === colegioId);
+    const notas     = data.notas.filter(n => alumnos.some(a => a.id === n.alumnoId));
+    const inasist   = (data.inasistencias || []).filter(i => alumnos.some(a => a.id === i.alumnoId));
+    const entregas  = (data.entregas || []).filter(e => materias.some(m => m.id === e.materiaId));
+    const agenda    = (data.agenda || []).filter(e => e.colegioId === colegioId);
+    const inscripciones = (data.inscripciones || []);
+
+    const avg = arr => arr.length ? (arr.reduce((s,v) => s+v, 0) / arr.length).toFixed(1) : null;
+
+    // Resumen por alumno
+    const resAlumnos = alumnos.map(a => {
+      const notasAl = notas.filter(n => n.alumnoId === a.id);
+      const vals = notasAl.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+      const matsIds = inscripciones.filter(i => i.alumnoId === a.id).map(i => i.materiaId);
+      const matsNombres = matsIds.map(id => materias.find(m => m.id === id)?.nombre).filter(Boolean);
+      const inasistAl = inasist.filter(i => i.alumnoId === a.id).length;
+      return {
+        nombre: `${a.apellido}, ${a.nombre}`,
+        curso: a.curso || "sin curso",
+        materias: matsNombres,
+        promedio: avg(vals),
+        cantNotas: vals.length,
+        inasistencias: inasistAl,
+        notas: notasAl.map(n => ({ materia: materias.find(m => m.id === n.materiaId)?.nombre || "?", tipo: n.tipo, nota: n.nota, fecha: n.fecha }))
+      };
+    });
+
+    // Resumen por materia
+    const resMaterias = materias.map(m => {
+      const notasMat = notas.filter(n => n.materiaId === m.id);
+      const vals = notasMat.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+      const alsInsc = inscripciones.filter(i => i.materiaId === m.id).length;
+      return { nombre: m.nombre, division: m.division || "", alumnos: alsInsc, promedio: avg(vals), cantNotas: vals.length };
+    });
+
+    // Entregas pendientes
+    const entregasPend = entregas.filter(e => e.estado === "entregada").map(e => ({
+      titulo: e.titulo, materia: materias.find(m => m.id === e.materiaId)?.nombre || "?", estado: e.estado
+    }));
+
+    const hoy = new Date().toISOString().slice(0,10);
+    return `DATOS DEL COLEGIO (fecha actual: ${hoy})
+
+ALUMNOS (${alumnos.length} total):
+${resAlumnos.map(a => `- ${a.nombre} | Curso: ${a.curso} | Materias: ${a.materias.join(", ")||"ninguna"} | Promedio: ${a.promedio||"sin notas"} | Notas: ${a.cantNotas} | Inasistencias: ${a.inasistencias}`).join("
+")}
+
+MATERIAS (${materias.length} total):
+${resMaterias.map(m => `- ${m.nombre}${m.division?" ("+m.division+")":""} | Alumnos: ${m.alumnos} | Promedio: ${m.promedio||"sin notas"} | Notas registradas: ${m.cantNotas}`).join("
+")}
+
+NOTAS DETALLADAS:
+${notas.slice(-100).map(n => `- ${alumnos.find(a=>a.id===n.alumnoId)?.apellido||"?"}: ${n.nota} en ${materias.find(m=>m.id===n.materiaId)?.nombre||"?"} (${n.tipo}, ${n.fecha})`).join("
+")}
+
+ENTREGAS PENDIENTES DE CORRECCIÓN (${entregasPend.length}):
+${entregasPend.map(e => `- ${e.titulo} | ${e.materia}`).join("
+")||"Ninguna"}
+
+AGENDA PRÓXIMA:
+${agenda.filter(e=>e.fecha>=hoy).slice(0,10).map(e=>`- ${e.titulo} | ${materias.find(m=>m.id===e.materiaId)?.nombre||""} | ${e.fecha} | ${e.estado}`).join("
+")||"Sin eventos próximos"}`;
+  };
+
+  const enviar = async () => {
+    if (!input.trim() || cargando) return;
+    const pregunta = input.trim();
+    setInput("");
+    setMensajes(m => [...m, { rol: "user", texto: pregunta }]);
+    setCargando(true);
+
+    try {
+      const contexto = buildContext();
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: `Sos un asistente educativo inteligente integrado en EduGestión, un sistema de gestión escolar. 
+Tenés acceso a todos los datos del colegio y respondés preguntas sobre alumnos, notas, asistencias, materias y entregas.
+Respondé siempre en español, de forma clara y concisa. Usá listas cuando sea útil.
+Cuando menciones notas, indicá si son buenas (≥7), regulares (4-6) o bajas (<4).
+Si hay alumnos en riesgo (promedio bajo + muchas inasistencias), destacalo.
+
+CONTEXTO ACTUAL:
+${contexto}`,
+          messages: [
+            ...mensajes.filter(m => m.rol !== "assistant" || mensajes.indexOf(m) > 0).map(m => ({
+              role: m.rol === "user" ? "user" : "assistant",
+              content: m.texto
+            })),
+            { role: "user", content: pregunta }
+          ]
+        })
+      });
+
+      const d = await response.json();
+      const respuesta = d.content?.[0]?.text || "No pude procesar la consulta.";
+      setMensajes(m => [...m, { rol: "assistant", texto: respuesta }]);
+    } catch(e) {
+      setMensajes(m => [...m, { rol: "assistant", texto: "❌ Error al conectar con la IA: " + e.message }]);
+    }
+    setCargando(false);
+    inputRef.current?.focus();
+  };
+
+  const sugerencias = [
+    "¿Quiénes tienen promedio menor a 6?",
+    "¿Cuántas entregas esperan corrección?",
+    "¿Qué materia tiene peor promedio?",
+    "¿Quiénes faltaron más de 3 veces?",
+  ];
+
+  return (
+    <div style={{ position: "fixed", bottom: 24, right: 24, width: 420, maxWidth: "calc(100vw - 48px)", height: 560, background: "#fffffff0", backdropFilter: "blur(12px)", borderRadius: 20, boxShadow: "0 24px 60px #00000033", display: "flex", flexDirection: "column", zIndex: 9999, border: "1px solid #f9731630" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid #f9731620", background: "linear-gradient(135deg, #1c1410, #2d1f14)", borderRadius: "20px 20px 0 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 36, height: 36, background: "#8b5cf622", border: "1px solid #8b5cf644", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🤖</div>
+          <div>
+            <div style={{ color: "#fb923c", fontWeight: 800, fontSize: 14 }}>Asistente IA</div>
+            <div style={{ color: "#8a6a4a", fontSize: 11 }}>Consultá los datos del colegio</div>
+          </div>
+        </div>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: "#8a6a4a", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>✕</button>
+      </div>
+
+      {/* Mensajes */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {mensajes.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.rol === "user" ? "flex-end" : "flex-start" }}>
+            <div style={{
+              maxWidth: "85%", padding: "10px 14px", borderRadius: m.rol === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+              background: m.rol === "user" ? "#1c1410" : "#fff8f0",
+              color: m.rol === "user" ? "#fb923c" : "#1c1410",
+              fontSize: 13, lineHeight: 1.6,
+              border: m.rol === "user" ? "none" : "1px solid #f9731620",
+              whiteSpace: "pre-wrap"
+            }}>
+              {m.texto}
+            </div>
+          </div>
+        ))}
+        {cargando && (
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div style={{ background: "#fff8f0", border: "1px solid #f9731620", borderRadius: "16px 16px 16px 4px", padding: "10px 16px", fontSize: 13, color: "#92400e" }}>
+              <span style={{ animation: "pulse 1s infinite" }}>⏳ Analizando datos...</span>
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Sugerencias */}
+      {mensajes.length <= 1 && (
+        <div style={{ padding: "0 12px 8px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {sugerencias.map((s, i) => (
+            <button key={i} onClick={() => { setInput(s); inputRef.current?.focus(); }}
+              style={{ background: "#f9731612", border: "1px solid #f9731630", borderRadius: 20, padding: "4px 10px", fontSize: 11, color: "#92400e", cursor: "pointer", fontWeight: 600 }}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{ padding: "12px 14px", borderTop: "1px solid #f9731620", display: "flex", gap: 8 }}>
+        <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
+          placeholder="Preguntá algo sobre los alumnos..."
+          style={{ flex: 1, background: "#fff8f0", border: "1px solid #f9731640", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: "#1c1410", outline: "none" }}
+          disabled={cargando} />
+        <button onClick={enviar} disabled={cargando || !input.trim()}
+          style={{ background: cargando || !input.trim() ? "#1c141066" : "#1c1410", color: "#fb923c", border: "none", borderRadius: 12, padding: "0 16px", cursor: cargando || !input.trim() ? "not-allowed" : "pointer", fontSize: 18, fontWeight: 700, transition: "all .2s" }}>
+          ➤
+        </button>
       </div>
     </div>
   );
