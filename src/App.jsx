@@ -4186,12 +4186,10 @@ NOTAS DETALLADAS:
 ${notas.slice(-100).map(n => `- ${alumnos.find(a=>a.id===n.alumnoId)?.apellido||"?"}: ${n.nota} en ${materias.find(m=>m.id===n.materiaId)?.nombre||"?"} (${n.tipo}, ${n.fecha})`).join("\n")}
 
 ENTREGAS PENDIENTES DE CORRECCIÓN (${entregasPend.length}):
-${entregasPend.map(e => `- ${e.titulo} | ${e.materia}`).join("
-")||"Ninguna"}
+${entregasPend.map(e => `- ${e.titulo} | ${e.materia}`).join("\n")||"Ninguna"}
 
 AGENDA PRÓXIMA:
-${agenda.filter(e=>e.fecha>=hoy).slice(0,10).map(e=>`- ${e.titulo} | ${materias.find(m=>m.id===e.materiaId)?.nombre||""} | ${e.fecha} | ${e.estado}`).join("
-")||"Sin eventos próximos"}`;
+${agenda.filter(e=>e.fecha>=hoy).slice(0,10).map(e=>`- ${e.titulo} | ${materias.find(m=>m.id===e.materiaId)?.nombre||""} | ${e.fecha} | ${e.estado}`).join("\n")||"Sin eventos próximos"}`;
   };
 
   const enviar = async () => {
