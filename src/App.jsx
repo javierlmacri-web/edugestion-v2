@@ -4201,20 +4201,11 @@ ${agenda.filter(e=>e.fecha>=hoy).slice(0,10).map(e=>`- ${e.titulo} | ${materias.
 
     try {
       const contexto = buildContext();
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `Sos un asistente educativo inteligente integrado en EduGestión, un sistema de gestión escolar. 
-Tenés acceso a todos los datos del colegio y respondés preguntas sobre alumnos, notas, asistencias, materias y entregas.
-Respondé siempre en español, de forma clara y concisa. Usá listas cuando sea útil.
-Cuando menciones notas, indicá si son buenas (≥7), regulares (4-6) o bajas (<4).
-Si hay alumnos en riesgo (promedio bajo + muchas inasistencias), destacalo.
-
-CONTEXTO ACTUAL:
-${contexto}`,
+          system: `Sos un asistente educativo inteligente integrado en EduGestión, un sistema de gestión escolar. Tenés acceso a todos los datos del colegio y respondés preguntas sobre alumnos, notas, asistencias, materias y entregas. Respondé siempre en español, de forma clara y concisa. Usá listas cuando sea útil. Cuando menciones notas, indicá si son buenas (≥7), regulares (4-6) o bajas (<4). Si hay alumnos en riesgo (promedio bajo + muchas inasistencias), destacalo. CONTEXTO ACTUAL: ${contexto}`,
           messages: [
             ...mensajes.filter(m => m.rol !== "assistant" || mensajes.indexOf(m) > 0).map(m => ({
               role: m.rol === "user" ? "user" : "assistant",
@@ -4226,7 +4217,7 @@ ${contexto}`,
       });
 
       const d = await response.json();
-      const respuesta = d.content?.[0]?.text || "No pude procesar la consulta.";
+      const respuesta = d.text || d.error || "No pude procesar la consulta.";
       setMensajes(m => [...m, { rol: "assistant", texto: respuesta }]);
     } catch(e) {
       setMensajes(m => [...m, { rol: "assistant", texto: "❌ Error al conectar con la IA: " + e.message }]);
