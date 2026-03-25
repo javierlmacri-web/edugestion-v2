@@ -13,11 +13,15 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "GEMINI_API_KEY no configurada" });
 
-    // Convertir historial al formato de Gemini
-    const contents = messages.map(m => ({
-      role: m.role === "user" ? "user" : "model",
-      parts: [{ text: m.content }]
-    }));
+    // En v1, el system prompt va como primer mensaje del modelo
+    const contents = [
+      { role: "user", parts: [{ text: system }] },
+      { role: "model", parts: [{ text: "Entendido. Estoy listo para responder consultas sobre los datos del colegio." }] },
+      ...messages.map(m => ({
+        role: m.role === "user" ? "user" : "model",
+        parts: [{ text: m.content }]
+      }))
+    ];
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
@@ -25,12 +29,8 @@ export default async function handler(req, res) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: system }] },
           contents,
-          generationConfig: {
-            maxOutputTokens: 1000,
-            temperature: 0.7,
-          }
+          generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
         })
       }
     );
