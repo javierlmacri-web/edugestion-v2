@@ -10,38 +10,33 @@ export default async function handler(req, res) {
 
   try {
     const { messages, system } = req.body;
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "GEMINI_API_KEY no configurada" });
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "GROQ_API_KEY no configurada" });
 
-    // En v1, el system prompt va como primer mensaje del modelo
-    const contents = [
-      { role: "user", parts: [{ text: system }] },
-      { role: "model", parts: [{ text: "Entendido. Estoy listo para responder consultas sobre los datos del colegio." }] },
-      ...messages.map(m => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.content }]
-      }))
-    ];
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents,
-          generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
-        })
-      }
-    );
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        max_tokens: 1000,
+        temperature: 0.7,
+        messages: [
+          { role: "system", content: system },
+          ...messages
+        ]
+      })
+    });
 
     const data = await response.json();
     if (!response.ok) {
-      console.error("Gemini error:", JSON.stringify(data));
-      return res.status(response.status).json({ error: data.error?.message || "Error de Gemini API" });
+      console.error("Groq error:", JSON.stringify(data));
+      return res.status(response.status).json({ error: data.error?.message || "Error de Groq API" });
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No pude procesar la consulta.";
+    const text = data.choices?.[0]?.message?.content || "No pude procesar la consulta.";
     res.status(200).json({ text });
   } catch (error) {
     console.error("Chat error:", error.message);
