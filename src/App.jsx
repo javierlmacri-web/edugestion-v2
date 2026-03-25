@@ -255,12 +255,12 @@ const ColegioSelector = ({ data, setData, onSelect, onBack }) => {
         </Pop> )}
     </div> ); };
 const TABS = [
-  { id: "dashboard", icon: "🏠", label: "Inicio" },
-  { id: "materias",  icon: "📚", label: "Materias" },
-  { id: "alumnos",   icon: "👤", label: "Alumnos" },
-  { id: "eventos",   icon: "📅", label: "Eventos del Colegio" },
-  { id: "agenda",    icon: "🗓️", label: "Agenda" },
-  { id: "documentos", icon: "📁", label: "Archivos/Docs" }, ];
+  { id: "dashboard",  icon: "🏠", label: "Inicio" },
+  { id: "agenda",     icon: "🗓️", label: "Agenda" },
+  { id: "alumnos",    icon: "👤", label: "Alumnos" },
+  { id: "documentos", icon: "📁", label: "Archivos/Docs" },
+  { id: "eventos",    icon: "📅", label: "Eventos del Colegio" },
+  { id: "materias",   icon: "📚", label: "Materias" }, ];
 const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
   const [vista, setVista] = useState(null); // null | "materias" | "alumnos" | "notas" | "promedio" | "actividades"
