@@ -4177,16 +4177,13 @@ const AIChat = ({ data, colegioId, onClose }) => {
     return `DATOS DEL COLEGIO (fecha actual: ${hoy})
 
 ALUMNOS (${alumnos.length} total):
-${resAlumnos.map(a => `- ${a.nombre} | Curso: ${a.curso} | Materias: ${a.materias.join(", ")||"ninguna"} | Promedio: ${a.promedio||"sin notas"} | Notas: ${a.cantNotas} | Inasistencias: ${a.inasistencias}`).join("
-")}
+${resAlumnos.map(a => `- ${a.nombre} | Curso: ${a.curso} | Materias: ${a.materias.join(", ")||"ninguna"} | Promedio: ${a.promedio||"sin notas"} | Notas: ${a.cantNotas} | Inasistencias: ${a.inasistencias}`).join("\n")}
 
 MATERIAS (${materias.length} total):
-${resMaterias.map(m => `- ${m.nombre}${m.division?" ("+m.division+")":""} | Alumnos: ${m.alumnos} | Promedio: ${m.promedio||"sin notas"} | Notas registradas: ${m.cantNotas}`).join("
-")}
+${resMaterias.map(m => `- ${m.nombre}${m.division?" ("+m.division+")":""} | Alumnos: ${m.alumnos} | Promedio: ${m.promedio||"sin notas"} | Notas registradas: ${m.cantNotas}`).join("\n")}
 
 NOTAS DETALLADAS:
-${notas.slice(-100).map(n => `- ${alumnos.find(a=>a.id===n.alumnoId)?.apellido||"?"}: ${n.nota} en ${materias.find(m=>m.id===n.materiaId)?.nombre||"?"} (${n.tipo}, ${n.fecha})`).join("
-")}
+${notas.slice(-100).map(n => `- ${alumnos.find(a=>a.id===n.alumnoId)?.apellido||"?"}: ${n.nota} en ${materias.find(m=>m.id===n.materiaId)?.nombre||"?"} (${n.tipo}, ${n.fecha})`).join("\n")}
 
 ENTREGAS PENDIENTES DE CORRECCIÓN (${entregasPend.length}):
 ${entregasPend.map(e => `- ${e.titulo} | ${e.materia}`).join("
