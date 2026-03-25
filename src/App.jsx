@@ -4174,22 +4174,36 @@ const AIChat = ({ data, colegioId, onClose }) => {
     }));
 
     const hoy = new Date().toISOString().slice(0,10);
+
+    // Notas exactas por alumno para evitar confusión
+    const notasPorAlumno = alumnos.map(a => {
+      const notasAl = notas.filter(n => n.alumnoId === a.id);
+      return {
+        nombre: `${a.apellido}, ${a.nombre}`,
+        cantNotas: notasAl.length,
+        detalle: notasAl.map(n => `${n.nota} en ${materias.find(m=>m.id===n.materiaId)?.nombre||"?"} (${n.tipo}, ${n.fecha})`)
+      };
+    }).filter(a => a.cantNotas > 0)
+      .sort((a,b) => b.cantNotas - a.cantNotas);
+
     return `DATOS DEL COLEGIO (fecha actual: ${hoy})
 
 ALUMNOS (${alumnos.length} total):
-${resAlumnos.map(a => `- ${a.nombre} | Curso: ${a.curso} | Materias: ${a.materias.join(", ")||"ninguna"} | Promedio: ${a.promedio||"sin notas"} | Notas: ${a.cantNotas} | Inasistencias: ${a.inasistencias}`).join("\n")}
+${resAlumnos.map(a => `- ${a.nombre} | Curso: ${a.curso} | Promedio general: ${a.promedio||"sin notas"} | Total notas: ${a.cantNotas} | Inasistencias: ${a.inasistencias}`).join("\n")}
 
 MATERIAS (${materias.length} total):
-${resMaterias.map(m => `- ${m.nombre}${m.division?" ("+m.division+")":""} | Alumnos: ${m.alumnos} | Promedio: ${m.promedio||"sin notas"} | Notas registradas: ${m.cantNotas}`).join("\n")}
+${resMaterias.map(m => `- ${m.nombre}${m.division?" ("+m.division+")":""} | Alumnos inscriptos: ${m.alumnos} | Promedio: ${m.promedio||"sin notas"} | Total notas: ${m.cantNotas}`).join("\n")}
 
-NOTAS DETALLADAS:
-${notas.slice(-100).map(n => `- ${alumnos.find(a=>a.id===n.alumnoId)?.apellido||"?"}: ${n.nota} en ${materias.find(m=>m.id===n.materiaId)?.nombre||"?"} (${n.tipo}, ${n.fecha})`).join("\n")}
+NOTAS POR ALUMNO (datos exactos):
+${notasPorAlumno.map(a => `${a.nombre} (${a.cantNotas} notas):\n  ${a.detalle.join("\n  ")}`).join("\n")}
 
 ENTREGAS PENDIENTES DE CORRECCIÓN (${entregasPend.length}):
 ${entregasPend.map(e => `- ${e.titulo} | ${e.materia}`).join("\n")||"Ninguna"}
 
 AGENDA PRÓXIMA:
-${agenda.filter(e=>e.fecha>=hoy).slice(0,10).map(e=>`- ${e.titulo} | ${materias.find(m=>m.id===e.materiaId)?.nombre||""} | ${e.fecha} | ${e.estado}`).join("\n")||"Sin eventos próximos"}`;
+${agenda.filter(e=>e.fecha>=hoy).slice(0,10).map(e=>`- ${e.titulo} | ${materias.find(m=>m.id===e.materiaId)?.nombre||""} | ${e.fecha} | ${e.estado}`).join("\n")||"Sin eventos próximos"}
+
+IMPORTANTE: Usá SOLO los datos anteriores para responder. No inventes ni supongas datos que no estén listados.`;
   };
 
   const enviar = async () => {
