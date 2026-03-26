@@ -4184,7 +4184,13 @@ const AIChat = ({ data, colegioId, onClose }) => {
     const materias  = data.materias.filter(m => m.colegioId === colegioId);
     const notas     = data.notas.filter(n => alumnos.some(a => a.id === n.alumnoId));
     const inasist   = (data.inasistencias || []).filter(i => alumnos.some(a => a.id === i.alumnoId));
-    const entregas  = (data.entregas || []).filter(e => materias.some(m => m.id === e.materiaId));
+    // Entregas: incluir TODAS las del colegio, no solo las vinculadas a materias
+    const todasEntregas = (data.entregas || []).filter(e => 
+      materias.some(m => m.id === e.materiaId) || 
+      alumnos.some(a => a.id === e.alumnoId) ||
+      e.colegioId === colegioId
+    );
+    const entregas = todasEntregas;
     const agenda    = (data.agenda || []).filter(e => e.colegioId === colegioId);
     const inscripciones = (data.inscripciones || []);
 
@@ -4216,9 +4222,13 @@ const AIChat = ({ data, colegioId, onClose }) => {
       return { nombre: m.nombre, division: m.division || "", alumnos: alsInsc, promedio: avg(vals), cantNotas: vals.length };
     });
 
-    // Entregas pendientes
-    const entregasPend = entregas.filter(e => e.estado === "entregada").map(e => ({
-      titulo: e.titulo, materia: materias.find(m => m.id === e.materiaId)?.nombre || "?", estado: e.estado
+    // Entregas pendientes — todas las que están en estado "entregada"
+    const todasEntregasPend = (data.entregas || []).filter(e => e.estado === "entregada");
+    const entregasPend = todasEntregasPend.map(e => ({
+      titulo: e.titulo,
+      materia: materias.find(m => m.id === e.materiaId)?.nombre || "sin materia",
+      alumno: alumnos.find(a => a.id === e.alumnoId) ? `${alumnos.find(a => a.id === e.alumnoId).apellido}, ${alumnos.find(a => a.id === e.alumnoId).nombre}` : "alumno desconocido",
+      fechaLimite: e.fechaLimite || "sin fecha"
     }));
 
     const hoy = new Date().toISOString().slice(0,10);
@@ -4245,8 +4255,8 @@ ${resMaterias.map(m => `- ${m.nombre}${m.division?" ("+m.division+")":""} | Alum
 NOTAS POR ALUMNO (datos exactos):
 ${notasPorAlumno.map(a => `${a.nombre} (${a.cantNotas} notas):\n  ${a.detalle.join("\n  ")}`).join("\n")}
 
-ENTREGAS PENDIENTES DE CORRECCIÓN (${entregasPend.length}):
-${entregasPend.map(e => `- ${e.titulo} | ${e.materia}`).join("\n")||"Ninguna"}
+ENTREGAS PENDIENTES DE CORRECCIÓN (${entregasPend.length} en total):
+${entregasPend.map(e => `- "${e.titulo}" | Materia: ${e.materia} | Alumno: ${e.alumno} | Límite: ${e.fechaLimite}`).join("\n")||"Ninguna"}
 
 AGENDA PRÓXIMA:
 ${agenda.filter(e=>e.fecha>=hoy).slice(0,10).map(e=>`- ${e.titulo} | ${materias.find(m=>m.id===e.materiaId)?.nombre||""} | ${e.fecha} | ${e.estado}`).join("\n")||"Sin eventos próximos"}
