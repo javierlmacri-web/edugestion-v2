@@ -3993,6 +3993,8 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
           </button>
         ))}
       </nav>
+      {showAIChat && <AIChat data={data} colegioId={colegioId} onClose={() => setShowAIChat(false)} />}
+      {showPDF && <InformePDF data={data} colegioId={colegioId} onClose={() => setShowPDF(false)} />}
     </div>
   );
 
