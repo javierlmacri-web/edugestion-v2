@@ -3973,8 +3973,8 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
       </main>
 
       {/* Botón flotante IA */}
-      <button onClick={() => setShowAIChat(true)}
-        style={{ position: "fixed", bottom: 72, right: 16, width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", color: "#fff", border: "none", fontSize: 22, cursor: "pointer", zIndex: 200, boxShadow: "0 4px 16px #8b5cf666", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <button onClick={() => setShowAIChat(v => !v)}
+        style={{ position: "fixed", bottom: 76, right: 16, width: 54, height: 54, borderRadius: "50%", background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", color: "#fff", border: "3px solid #ffffff55", fontSize: 24, cursor: "pointer", zIndex: 1500, boxShadow: "0 4px 20px #8b5cf688", display: "flex", alignItems: "center", justifyContent: "center", touchAction: "manipulation", WebkitTapHighlightColor: "transparent", userSelect: "none" }}>
         🤖
       </button>
 
@@ -4435,7 +4435,7 @@ ${contexto}`,
   ];
 
   return (
-    <div style={{ position: "fixed", bottom: 0, right: 0, width: "min(420px, 100vw)", height: "min(560px, 85dvh)", background: "#fffffff0", backdropFilter: "blur(12px)", borderRadius: window.innerWidth < 600 ? "16px 16px 0 0" : 20, boxShadow: "0 24px 60px #00000033", display: "flex", flexDirection: "column", zIndex: 9999, border: "1px solid #f9731630" }}>
+    <div style={{ position: "fixed", bottom: 0, right: 0, width: "min(420px, 100vw)", height: "min(560px, 85svh)", background: "#fff", backdropFilter: "blur(12px)", borderRadius: "16px 16px 0 0", boxShadow: "0 -4px 30px #00000033", display: "flex", flexDirection: "column", zIndex: 9999, border: "1px solid #f9731630" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid #f9731620", background: "linear-gradient(135deg, #1c1410, #2d1f14)", borderRadius: "20px 20px 0 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
