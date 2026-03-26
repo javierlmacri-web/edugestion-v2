@@ -4244,6 +4244,12 @@ const AIChat = ({ data, colegioId, onClose }) => {
     }).filter(a => a.cantNotas > 0)
       .sort((a,b) => b.cantNotas - a.cantNotas);
 
+    // Unificar pendientes: entregas subidas + eventos vencidos sin resolver
+    const pendientesUnificados = [
+      ...entregasPend.map(e => ({ tipo: "entrega_subida", titulo: e.titulo, materia: e.materia, alumno: e.alumno, detalle: `Alumno entregó el trabajo, falta que el profesor corrija y ponga nota. Límite: ${e.fechaLimite}` })),
+      ...agenda.filter(e => e.fecha < hoy && e.estado === "pendiente").map(e => ({ tipo: "evento_vencido", titulo: e.titulo, materia: materias.find(m=>m.id===e.materiaId)?.nombre||"?", alumno: "—", detalle: `Evento programado que venció el ${e.fecha} sin resolverse. El alumno aún no entregó.` }))
+    ];
+
     return `DATOS DEL COLEGIO (fecha actual: ${hoy})
 
 ALUMNOS (${alumnos.length} total):
@@ -4255,21 +4261,19 @@ ${resMaterias.map(m => `- ${m.nombre}${m.division?" ("+m.division+")":""} | Alum
 NOTAS POR ALUMNO (datos exactos):
 ${notasPorAlumno.map(a => `${a.nombre} (${a.cantNotas} notas):\n  ${a.detalle.join("\n  ")}`).join("\n")}
 
-ENTREGAS PENDIENTES DE CORRECCIÓN (${entregasPend.length} en total):
-${entregasPend.map(e => `- "${e.titulo}" | Materia: ${e.materia} | Alumno: ${e.alumno} | Límite: ${e.fechaLimite}`).join("\n")||"Ninguna"}
+PENDIENTES (entregas sin corregir + eventos vencidos) - TOTAL: ${pendientesUnificados.length}
+DEFINICIÓN: "pendiente" incluye tanto trabajos entregados esperando corrección COMO eventos de agenda que vencieron sin resolverse.
+${pendientesUnificados.map(p => `- [${p.tipo === "entrega_subida" ? "TRABAJO ENTREGADO - falta corrección" : "EVENTO VENCIDO - alumno no entregó"}] "${p.titulo}" | Materia: ${p.materia} | Alumno: ${p.alumno} | ${p.detalle}`).join("\n")||"No hay pendientes de ningún tipo."}
 
-AGENDA COMPLETA (todos los eventos):
+AGENDA COMPLETA:
 ${agenda.map(e => {
   const mat = materias.find(m=>m.id===e.materiaId)?.nombre || "sin materia";
   const vencido = e.fecha < hoy;
-  const estadoReal = vencido && e.estado === "pendiente" ? "VENCIDO/pendiente" : e.estado;
-  return `- "${e.titulo}" | ${mat} | Fecha: ${e.fecha} | Estado: ${estadoReal} | Requiere entrega: ${e.requiereEntrega ? "sí" : "no"}`;
+  const estadoReal = vencido && e.estado === "pendiente" ? "VENCIDO" : e.estado;
+  return `- "${e.titulo}" | ${mat} | Fecha: ${e.fecha} | Estado: ${estadoReal}`;
 }).join("\n")||"Sin eventos"}
 
-EVENTOS VENCIDOS SIN RESOLVER (${agenda.filter(e=>e.fecha<hoy && e.estado==="pendiente").length}):
-${agenda.filter(e=>e.fecha<hoy && e.estado==="pendiente").map(e=>`- "${e.titulo}" | ${materias.find(m=>m.id===e.materiaId)?.nombre||"?"} | venció el ${e.fecha}`).join("\n")||"Ninguno"}
-
-IMPORTANTE: Usá SOLO los datos anteriores para responder. No inventes ni supongas datos que no estén listados.`;
+IMPORTANTE: Usá SOLO los datos anteriores. "Pendientes" = trabajos entregados sin corregir + eventos vencidos sin resolver. Son ${pendientesUnificados.length} en total.`;
   };
 
   const enviar = async () => {
