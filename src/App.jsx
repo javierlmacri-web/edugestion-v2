@@ -4258,8 +4258,16 @@ ${notasPorAlumno.map(a => `${a.nombre} (${a.cantNotas} notas):\n  ${a.detalle.jo
 ENTREGAS PENDIENTES DE CORRECCIÓN (${entregasPend.length} en total):
 ${entregasPend.map(e => `- "${e.titulo}" | Materia: ${e.materia} | Alumno: ${e.alumno} | Límite: ${e.fechaLimite}`).join("\n")||"Ninguna"}
 
-AGENDA PRÓXIMA:
-${agenda.filter(e=>e.fecha>=hoy).slice(0,10).map(e=>`- ${e.titulo} | ${materias.find(m=>m.id===e.materiaId)?.nombre||""} | ${e.fecha} | ${e.estado}`).join("\n")||"Sin eventos próximos"}
+AGENDA COMPLETA (todos los eventos):
+${agenda.map(e => {
+  const mat = materias.find(m=>m.id===e.materiaId)?.nombre || "sin materia";
+  const vencido = e.fecha < hoy;
+  const estadoReal = vencido && e.estado === "pendiente" ? "VENCIDO/pendiente" : e.estado;
+  return `- "${e.titulo}" | ${mat} | Fecha: ${e.fecha} | Estado: ${estadoReal} | Requiere entrega: ${e.requiereEntrega ? "sí" : "no"}`;
+}).join("\n")||"Sin eventos"}
+
+EVENTOS VENCIDOS SIN RESOLVER (${agenda.filter(e=>e.fecha<hoy && e.estado==="pendiente").length}):
+${agenda.filter(e=>e.fecha<hoy && e.estado==="pendiente").map(e=>`- "${e.titulo}" | ${materias.find(m=>m.id===e.materiaId)?.nombre||"?"} | venció el ${e.fecha}`).join("\n")||"Ninguno"}
 
 IMPORTANTE: Usá SOLO los datos anteriores para responder. No inventes ni supongas datos que no estén listados.`;
   };
