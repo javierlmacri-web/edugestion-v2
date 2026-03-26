@@ -3702,6 +3702,40 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [exportando, setExportando] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
+  const [entregasNuevas, setEntregasNuevas] = useState(0);
+  const [showPDF, setShowPDF] = useState(false);
+  const entregasRef = React.useRef(0);
+
+  // Polling cada 60s para detectar entregas nuevas
+  React.useEffect(() => {
+    if (!colegioId) return;
+    const checkEntregas = async () => {
+      const mats = data.materias.filter(m => m.colegioId === colegioId).map(m => m.id);
+      if (!mats.length) return;
+      const { data: rows } = await supabase.from("entregas").select("id").eq("estado", "entregada").in("materia_id", mats);
+      const count = rows?.length || 0;
+      if (count > entregasRef.current && entregasRef.current > 0) {
+        const nuevas = count - entregasRef.current;
+        setEntregasNuevas(count);
+        // Notificación push del navegador
+        if (Notification.permission === "granted") {
+          new Notification("📥 Nueva entrega recibida", {
+            body: `${nuevas} alumno(s) entregaron un trabajo. Entrá a Agenda para corregir.`,
+            icon: "/favicon.ico"
+          });
+        }
+      } else {
+        setEntregasNuevas(count);
+        entregasRef.current = count;
+      }
+      entregasRef.current = count;
+    };
+    // Pedir permiso de notificaciones
+    if (Notification.permission === "default") Notification.requestPermission();
+    checkEntregas();
+    const interval = setInterval(checkEntregas, 60000);
+    return () => clearInterval(interval);
+  }, [colegioId, data.materias]);
   const isMobile = useIsMobile();
   const col = data.colegios.find(c => c.id === colegioId);
   const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos };
@@ -3873,12 +3907,25 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
         <nav style={{ flex: 1, padding: "12px 9px", display: "flex", flexDirection: "column", gap: 3 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: activeTab === t.id ? 700 : 500, transition: "all .15s", background: activeTab === t.id ? "#f9731622" : "transparent", color: activeTab === t.id ? "#fb923c" : "#8a6a4a" }}>
-              <span style={{ fontSize: 16 }}>{t.icon}</span>{t.label}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: activeTab === t.id ? 700 : 500, transition: "all .15s", background: activeTab === t.id ? "#f9731622" : "transparent", color: activeTab === t.id ? "#fb923c" : "#8a6a4a", position: "relative" }}>
+              <span style={{ fontSize: 16 }}>{t.icon}</span>
+              {t.label}
+              {t.id === "agenda" && entregasNuevas > 0 && (
+                <span style={{ position: "absolute", top: 6, right: 8, background: "#dc2626", color: "#fff", borderRadius: 10, fontSize: 10, fontWeight: 900, padding: "1px 6px", minWidth: 16, textAlign: "center" }}>
+                  {entregasNuevas}
+                </span>
+              )}
             </button>
           ))}
         </nav>
         <div style={{ padding: "10px 9px", borderTop: "1px solid #2d1f14", display: "flex", flexDirection: "column", gap: 6 }}>
+          <button onClick={() => setShowPDF(true)}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: "1px solid #e0791433", cursor: "pointer", fontSize: 13, fontWeight: 700, background: "#e0791412", color: "#fb923c", transition: "all .15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#e0791422"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#e0791412"; }}>
+            <span style={{ fontSize: 15 }}>📄</span>
+            Generar Informe
+          </button>
           <button onClick={() => setShowAIChat(true)}
             style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: "1px solid #8b5cf633", cursor: "pointer", fontSize: 13, fontWeight: 700, background: "#8b5cf612", color: "#a78bfa", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#8b5cf622"; }}
@@ -3934,6 +3981,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
       </main>
       {showPanel && <PanelFallas user={user} onClose={() => setShowPanel(false)} />}
       {showAIChat && <AIChat data={data} colegioId={colegioId} onClose={() => setShowAIChat(false)} />}
+      {showPDF && <InformePDF data={data} colegioId={colegioId} onClose={() => setShowPDF(false)} />}
     </div>
   );
 };
@@ -4324,6 +4372,185 @@ ${contexto}`,
           ➤
         </button>
       </div>
+    </div>
+  );
+};
+
+
+// ─────────────────────────────────────────────────────────────
+// INFORME PDF
+// ─────────────────────────────────────────────────────────────
+const InformePDF = ({ data, colegioId, onClose }) => {
+  const col      = data.colegios.find(c => c.id === colegioId);
+  const alumnos  = data.alumnos.filter(a => a.colegioId === colegioId).sort((a,b) => a.apellido.localeCompare(b.apellido));
+  const materias = data.materias.filter(m => m.colegioId === colegioId).sort((a,b) => a.nombre.localeCompare(b.nombre));
+  const notas    = data.notas.filter(n => alumnos.some(a => a.id === n.alumnoId));
+  const inasist  = (data.inasistencias || []).filter(i => alumnos.some(a => a.id === i.alumnoId));
+  const inscr    = (data.inscripciones || []);
+  const entregas = (data.entregas || []).filter(e => materias.some(m => m.id === e.materiaId));
+  const hoy      = new Date().toLocaleDateString("es-AR", { day:"2-digit", month:"long", year:"numeric" });
+
+  const avg = arr => arr.length ? (arr.reduce((s,v) => s+v, 0)/arr.length).toFixed(1) : "—";
+  const nc  = v => v >= 7 ? "#16a34a" : v >= 4 ? "#d97706" : "#dc2626";
+
+  const imprimir = () => window.print();
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"#00000088", zIndex:9999, display:"flex", alignItems:"flex-start", justifyContent:"center", overflowY:"auto", padding:"20px 0" }}>
+      <div style={{ background:"#fff", width:"100%", maxWidth:900, borderRadius:16, overflow:"hidden", boxShadow:"0 24px 60px #00000044" }}>
+        {/* Toolbar */}
+        <div style={{ background:"#1c1410", padding:"14px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" }} className="no-print">
+          <div style={{ color:"#fb923c", fontWeight:800, fontSize:16 }}>📄 Informe del Colegio</div>
+          <div style={{ display:"flex", gap:10 }}>
+            <button onClick={imprimir} style={{ background:"#fb923c", color:"#1c1410", border:"none", borderRadius:8, padding:"8px 20px", fontWeight:800, fontSize:13, cursor:"pointer" }}>🖨️ Imprimir / Guardar PDF</button>
+            <button onClick={onClose} style={{ background:"transparent", color:"#8a6a4a", border:"none", cursor:"pointer", fontSize:20 }}>✕</button>
+          </div>
+        </div>
+
+        {/* Contenido imprimible */}
+        <div style={{ padding:"36px 40px", fontFamily:"Arial, sans-serif", color:"#1c1410" }} id="informe-content">
+
+          {/* Encabezado */}
+          <div style={{ textAlign:"center", marginBottom:32, borderBottom:"3px solid #f97316", paddingBottom:20 }}>
+            <div style={{ fontSize:32, marginBottom:8 }}>🎓</div>
+            <h1 style={{ fontSize:26, fontWeight:900, margin:"0 0 6px", color:"#1c1410" }}>{col?.nombre || "Colegio"}</h1>
+            <div style={{ fontSize:13, color:"#92400e" }}>Informe General · {hoy}</div>
+          </div>
+
+          {/* Resumen general */}
+          <h2 style={{ fontSize:16, fontWeight:800, color:"#f97316", borderBottom:"2px solid #fde68a", paddingBottom:6, marginBottom:16 }}>📊 Resumen General</h2>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:28 }}>
+            {[
+              { label:"Alumnos", value: alumnos.length, icon:"👤" },
+              { label:"Materias", value: materias.length, icon:"📚" },
+              { label:"Notas registradas", value: notas.length, icon:"📝" },
+              { label:"Inasistencias", value: inasist.length, icon:"📅" },
+            ].map(s => (
+              <div key={s.label} style={{ background:"#fff8f0", border:"1px solid #f9731630", borderRadius:10, padding:"12px 16px", textAlign:"center" }}>
+                <div style={{ fontSize:22 }}>{s.icon}</div>
+                <div style={{ fontSize:24, fontWeight:900, color:"#f97316" }}>{s.value}</div>
+                <div style={{ fontSize:11, color:"#92400e", marginTop:2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Por materia con alumnos integrados */}
+          <h2 style={{ fontSize:16, fontWeight:800, color:"#f97316", borderBottom:"2px solid #fde68a", paddingBottom:6, marginBottom:16 }}>📚 Detalle por Materia</h2>
+          {materias.map(m => {
+            const alsInsc = inscr.filter(i => i.materiaId === m.id).map(i => alumnos.find(a => a.id === i.alumnoId)).filter(Boolean).sort((a,b) => a.apellido.localeCompare(b.apellido));
+            const notasMat = notas.filter(n => n.materiaId === m.id);
+            const vals = notasMat.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+            const promMat = avg(vals);
+            const entregasMat = entregas.filter(e => e.materiaId === m.id);
+            const pendCorr = entregasMat.filter(e => e.estado === "entregada").length;
+            return (
+              <div key={m.id} style={{ marginBottom:24, pageBreakInside:"avoid", border:"1px solid #f9731630", borderRadius:12, overflow:"hidden" }}>
+                {/* Header materia */}
+                <div style={{ background:"#fff3e0", padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div>
+                    <div style={{ fontWeight:800, fontSize:15 }}>{m.nombre}</div>
+                    {m.division && <div style={{ fontSize:12, color:"#92400e" }}>{m.division}</div>}
+                  </div>
+                  <div style={{ display:"flex", gap:16, alignItems:"center" }}>
+                    <div style={{ textAlign:"center" }}>
+                      <div style={{ fontSize:22, fontWeight:900, color: promMat !== "—" ? nc(parseFloat(promMat)) : "#92400e" }}>{promMat}</div>
+                      <div style={{ fontSize:10, color:"#92400e" }}>promedio</div>
+                    </div>
+                    <div style={{ textAlign:"center" }}>
+                      <div style={{ fontSize:18, fontWeight:800, color:"#92400e" }}>{alsInsc.length}</div>
+                      <div style={{ fontSize:10, color:"#92400e" }}>alumnos</div>
+                    </div>
+                    {pendCorr > 0 && <div style={{ background:"#dc262622", color:"#dc2626", border:"1px solid #dc262644", borderRadius:8, padding:"3px 10px", fontSize:11, fontWeight:700 }}>⚠️ {pendCorr} entregas pendientes</div>}
+                  </div>
+                </div>
+                {/* Tabla alumnos */}
+                {alsInsc.length > 0 && (
+                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                    <thead>
+                      <tr style={{ background:"#f9731610" }}>
+                        <th style={{ padding:"8px 12px", textAlign:"left", fontWeight:700, color:"#92400e", borderBottom:"1px solid #f9731630" }}>Alumno</th>
+                        <th style={{ padding:"8px 12px", textAlign:"center", fontWeight:700, color:"#92400e", borderBottom:"1px solid #f9731630" }}>Promedio</th>
+                        <th style={{ padding:"8px 12px", textAlign:"center", fontWeight:700, color:"#92400e", borderBottom:"1px solid #f9731630" }}>Notas</th>
+                        <th style={{ padding:"8px 12px", textAlign:"center", fontWeight:700, color:"#92400e", borderBottom:"1px solid #f9731630" }}>Inasistencias</th>
+                        <th style={{ padding:"8px 12px", textAlign:"left", fontWeight:700, color:"#92400e", borderBottom:"1px solid #f9731630" }}>Detalle notas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {alsInsc.map((al, idx) => {
+                        const notasAl = notasMat.filter(n => n.alumnoId === al.id);
+                        const valsAl = notasAl.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+                        const promAl = avg(valsAl);
+                        const inasistAl = inasist.filter(i => i.alumnoId === al.id).length;
+                        const enRiesgo = parseFloat(promAl) < 6 && inasistAl >= 3;
+                        return (
+                          <tr key={al.id} style={{ background: idx%2===0 ? "#fff" : "#fff8f0", borderBottom:"1px solid #f9731618" }}>
+                            <td style={{ padding:"8px 12px", fontWeight:600 }}>
+                              {al.apellido}, {al.nombre}
+                              {enRiesgo && <span style={{ marginLeft:6, color:"#dc2626", fontSize:11 }}>⚠️ en riesgo</span>}
+                            </td>
+                            <td style={{ padding:"8px 12px", textAlign:"center", fontWeight:800, color: promAl !== "—" ? nc(parseFloat(promAl)) : "#92400e", fontSize:15 }}>{promAl}</td>
+                            <td style={{ padding:"8px 12px", textAlign:"center", color:"#92400e" }}>{notasAl.length}</td>
+                            <td style={{ padding:"8px 12px", textAlign:"center", color: inasistAl >= 5 ? "#dc2626" : "#92400e", fontWeight: inasistAl >= 5 ? 700 : 400 }}>{inasistAl}</td>
+                            <td style={{ padding:"8px 12px", fontSize:11, color:"#92400e" }}>
+                              {notasAl.map(n => `${n.nota} (${n.tipo})`).join(" · ") || "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+                {alsInsc.length === 0 && <div style={{ padding:"12px 16px", color:"#92400e", fontSize:13 }}>Sin alumnos inscriptos.</div>}
+              </div>
+            );
+          })}
+
+          {/* Entregas pendientes */}
+          {entregas.filter(e => e.estado === "entregada").length > 0 && (
+            <>
+              <h2 style={{ fontSize:16, fontWeight:800, color:"#f97316", borderBottom:"2px solid #fde68a", paddingBottom:6, marginBottom:16, marginTop:8 }}>📥 Entregas Pendientes de Corrección</h2>
+              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13, marginBottom:24 }}>
+                <thead>
+                  <tr style={{ background:"#fff3e0" }}>
+                    <th style={{ padding:"8px 12px", textAlign:"left", fontWeight:700, color:"#92400e", borderBottom:"1px solid #f9731630" }}>Título</th>
+                    <th style={{ padding:"8px 12px", textAlign:"left", fontWeight:700, color:"#92400e", borderBottom:"1px solid #f9731630" }}>Materia</th>
+                    <th style={{ padding:"8px 12px", textAlign:"left", fontWeight:700, color:"#92400e", borderBottom:"1px solid #f9731630" }}>Alumno</th>
+                    <th style={{ padding:"8px 12px", textAlign:"left", fontWeight:700, color:"#92400e", borderBottom:"1px solid #f9731630" }}>Fecha límite</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entregas.filter(e => e.estado === "entregada").map((e,i) => {
+                    const mat = materias.find(m => m.id === e.materiaId);
+                    const al  = alumnos.find(a => a.id === e.alumnoId);
+                    return (
+                      <tr key={e.id} style={{ background: i%2===0 ? "#fff" : "#fff8f0", borderBottom:"1px solid #f9731618" }}>
+                        <td style={{ padding:"8px 12px", fontWeight:600 }}>{e.titulo}</td>
+                        <td style={{ padding:"8px 12px", color:"#92400e" }}>{mat?.nombre || "—"}</td>
+                        <td style={{ padding:"8px 12px", color:"#92400e" }}>{al ? `${al.apellido}, ${al.nombre}` : "—"}</td>
+                        <td style={{ padding:"8px 12px", color:"#92400e" }}>{e.fechaLimite || "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
+          )}
+
+          {/* Pie de página */}
+          <div style={{ borderTop:"2px solid #f9731630", paddingTop:16, marginTop:8, textAlign:"center", fontSize:11, color:"#92400e" }}>
+            EduGestión · Informe generado el {hoy}
+          </div>
+        </div>
+      </div>
+
+      {/* CSS de impresión */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { margin: 0; }
+          #informe-content { padding: 20px !important; }
+        }
+      `}</style>
     </div>
   );
 };
