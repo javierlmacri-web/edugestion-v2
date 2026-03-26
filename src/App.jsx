@@ -58,8 +58,8 @@ const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).
 const nc = (n) => { if (n === null || n === undefined) return C.muted; const v = parseFloat(n); return v >= 7 ? C.green : v >= 5 ? C.yellow : C.red; };
 
 const TABLE_MAP = {colegios:"colegios",materias:"materias",alumnos:"alumnos",inscripciones:"inscripciones",notas:"notas",actividades:"actividades",asistencias:"asistencias",eventos:"eventos",inasistencias:"inasistencias",documentos:"documentos",historial:"historial",agenda:"agenda",entregas:"entregas"};
-const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",archivo_url:"archivoUrl",archivo_nombre:"archivoNombre",created_at:"createdAt",fecha_limite:"fechaLimite",comentario_profesor:"comentarioProfesor",requiere_entrega:"requiereEntrega",entrega_id:"entregaId"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
-const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac",archivoUrl:"archivo_url",archivoNombre:"archivo_nombre",fechaLimite:"fecha_limite",comentarioProfesor:"comentario_profesor",requiereEntrega:"requiere_entrega",entregaId:"entrega_id"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue; out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
+const fromDB = (row) => { if (!row) return row; const map = {colegio_id:"colegioId",alumno_id:"alumnoId",materia_id:"materiaId",tipo_inasist:"tipoInasist",fecha_nac:"fechaNac",archivo_url:"archivoUrl",archivo_nombre:"archivoNombre",created_at:"createdAt",fecha_limite:"fechaLimite",comentario_profesor:"comentarioProfesor",requiere_entrega:"requiereEntrega",entrega_id:"entregaId",horarios:"horarios"}; const out={}; for (const [k,v] of Object.entries(row)){const m=map[k];if(m===null)continue;out[m||k]=v;} return out; };
+const toDB = (obj) => { const map={colegioId:"colegio_id",alumnoId:"alumno_id",materiaId:"materia_id",tipoInasist:"tipo_inasist",fechaNac:"fecha_nac",archivoUrl:"archivo_url",archivoNombre:"archivo_nombre",fechaLimite:"fecha_limite",comentarioProfesor:"comentario_profesor",requiereEntrega:"requiere_entrega",entregaId:"entrega_id",horarios:"horarios"}; const skip=new Set(["createdAt","_src","_fecha"]); const out={}; for(const [k,v] of Object.entries(obj)){if(skip.has(k))continue; out[map[k]||k]=v;} if(!out.id || typeof out.id !== "string" || out.id.length < 3) out.id = crypto.randomUUID(); return out; };
 const loadD = async () => { try { const results = await Promise.all(Object.keys(TABLE_MAP).map(async key => { const {data,error} = await supabase.from(TABLE_MAP[key]).select("*"); if(error){console.error("loadD",key,error);return[key,[]];} return[key,(data||[]).map(r=>fromDB(r))]; })); return Object.fromEntries(results); } catch(e){console.error("loadD failed",e);return null;} };
 const saveD = async () => {};
 const upsertRow = async (table, obj) => { 
@@ -569,6 +569,7 @@ const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
     const cerrar = () => { setPopOpen(false); setEditId(null); setAdjFile(null); };
     const guardar = async () => {
       if (!form.titulo.trim() || !form.fecha) { alert("Título y fecha son obligatorios."); return; }
+      if (!form.materiaId) { if (!confirm("No seleccionaste una materia. El evento no aparecerá en los filtros por materia. ¿Continuás igual?")) return; }
       setUploading(true);
       let archivoUrl = form.archivoUrl, archivoNombre = form.archivoNombre;
       if (adjFile) {
@@ -1971,8 +1972,11 @@ const Materias = ({ data, setData, colegioId }) => {
     const materia = { id: materiaId, colegioId, ...form };
     if (editId) setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? { ...m, ...form } : m) }));
     else setData(d => ({ ...d, materias: [...d.materias, materia] }));
-    // Guardar horarios en Supabase
-    supabase.from("materias").update({ horarios: form.horarios || [] }).eq("id", materiaId).then(({error}) => { if(error) console.error("horarios save:", error); });
+    // Guardar horarios en Supabase (update funciona para crear y editar ya que upsertRow lo maneja)
+    setTimeout(() => {
+      supabase.from("materias").update({ horarios: form.horarios || [] }).eq("id", materiaId)
+        .then(({error}) => { if(error) console.error("horarios save:", error); });
+    }, 500); // pequeño delay para que el upsert automático no pise
 
     // Auto-inscribir alumnos que coincidan con la división de la materia
     if (form.division) {
@@ -1995,7 +1999,20 @@ const Materias = ({ data, setData, colegioId }) => {
       });
     }
     setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "", division: "", horarios: [] }); };
-  const del = (id) => { if (!confirm("¿Eliminar materia?")) return; setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) })); };
+  const del = async (id) => {
+    if (!confirm("¿Eliminar materia y todas sus inscripciones y notas asociadas?")) return;
+    await supabase.from("inscripciones").delete().eq("materia_id", id);
+    await supabase.from("notas").delete().eq("materia_id", id);
+    await supabase.from("actividades").delete().eq("materia_id", id);
+    await supabase.from("materias").delete().eq("id", id);
+    setData(d => ({
+      ...d,
+      materias: d.materias.filter(m => m.id !== id),
+      inscripciones: (d.inscripciones||[]).filter(i => i.materiaId !== id),
+      notas: d.notas.filter(n => n.materiaId !== id),
+      actividades: d.actividades.filter(a => a.materiaId !== id)
+    }));
+  };
 
   const edit = (m) => { setForm({ nombre: m.nombre, descripcion: m.descripcion || "", division: m.division || "", horarios: m.horarios || [] }); setEditId(m.id); setPop(true); };
 
@@ -2273,7 +2290,25 @@ const Alumnos = ({ data, setData, colegioId }) => {
     }
     setPop(false); setEditId(null);
     setForm({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); };
-  const del = (id) => { if (!confirm("¿Eliminar alumno?")) return; setData(d => ({ ...d, alumnos: d.alumnos.filter(a => a.id !== id) })); };
+  const del = async (id) => {
+    if (!confirm("¿Eliminar alumno y todos sus datos (notas, asistencias, inscripciones)?")) return;
+    await supabase.from("inscripciones").delete().eq("alumno_id", id);
+    await supabase.from("notas").delete().eq("alumno_id", id);
+    await supabase.from("actividades").delete().eq("alumno_id", id);
+    await supabase.from("asistencias").delete().eq("alumno_id", id);
+    await supabase.from("inasistencias").delete().eq("alumno_id", id);
+    await supabase.from("historial").delete().eq("alumno_id", id);
+    await supabase.from("alumnos").delete().eq("id", id);
+    setData(d => ({
+      ...d,
+      alumnos: d.alumnos.filter(a => a.id !== id),
+      inscripciones: (d.inscripciones||[]).filter(i => i.alumnoId !== id),
+      notas: d.notas.filter(n => n.alumnoId !== id),
+      actividades: d.actividades.filter(a => a.alumnoId !== id),
+      asistencias: (d.asistencias||[]).filter(a => a.alumnoId !== id),
+      inasistencias: (d.inasistencias||[]).filter(i => i.alumnoId !== id)
+    }));
+  };
 
   const edit = (a) => {
     setForm({ nombre: a.nombre, apellido: a.apellido, dni: a.dni || "", fechaNac: a.fechaNac || "", curso: a.curso || "", email: a.email || "", telefono: a.telefono || "" });
@@ -3890,7 +3925,7 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
 
       {/* Menú desplegable móvil */}
       {menuOpen && (
-        <div style={{ background: "#1c1410", borderBottom: "1px solid #2d1f14", padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4, zIndex: 99 }}>
+        <div style={{ background: "#1c1410", borderBottom: "1px solid #2d1f14", padding: "8px 12px", display: "flex", flexDirection: "column", gap: 4, zIndex: 99, overflowY: "auto", maxHeight: "80vh" }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTab(t.id)}
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: activeTab === t.id ? 700 : 500, background: activeTab === t.id ? "#f9731622" : "transparent", color: activeTab === t.id ? "#fb923c" : "#8a6a4a", textAlign: "left" }}>
@@ -3898,6 +3933,14 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
             </button>
           ))}
           <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+            <button onClick={() => { setShowPDF(true); setMenuOpen(false); }}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: "1px solid #e0791433", cursor: "pointer", fontSize: 14, fontWeight: 700, background: "#e0791412", color: "#fb923c" }}>
+              <span>📄</span>Generar Informe
+            </button>
+            <button onClick={() => { setShowAIChat(true); setMenuOpen(false); }}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: "1px solid #8b5cf633", cursor: "pointer", fontSize: 14, fontWeight: 700, background: "#8b5cf612", color: "#a78bfa" }}>
+              <span>🤖</span>Consultar IA
+            </button>
             <button onClick={() => { handleExport(); setMenuOpen(false); }} disabled={exportando}
               style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, border: `1px solid #22c55e33`, cursor: "pointer", fontSize: 14, fontWeight: 700, background: "#22c55e12", color: "#22c55e" }}>
               <span>{exportando ? "⏳" : "📊"}</span>{exportando ? "Generando..." : "Exportar Excel"}
@@ -3925,17 +3968,28 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
       )}
 
       {/* Contenido principal móvil */}
-      <main style={{ flex: 1, padding: "16px 14px", overflowY: "auto" }}>
+      <main style={{ flex: 1, padding: "16px 14px", overflowY: "auto", paddingBottom: 80 }}>
         <View data={data} setData={setData} colegioId={colegioId} onChangeTab={handleTab} key={tab === "dashboard" ? `dash-${dashKey}` : `${tab}-${tabKey}`} />
       </main>
 
+      {/* Botón flotante IA */}
+      <button onClick={() => setShowAIChat(true)}
+        style={{ position: "fixed", bottom: 72, right: 16, width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", color: "#fff", border: "none", fontSize: 22, cursor: "pointer", zIndex: 200, boxShadow: "0 4px 16px #8b5cf666", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        🤖
+      </button>
+
       {/* Tab bar inferior móvil */}
-      <nav style={{ background: "#1c1410", borderTop: "1px solid #2d1f14", display: "flex", position: "sticky", bottom: 0, zIndex: 100 }}>
+      <nav style={{ background: "#1c1410", borderTop: "1px solid #2d1f14", display: "flex", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => handleTab(t.id)}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px", border: "none", cursor: "pointer", background: "transparent", color: activeTab === t.id ? C.accentL : C.dim, borderTop: `2px solid ${activeTab === t.id ? C.accent : "transparent"}` }}>
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "10px 4px", border: "none", cursor: "pointer", background: "transparent", color: activeTab === t.id ? C.accentL : C.dim, borderTop: `2px solid ${activeTab === t.id ? C.accent : "transparent"}`, position: "relative" }}>
             <span style={{ fontSize: 20 }}>{t.icon}</span>
-            <span style={{ fontSize: 10, fontWeight: activeTab === t.id ? 700 : 500 }}>{t.label}</span>
+            <span style={{ fontSize: 10, fontWeight: activeTab === t.id ? 700 : 500 }}>{t.label.split(" ")[0]}</span>
+            {t.id === "agenda" && entregasNuevas > 0 && (
+              <span style={{ position: "absolute", top: 4, right: "25%", background: "#dc2626", color: "#fff", borderRadius: 10, fontSize: 9, fontWeight: 900, padding: "1px 5px" }}>
+                {entregasNuevas}
+              </span>
+            )}
           </button>
         ))}
       </nav>
@@ -4381,7 +4435,7 @@ ${contexto}`,
   ];
 
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, width: 420, maxWidth: "calc(100vw - 48px)", height: 560, background: "#fffffff0", backdropFilter: "blur(12px)", borderRadius: 20, boxShadow: "0 24px 60px #00000033", display: "flex", flexDirection: "column", zIndex: 9999, border: "1px solid #f9731630" }}>
+    <div style={{ position: "fixed", bottom: 0, right: 0, width: "min(420px, 100vw)", height: "min(560px, 85dvh)", background: "#fffffff0", backdropFilter: "blur(12px)", borderRadius: window.innerWidth < 600 ? "16px 16px 0 0" : 20, boxShadow: "0 24px 60px #00000033", display: "flex", flexDirection: "column", zIndex: 9999, border: "1px solid #f9731630" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid #f9731620", background: "linear-gradient(135deg, #1c1410, #2d1f14)", borderRadius: "20px 20px 0 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -4468,8 +4522,8 @@ const InformePDF = ({ data, colegioId, onClose }) => {
   const imprimir = () => window.print();
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"#00000088", zIndex:9999, display:"flex", alignItems:"flex-start", justifyContent:"center", overflowY:"auto", padding:"20px 0" }}>
-      <div style={{ background:"#fff", width:"100%", maxWidth:900, borderRadius:16, overflow:"hidden", boxShadow:"0 24px 60px #00000044" }}>
+    <div style={{ position:"fixed", inset:0, background:"#00000088", zIndex:9999, display:"flex", alignItems:"flex-start", justifyContent:"center", overflowY:"auto", padding:"0", WebkitOverflowScrolling:"touch" }}>
+      <div style={{ background:"#fff", width:"100%", maxWidth:900, minHeight:"100%", borderRadius:0, overflow:"hidden", boxShadow:"0 24px 60px #00000044" }}>
         {/* Toolbar */}
         <div style={{ background:"#1c1410", padding:"14px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" }} className="no-print">
           <div style={{ color:"#fb923c", fontWeight:800, fontSize:16 }}>📄 Informe del Colegio</div>
