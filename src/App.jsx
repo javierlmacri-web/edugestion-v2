@@ -1742,8 +1742,18 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
           <div style={{ width: 52, height: 52, background: C.accentDim, border: `2px solid ${C.accent}44`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>📚</div>
           <div>
             <div style={{ color: "#1c1410", fontWeight: 800, fontSize: 20 }}>{materia?.nombre}</div>
+            {materia?.division && <div style={{ color: C.accentL, fontSize: 12, fontWeight: 700, marginTop: 2 }}>📋 {materia.division}</div>}
             {materia?.descripcion && <div style={{ color: "#92400e", fontSize: 13 }}>{materia.descripcion}</div>}
             <div style={{ color: "#b45309", fontSize: 13, marginTop: 4 }}>{alumnosMateria.length} alumnos inscriptos</div>
+            {(materia?.horarios||[]).length > 0 && (
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
+                {(materia.horarios||[]).map((h,i) => (
+                  <span key={i} style={{ background: "#f9731618", border: "1px solid #f9731640", borderRadius: 6, padding: "2px 8px", fontSize: 11, color: "#92400e", fontWeight: 600 }}>
+                    🕐 {h.dia} {h.desde}–{h.hasta}
+                  </span>
+                ))}
+              </div>
+            )}
           </div></div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
           <Btn v="ghost" onClick={() => setPopMasiva(true)}>📋 Carga masiva</Btn>
@@ -1949,7 +1959,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
         </Pop> )}
     </div> ); };
 const Materias = ({ data, setData, colegioId }) => {
-  const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "", division: "" });
+  const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "", division: "", horarios: [] });
   const [editId, setEditId] = useState(null);
   const materias = data.materias.filter(m => m.colegioId === colegioId).sort((a,b) => a.nombre.localeCompare(b.nombre));
   if (materiaSeleccionada) {
@@ -1961,6 +1971,8 @@ const Materias = ({ data, setData, colegioId }) => {
     const materia = { id: materiaId, colegioId, ...form };
     if (editId) setData(d => ({ ...d, materias: d.materias.map(m => m.id === editId ? { ...m, ...form } : m) }));
     else setData(d => ({ ...d, materias: [...d.materias, materia] }));
+    // Guardar horarios en Supabase
+    supabase.from("materias").update({ horarios: form.horarios || [] }).eq("id", materiaId).then(({error}) => { if(error) console.error("horarios save:", error); });
 
     // Auto-inscribir alumnos que coincidan con la división de la materia
     if (form.division) {
@@ -1982,16 +1994,16 @@ const Materias = ({ data, setData, colegioId }) => {
         return { ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] };
       });
     }
-    setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "", division: "" }); };
+    setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "", division: "", horarios: [] }); };
   const del = (id) => { if (!confirm("¿Eliminar materia?")) return; setData(d => ({ ...d, materias: d.materias.filter(m => m.id !== id) })); };
 
-  const edit = (m) => { setForm({ nombre: m.nombre, descripcion: m.descripcion || "", division: m.division || "" }); setEditId(m.id); setPop(true); };
+  const edit = (m) => { setForm({ nombre: m.nombre, descripcion: m.descripcion || "", division: m.division || "", horarios: m.horarios || [] }); setEditId(m.id); setPop(true); };
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h2 style={{ color: "#1c1410", margin: 0, fontSize: 22, fontWeight: 800 }}>📚 Materias</h2>
-        <Btn onClick={() => { setForm({ nombre: "", descripcion: "", division: "" }); setEditId(null); setPop(true); }}>+ Nueva Materia</Btn>
+        <Btn onClick={() => { setForm({ nombre: "", descripcion: "", division: "", horarios: [] }); setEditId(null); setPop(true); }}>+ Nueva Materia</Btn>
       </div>
       {materias.length === 0 ? (
         <Empty icon="📚" msg="No hay materias en este colegio. Creá la primera para empezar." />
@@ -2013,6 +2025,15 @@ const Materias = ({ data, setData, colegioId }) => {
                     <div style={{ fontSize: 11, color: C.muted }}>promedio</div> </div> </div> <div style={{ display: "flex", gap: 16, fontSize: 12, color: C.dim }}>
                   <span>👥 {inscriptos} alumnos</span>
                   <span>📝 {notas.length} notas</span></div>
+                {(m.horarios||[]).length > 0 && (
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 8 }}>
+                    {(m.horarios||[]).map((h,i) => (
+                      <span key={i} style={{ background: "#f9731618", border: "1px solid #f9731640", borderRadius: 6, padding: "2px 8px", fontSize: 11, color: "#92400e", fontWeight: 600 }}>
+                        🕐 {h.dia} {h.desde}–{h.hasta}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "10px 14px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: C.accentL, fontSize: 12, fontWeight: 700 }}>Abrir materia →</span>
                   <div style={{ display: "flex", gap: 6 }} onClick={e => e.stopPropagation()}>
@@ -2044,6 +2065,31 @@ const Materias = ({ data, setData, colegioId }) => {
                 <option style={{ background: "#fff8f0", color: "#1c1410" }} value="4° y 5° Año - División 3">4° y 5° Año - División 3</option>
               </optgroup>
             </Sel>
+            {/* Horarios */}
+            <div>
+              <label style={{ fontSize: 12, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 8 }}>🕐 Días y horarios</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {(form.horarios || []).map((h, i) => (
+                  <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <select value={h.dia} onChange={e => setForm(f => ({ ...f, horarios: f.horarios.map((x,j) => j===i ? {...x, dia: e.target.value} : x) }))}
+                      style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }}>
+                      {["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"].map(d => <option key={d} value={d} style={{ background: "#fff8f0", color: "#1c1410" }}>{d}</option>)}
+                    </select>
+                    <input type="time" value={h.desde} onChange={e => setForm(f => ({ ...f, horarios: f.horarios.map((x,j) => j===i ? {...x, desde: e.target.value} : x) }))}
+                      style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }} />
+                    <span style={{ color: "#92400e", fontSize: 13 }}>a</span>
+                    <input type="time" value={h.hasta} onChange={e => setForm(f => ({ ...f, horarios: f.horarios.map((x,j) => j===i ? {...x, hasta: e.target.value} : x) }))}
+                      style={{ background: "#fff8f0", border: "1px solid #f9731650", borderRadius: 8, padding: "7px 10px", color: "#1c1410", fontSize: 13, outline: "none" }} />
+                    <button onClick={() => setForm(f => ({ ...f, horarios: f.horarios.filter((_,j) => j!==i) }))}
+                      style={{ background: "#dc262622", border: "1px solid #dc262644", color: "#dc2626", borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontSize: 13 }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={() => setForm(f => ({ ...f, horarios: [...(f.horarios||[]), { dia: "Lunes", desde: "08:00", hasta: "09:30" }] }))}
+                  style={{ background: "#f9731618", border: "1px dashed #f9731650", borderRadius: 8, padding: "7px 14px", color: "#92400e", cursor: "pointer", fontSize: 12, fontWeight: 700, alignSelf: "flex-start" }}>
+                  + Agregar día
+                </button>
+              </div>
+            </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <Btn v="ghost" onClick={() => { setPop(false); setEditId(null); }}>Cancelar</Btn>
               <Btn onClick={save}>💾 Guardar</Btn></div></div>
@@ -4256,7 +4302,11 @@ ALUMNOS (${alumnos.length} total):
 ${resAlumnos.map(a => `- ${a.nombre} | Curso: ${a.curso} | Promedio general: ${a.promedio||"sin notas"} | Total notas: ${a.cantNotas} | Inasistencias: ${a.inasistencias}`).join("\n")}
 
 MATERIAS (${materias.length} total):
-${resMaterias.map(m => `- ${m.nombre}${m.division?" ("+m.division+")":""} | Alumnos inscriptos: ${m.alumnos} | Promedio: ${m.promedio||"sin notas"} | Total notas: ${m.cantNotas}`).join("\n")}
+${materias.map(m => {
+  const r = resMaterias.find(x => x.nombre === m.nombre);
+  const hors = (m.horarios||[]).map(h => `${h.dia} ${h.desde}-${h.hasta}`).join(", ") || "sin horario";
+  return `- ${m.nombre}${m.division?" ("+m.division+")":""} | Alumnos: ${r?.alumnos||0} | Promedio: ${r?.promedio||"sin notas"} | Horarios: ${hors}`;
+}).join("\n")}
 
 NOTAS POR ALUMNO (datos exactos):
 ${notasPorAlumno.map(a => `${a.nombre} (${a.cantNotas} notas):\n  ${a.detalle.join("\n  ")}`).join("\n")}
@@ -4472,6 +4522,15 @@ const InformePDF = ({ data, colegioId, onClose }) => {
                   <div>
                     <div style={{ fontWeight:800, fontSize:15 }}>{m.nombre}</div>
                     {m.division && <div style={{ fontSize:12, color:"#92400e" }}>{m.division}</div>}
+                    {(m.horarios||[]).length > 0 && (
+                      <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginTop:4 }}>
+                        {(m.horarios||[]).map((h,i) => (
+                          <span key={i} style={{ background:"#f9731618", border:"1px solid #f9731630", borderRadius:4, padding:"1px 6px", fontSize:10, color:"#92400e" }}>
+                            🕐 {h.dia} {h.desde}–{h.hasta}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div style={{ display:"flex", gap:16, alignItems:"center" }}>
                     <div style={{ textAlign:"center" }}>
