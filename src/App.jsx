@@ -3097,7 +3097,9 @@ const Documentos = ({ data, setData, colegioId }) => {
       console.log("doc insert result:", docErr ? JSON.stringify(docErr) : "OK", "doc.id:", doc.id);
       // Save nota if provided
       const notaFinal = notaOverride !== undefined ? notaOverride : item.notaDetectada;
-      if (notaFinal && alumnoId) {
+      const notaFinalNum = parseFloat(notaFinal);
+      const notaValida = notaFinal && !isNaN(notaFinalNum) && notaFinalNum >= 0 && notaFinalNum <= 10;
+      if (notaValida && alumnoId) {
         const materiaId = item.materiaId || (data.inscripciones.filter(i => i.alumnoId === alumnoId)[0]?.materiaId || "");
         const nota = { id: crypto.randomUUID(), alumno_id: alumnoId, materia_id: materiaId, nota: notaFinal, tipo, descripcion: item.file.name, fecha: new Date().toISOString().slice(0,10) };
         console.log("Saving nota:", JSON.stringify(nota));
