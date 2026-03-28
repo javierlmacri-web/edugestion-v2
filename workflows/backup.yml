@@ -1,0 +1,57 @@
+name: Backup Diario EduGestión
+
+on:
+  schedule:
+    # Corre todos los días a las 3:00 AM (UTC) = 00:00 Argentina
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    # También permite correrlo manualmente desde GitHub
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    name: Exportar datos de Supabase
+
+    steps:
+      - name: Descargar backup desde la app
+        run: |
+          echo "Iniciando backup de EduGestión..."
+          curl -f -H "x-backup-token: ${{ secrets.BACKUP_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/backup" \
+            -o "edugestion-backup-$(date +%Y-%m-%d).json"
+          echo "Backup descargado exitosamente"
+          ls -lh edugestion-backup-*.json
+
+      - name: Verificar contenido del backup
+        run: |
+          FILE="edugestion-backup-$(date +%Y-%m-%d).json"
+          SIZE=$(wc -c < "$FILE")
+          echo "Tamaño del backup: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "ERROR: El backup está vacío"
+            exit 1
+          fi
+          echo "✅ Backup verificado correctamente"
+          # Mostrar resumen
+          cat "$FILE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          print('Fecha:', data['fecha'])
+          print('Total filas:', data['resumen']['totalFilas'])
+          for tabla, count in data['resumen']['tablas'].items():
+              if count > 0:
+                  print(f'  {tabla}: {count} registros')
+          "
+
+      - name: Subir backup como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_number }}-${{ github.run_id }}
+          path: edugestion-backup-*.json
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Resultado
+        run: |
+          echo "✅ Backup completado y guardado en GitHub Actions"
+          echo "📥 Para descargar: Actions → este workflow → Artifacts"
