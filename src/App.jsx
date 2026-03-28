@@ -1,4 +1,23 @@
 import React, { useState, useEffect, useCallback } from "react";
+
+// Fuse.js — búsqueda fuzzy tolerante a errores tipográficos
+const loadFuse = () => import("https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.mjs").then(m => m.default);
+let FuseClass = null;
+loadFuse().then(F => { FuseClass = F; });
+
+const fuzzySearch = (list, query, keys, threshold = 0.4) => {
+  if (!query || !query.trim()) return list;
+  if (!FuseClass) {
+    // Fallback a búsqueda simple si Fuse no cargó
+    const q = query.toLowerCase();
+    return list.filter(item => keys.some(k => {
+      const val = k.split('.').reduce((o, p) => o?.[p], item);
+      return String(val || '').toLowerCase().includes(q);
+    }));
+  }
+  const fuse = new FuseClass(list, { keys, threshold, includeScore: true, ignoreLocation: true, minMatchCharLength: 2 });
+  return fuse.search(query).map(r => r.item);
+};
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -921,21 +940,27 @@ ${link}`), 100);
           </> )}
       </div> ); }
   const resAlumnos = busLower
-    ? als.filter(a => `${a.nombre} ${a.apellido} ${a.dni || ""} ${a.curso || ""}`.toLowerCase().includes(busLower))
+    ? fuzzySearch(als, busqueda, ["nombre", "apellido", "dni", "curso"])
     : [];
   const resMaterias = busLower
-    ? mats.filter(m => m.nombre.toLowerCase().includes(busLower))
+    ? fuzzySearch(mats, busqueda, ["nombre", "descripcion", "division"])
     : [];
   const resNotas = busLower
     ? data.notas.filter(n => {
         const al = als.find(a => a.id === n.alumnoId); const mat = mats.find(m => m.id === n.materiaId);
-        return al && (`${al.nombre} ${al.apellido}`.toLowerCase().includes(busLower) || (mat && mat.nombre.toLowerCase().includes(busLower)) || (n.descripcion && n.descripcion.toLowerCase().includes(busLower)));
+        if (!al) return false;
+        return fuzzySearch([al], busqueda, ["nombre","apellido"]).length > 0 ||
+               (mat && fuzzySearch([mat], busqueda, ["nombre"]).length > 0) ||
+               (n.descripcion || "").toLowerCase().includes(busLower);
       })
     : [];
   const resActs = busLower
     ? acts.filter(act => {
         const al = als.find(a => a.id === act.alumnoId); const mat = mats.find(m => m.id === act.materiaId);
-        return al && (`${al.nombre} ${al.apellido}`.toLowerCase().includes(busLower) || (mat && mat.nombre.toLowerCase().includes(busLower)) || (act.descripcion && act.descripcion.toLowerCase().includes(busLower)) || act.tipo.includes(busLower));
+        if (!al) return false;
+        return fuzzySearch([al], busqueda, ["nombre","apellido"]).length > 0 ||
+               (mat && fuzzySearch([mat], busqueda, ["nombre"]).length > 0) ||
+               (act.descripcion || "").toLowerCase().includes(busLower);
       })
     : [];
   const hayResultados = resAlumnos.length + resMaterias.length + resNotas.length + resActs.length > 0;
@@ -1681,7 +1706,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
     ? data.inscripciones.filter(i => i.materiaId === materiaId).map(i => i.alumnoId)
     : [];
   const alumnosMateria = alumnosColegio.filter(a => inscriptos.includes(a.id));
-  const disponibles = alumnosColegio.filter(a => !inscriptos.includes(a.id) && `${a.nombre} ${a.apellido} ${a.dni || ""}`.toLowerCase().includes(busqueda.toLowerCase()));
+  const disponibles = (busqueda ? fuzzySearch(alumnosColegio, busqueda, ["nombre","apellido","dni"]) : alumnosColegio).filter(a => !inscriptos.includes(a.id));
   const agregarAlumno = (alumnoId) => {
     setData(d => ({ ...d, inscripciones: [...(d.inscripciones || []), { id: uid(), materiaId, alumnoId }] })); };
   const crearYAgregarAlumno = () => {
@@ -2313,7 +2338,7 @@ const Alumnos = ({ data, setData, colegioId }) => {
   const edit = (a) => {
     setForm({ nombre: a.nombre, apellido: a.apellido, dni: a.dni || "", fechaNac: a.fechaNac || "", curso: a.curso || "", email: a.email || "", telefono: a.telefono || "" });
     setEditId(a.id); setPop(true); };
-  const filtered = alumnos.filter(a => `${a.nombre} ${a.apellido} ${a.dni || ""}`.toLowerCase().includes(filtro.toLowerCase()) && (!filtroCurso || a.curso === filtroCurso)).sort((a,b) => a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre));
+  const filtered = (filtro ? fuzzySearch(alumnos, filtro, ["nombre","apellido","dni","email"]) : alumnos).filter(a => !filtroCurso || a.curso === filtroCurso).sort((a,b) => a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre));
   if (alumnoViendo) {
     return <AlumnoPerfilGlobal data={data} setData={setData} alumnoId={alumnoViendo} colegioId={colegioId} onBack={() => setAlumnoViendo(null)} />;
   }
