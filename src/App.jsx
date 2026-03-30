@@ -3814,36 +3814,55 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   const [showPDF, setShowPDF] = useState(false);
   const entregasRef = React.useRef(0);
 
-  // Polling cada 60s para detectar entregas nuevas
+  // Web Push — registrar Service Worker y suscribir
   React.useEffect(() => {
     if (!colegioId) return;
-    const checkEntregas = async () => {
+
+    const setupPush = async () => {
+      try {
+        // 1. Registrar Service Worker
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+        const reg = await navigator.serviceWorker.register("/sw.js");
+
+        // 2. Pedir permiso
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") return;
+
+        // 3. Obtener VAPID public key
+        const { publicKey } = await fetch("/api/push").then(r => r.json());
+        if (!publicKey) return;
+
+        // 4. Suscribir al push
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: publicKey
+        });
+
+        // 5. Guardar suscripción en Supabase
+        await fetch("/api/push", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "subscribe", subscription: sub.toJSON() })
+        });
+        console.log("✅ Web Push registrado");
+      } catch(e) {
+        console.warn("Web Push no disponible:", e.message);
+      }
+    };
+
+    setupPush();
+
+    // Polling para badge del contador (solo UI, no notificación)
+    const checkBadge = async () => {
       const mats = data.materias.filter(m => m.colegioId === colegioId).map(m => m.id);
       if (!mats.length) return;
       const { data: rows } = await supabase.from("entregas").select("id").eq("estado", "entregada").in("materia_id", mats);
-      const count = rows?.length || 0;
-      if (count > entregasRef.current && entregasRef.current > 0) {
-        const nuevas = count - entregasRef.current;
-        setEntregasNuevas(count);
-        // Notificación push del navegador
-        if (Notification.permission === "granted") {
-          new Notification("📥 Nueva entrega recibida", {
-            body: `${nuevas} alumno(s) entregaron un trabajo. Entrá a Agenda para corregir.`,
-            icon: "/favicon.ico"
-          });
-        }
-      } else {
-        setEntregasNuevas(count);
-        entregasRef.current = count;
-      }
-      entregasRef.current = count;
+      setEntregasNuevas(rows?.length || 0);
     };
-    // Pedir permiso de notificaciones
-    if (Notification.permission === "default") Notification.requestPermission();
-    checkEntregas();
-    const interval = setInterval(checkEntregas, 60000);
+    checkBadge();
+    const interval = setInterval(checkBadge, 60000);
     return () => clearInterval(interval);
-  }, [colegioId, data.materias]);
+  }, [colegioId]);
   const isMobile = useIsMobile();
   const col = data.colegios.find(c => c.id === colegioId);
   const views = { dashboard: Dashboard, materias: Materias, alumnos: Alumnos, eventos: Eventos, documentos: Documentos };
@@ -4203,6 +4222,23 @@ const EntregaPublica = ({ entregaId }) => {
         descripcion: (entrega.descripcion || "") + (nombre ? `
 [Entregado por: ${nombre}${email ? ` <${email}>` : ""}]` : "")
       }).eq("id", entregaId);
+
+      // Enviar notificación push al profesor
+      try {
+        await fetch("/api/push", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-push-secret": "edugestion" },
+          body: JSON.stringify({
+            action: "notify",
+            notification: {
+              title: "📥 Nueva entrega recibida",
+              body: `${nombre} entregó: ${entrega.titulo}`,
+              icon: "/favicon.ico",
+              url: "/#agenda"
+            }
+          })
+        });
+      } catch(e) { console.warn("Push notify error:", e.message); }
 
       setEnviado(true);
     } catch(e) { alert("Error inesperado: " + e.message); }
