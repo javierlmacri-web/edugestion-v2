@@ -280,6 +280,34 @@ const TABS = [
   { id: "documentos", icon: "📁", label: "Archivos/Docs" },
   { id: "eventos",    icon: "📅", label: "Eventos del Colegio" },
   { id: "materias",   icon: "📚", label: "Materias" }, ];
+
+// ─── Toast System ────────────────────────────────────────────────────────────
+const ToastContext = React.createContext(null);
+const ToastProvider = ({ children }) => {
+  const [toasts, setToasts] = React.useState([]);
+  const show = React.useCallback((msg, type = "success") => {
+    const id = crypto.randomUUID();
+    setToasts(t => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3000);
+  }, []);
+  const colors = { success: { bg: "#16a34a", icon: "✅" }, error: { bg: "#dc2626", icon: "❌" }, info: { bg: "#2563eb", icon: "ℹ️" }, warn: { bg: "#d97706", icon: "⚠️" } };
+  return (
+    <ToastContext.Provider value={show}>
+      {children}
+      <div style={{ position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", zIndex: 99999, display: "flex", flexDirection: "column", gap: 8, alignItems: "center", pointerEvents: "none" }}>
+        {toasts.map(t => (
+          <div key={t.id} style={{ background: colors[t.type]?.bg || "#1c1410", color: "#fff", borderRadius: 12, padding: "12px 20px", fontSize: 14, fontWeight: 700, boxShadow: "0 4px 20px #00000044", display: "flex", alignItems: "center", gap: 8, minWidth: 220, maxWidth: 340, animation: "slideUp .3s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <span>{colors[t.type]?.icon}</span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{t.msg}</span>
+          </div>
+        ))}
+      </div>
+      <style>{`@keyframes slideUp { from { opacity:0; transform:translateY(16px);} to { opacity:1; transform:translateY(0);} }`}</style>
+    </ToastContext.Provider>
+  );
+};
+const useToast = () => React.useContext(ToastContext);
+
 const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
   const [vista, setVista] = useState(null); // null | "materias" | "alumnos" | "notas" | "promedio" | "actividades"
@@ -1154,6 +1182,7 @@ ${link}`), 100);
         </> )}
     </div> ); };
 const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
+  const toast = useToast();
   const alumno = data.alumnos.find(a => a.id === alumnoId);
   const materia = data.materias.find(m => m.id === materiaId);
   const [subTab, setSubTab] = useState("notas"); const [popNota, setPopNota] = useState(false); const [popAct, setPopAct] = useState(false);
@@ -1217,7 +1246,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
   const asistColor    = pctAsist === null ? C.muted : pctAsist >= 75 ? C.green : pctAsist >= 50 ? C.yellow : C.red;
   const saveNota = async () => {
     const v = parseFloat(formNota.nota);
-    if (isNaN(v) || v < 0 || v > 10) { alert("Nota debe ser entre 0 y 10"); return; }
+    if (isNaN(v) || v < 0 || v > 10) { toast("Nota debe ser entre 0 y 10", "error"); return; }
     if (editNotaId) {
       setData(d => ({ ...d, notas: d.notas.map(n => n.id === editNotaId ? { ...n, ...formNota } : n) }));
       await supabase.from("notas").update(formNota).eq("id", editNotaId);
@@ -1227,6 +1256,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
       setData(d => ({ ...d, notas: [...d.notas, nueva] }));
       await supabase.from("notas").insert(nueva);
       await registrarHistorial(alumnoId, "Nota agregada", `${formNota.tipo} — ${formNota.descripcion || ""} — Nota: ${formNota.nota}`);
+      toast("Nota guardada correctamente", "success");
     }
     setPopNota(false); setEditNotaId(null); setFormNota(emptyNota); };
   const delNota = async (id) => {
@@ -1303,7 +1333,28 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
           <div>
             <div style={{ color: "#1c1410", fontWeight: 800, fontSize: 18 }}>{alumno?.apellido}, {alumno?.nombre}</div> <div style={{ color: "#92400e", fontSize: 13, marginTop: 2 }}>
               {alumno?.curso && <span>Curso: {alumno.curso} · </span>}
-              {alumno?.dni && <span>DNI: {alumno.dni}</span>}</div></div></div>
+              {alumno?.dni && <span>DNI: {alumno.dni}</span>}</div>
+            {/* Horarios de materias inscriptas */}
+            {(() => {
+              const matsIds = [...new Set((data.inscripciones||[]).filter(i => i.alumnoId === alumnoId).map(i => i.materiaId))];
+              const matsConHorario = matsIds.map(id => data.materias.find(m => m.id === id)).filter(m => m && (m.horarios||[]).length > 0);
+              if (!matsConHorario.length) return null;
+              return (
+                <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+                  {matsConHorario.map(m => (
+                    <div key={m.id} style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, color: "#92400e", fontWeight: 700 }}>{m.nombre}:</span>
+                      {(m.horarios||[]).map((h, i) => (
+                        <span key={i} style={{ background: "#f9731618", border: "1px solid #f9731640", borderRadius: 6, padding: "1px 7px", fontSize: 11, color: "#92400e", fontWeight: 600 }}>
+                          🕐 {h.dia} {h.desde}–{h.hasta}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div></div></div>
         <div style={{ display: "flex", gap: 20 }}> <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 34, fontWeight: 900, color: nc(prom) }}>{prom ?? "—"}</div>
             <div style={{ fontSize: 11, color: C.muted }}>{notas.length} evaluaciones</div> </div> <div style={{ width: 1, background: C.border }} /> <div style={{ textAlign: "right" }}>
@@ -1985,6 +2036,7 @@ const MateriaDetalle = ({ data, setData, materiaId, colegioId, onBack }) => {
         </Pop> )}
     </div> ); };
 const Materias = ({ data, setData, colegioId }) => {
+  const toast = useToast();
   const [materiaSeleccionada, setMateriaSeleccionada] = useState(null); const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", descripcion: "", division: "", horarios: [] });
   const [editId, setEditId] = useState(null);
   const materias = data.materias.filter(m => m.colegioId === colegioId).sort((a,b) => a.nombre.localeCompare(b.nombre));
@@ -2018,12 +2070,13 @@ const Materias = ({ data, setData, colegioId }) => {
         )).then(results => {
           const errs = results.filter(r => r.error);
           if (errs.length) console.error("Inscripcion auto error:", JSON.stringify(errs[0].error));
-          else if (nuevasInsc.length > 0) alert(`✅ ${nuevasInsc.length} alumno(s) inscripto(s) automáticamente en "${form.nombre}" (División: ${form.division}).`);
+          else if (nuevasInsc.length > 0) toast(`${nuevasInsc.length} alumno(s) inscripto(s) en "${form.nombre}"`, "success");
         });
         return { ...d, inscripciones: [...(d.inscripciones || []), ...nuevasInsc] };
       });
     }
-    setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "", division: "", horarios: [] }); };
+    setPop(false); setEditId(null); setForm({ nombre: "", descripcion: "", division: "", horarios: [] });
+    toast(editId ? "Materia actualizada" : "Materia creada", "success"); };
   const del = async (id) => {
     if (!confirm("¿Eliminar materia y todas sus inscripciones y notas asociadas?")) return;
     await supabase.from("inscripciones").delete().eq("materia_id", id);
@@ -2279,6 +2332,7 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
         </> )}
     </div> ); };
 const Alumnos = ({ data, setData, colegioId }) => {
+  const toast = useToast();
   const [pop, setPop] = useState(false); const [form, setForm] = useState({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); const [editId, setEditId] = useState(null);
   const [filtro, setFiltro] = useState(""); const [alumnoViendo, setAlumnoViendo] = useState(null);
   const alumnos = data.alumnos.filter(a => a.colegioId === colegioId);
@@ -2313,6 +2367,7 @@ const Alumnos = ({ data, setData, colegioId }) => {
         return { ...d, alumnos: [...d.alumnos, alumno], inscripciones: [...(d.inscripciones || []), ...nuevasInsc] };
       });
     }
+    toast(editId ? "Alumno actualizado" : "Alumno creado", "success");
     setPop(false); setEditId(null);
     setForm({ nombre: "", apellido: "", dni: "", fechaNac: "", curso: "", email: "", telefono: "" }); };
   const del = async (id) => {
@@ -3094,6 +3149,8 @@ const Documentos = ({ data, setData, colegioId }) => {
       }
       // 3. Si solo tiene una materia inscripta, usarla
       if (!materiaIdSugerida && alumnoIns.length === 1) materiaIdSugerida = alumnoIns[0].materiaId;
+      // 4. Si estamos dentro de una carpeta de materia, preseleccionarla
+      if (!materiaIdSugerida && filtroMateria && filtroMateria !== "__sin__") materiaIdSugerida = filtroMateria;
       queue.push({ file, analisis, alumnoSugerido: alumnoEncontrado || null, alumnoId: alumnoEncontrado?.id || "", notaDetectada: analisis.nota || "", materiaId: materiaIdSugerida, materiaSugerida: analisis.materiaDetectada });
     }
     setConfirmQueue(queue);
@@ -3218,6 +3275,7 @@ const Documentos = ({ data, setData, colegioId }) => {
       setData(d => ({ ...d, notas: d.notas.filter(n => n.id !== editForm.notaId) }));
     }
     setArchivos(a => a.map(x => x.id === editDoc.id ? { ...x, tipo: editForm.tipo, alumno_id: editForm.alumno_id || null, nombre: editForm.nombre, materia_id: editForm.materia_id || null } : x));
+    toast("Documento actualizado", "success");
     setEditDoc(null);
   };
 
@@ -3589,7 +3647,7 @@ ${link}
       setData(d => ({ ...d, notas: [...d.notas, { ...notaRow, alumnoId: notaRow.alumno_id, materiaId: notaRow.materia_id }] }));
     }
     setData(d => ({ ...d, entregas: d.entregas.map(e => e.id === entrega.id ? { ...e, nota, comentarioProfesor: comentario, estado: "corregida" } : e) }));
-    alert("✅ Corrección guardada y nota registrada en la ficha del alumno.");
+    toast("Corrección guardada y nota registrada", "success");
     setVista("bandeja");
   };
 
@@ -4755,7 +4813,7 @@ const InformePDF = ({ data, colegioId, onClose }) => {
   );
 };
 
-export default function App() {
+function AppRoot() {
   // Detectar ruta pública de entrega
   const hashPath = window.location.pathname;
   const entregaMatch = hashPath.match(/\/entrega\/([a-z0-9\-]+)/i);
@@ -4826,3 +4884,7 @@ export default function App() {
     </div>
     </ErrorBoundary>
   ); }
+
+export default function App() {
+  return <ToastProvider><AppRoot /></ToastProvider>;
+}
