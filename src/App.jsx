@@ -1354,7 +1354,7 @@ const AlumnoDetalle = ({ data, setData, alumnoId, materiaId }) => {
                 </div>
               );
             })()}
-          </div></div></div>
+          </div></div>
         <div style={{ display: "flex", gap: 20 }}> <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 34, fontWeight: 900, color: nc(prom) }}>{prom ?? "—"}</div>
             <div style={{ fontSize: 11, color: C.muted }}>{notas.length} evaluaciones</div> </div> <div style={{ width: 1, background: C.border }} /> <div style={{ textAlign: "right" }}>
