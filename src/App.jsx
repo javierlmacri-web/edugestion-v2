@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 // Fuse.js — búsqueda fuzzy tolerante a errores tipográficos
 const loadFuse = () => import("https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.mjs").then(m => m.default);
@@ -4886,5 +4887,5 @@ function AppRoot() {
   ); }
 
 export default function App() {
-  return <ToastProvider><AppRoot /></ToastProvider>;
+  return <><ToastProvider><AppRoot /></ToastProvider><Analytics /></>;
 }
