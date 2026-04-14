@@ -2264,6 +2264,21 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
   const todasNotas = data.notas.filter(n => n.alumnoId === alumnoId);
   const todasActs = data.actividades.filter(a => a.alumnoId === alumnoId);
   const vals = todasNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v)); const promGeneral = avg(vals);
+  const [resumenIA, setResumenIA] = useState(null);
+  const [resumenCargando, setResumenCargando] = useState(false);
+  const generarResumen = async () => {
+    setResumenCargando(true); setResumenIA(null);
+    try {
+      const materiasDel = materiaIds.map(mid => data.materias.find(m => m.id === mid)).filter(Boolean);
+      const r = await fetch("/api/resumen-alumno", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alumno, notas: todasNotas, asistencias: data.asistencias.filter(a => a.alumnoId === alumnoId), materias: materiasDel })
+      });
+      const d = await r.json();
+      setResumenIA(d.resumen || "No se pudo generar el resumen.");
+    } catch(e) { setResumenIA("Error al conectar con la IA."); }
+    setResumenCargando(false);
+  };
   return (
     <div>
       <Breadcrumb items={[{ label: "Alumnos", onClick: onBack }, { label: `${alumno?.apellido}, ${alumno?.nombre}` }]} />
@@ -2291,8 +2306,22 @@ const AlumnoPerfilGlobal = ({ data, setData, alumnoId, colegioId, onBack }) => {
             <div>
               <div style={{ fontSize: 30, fontWeight: 900, color: C.blue }}>{materiaIds.length}</div>
               <div style={{ fontSize: 11, color: C.muted }}>Materias</div> </div> </div>
-          <Btn v="ghost" sm onClick={() => imprimirBoletin(data, alumnoId, colegioId)}>🖨️ Imprimir Boletín</Btn>
-        </div> </div> </div>  {materiaIds.length === 0 ? ( <div style={{ textAlign: "center", padding: "48px 20px" }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn v="ghost" sm onClick={() => imprimirBoletin(data, alumnoId, colegioId)}>🖨️ Imprimir Boletín</Btn>
+            <Btn v="ghost" sm onClick={generarResumen} disabled={resumenCargando}>{resumenCargando ? "⏳ Generando..." : "🤖 Resumen IA"}</Btn>
+          </div>
+        </div> </div> </div>
+      {resumenIA && (
+        <div style={{ background: "#f0f9ff", border: "1px solid #2563eb33", borderRadius: 14, padding: "16px 20px", marginBottom: 20, display: "flex", gap: 14, alignItems: "flex-start" }}>
+          <span style={{ fontSize: 24 }}>🤖</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Resumen IA</div>
+            <div style={{ fontSize: 14, color: "#1c1410", lineHeight: 1.6 }}>{resumenIA}</div>
+          </div>
+          <button onClick={() => setResumenIA(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#92400e", fontSize: 16 }}>✕</button>
+        </div>
+      )}
+      {materiaIds.length === 0 ? ( <div style={{ textAlign: "center", padding: "48px 20px" }}>
           <div style={{ fontSize: 44, marginBottom: 14 }}>📚</div>
           <div style={{ color: "#1c1410", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Este alumno no está inscripto en ninguna materia</div>
           <div style={{ color: "#b45309", fontSize: 14 }}>Inscribilo desde la sección <strong style={{ color: C.accentL }}>Materias</strong> para empezar a registrar notas y actividades.</div>
