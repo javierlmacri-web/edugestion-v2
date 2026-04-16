@@ -308,6 +308,173 @@ const ToastProvider = ({ children }) => {
 };
 const useToast = () => React.useContext(ToastContext);
 
+const PantallaHoy = ({ data, colegioId, onChangeTab }) => {
+  const hoy = new Date();
+  const diasSemana = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const fechaLabel = `${diasSemana[hoy.getDay()]} ${hoy.getDate()} ${meses[hoy.getMonth()]}`;
+  const todayStr = hoy.toISOString().slice(0,10);
+  const als   = data.alumnos.filter(a => a.colegioId === colegioId);
+  const mats  = data.materias.filter(m => m.colegioId === colegioId);
+  const notas = data.notas.filter(n => als.some(a => a.id === n.alumnoId));
+  const agenda = (data.agenda || []).filter(e => e.colegioId === colegioId);
+  const entregas = (data.entregas || []).filter(e => mats.some(m => m.id === e.materiaId));
+
+  // Clases de hoy (desde horarios de materias)
+  const diasMap = { lunes:1, martes:2, miércoles:3, miercoles:3, jueves:4, viernes:5, sábado:6, sabado:6, domingo:0 };
+  const diaSemanaHoy = hoy.getDay();
+  const clasesHoy = mats.flatMap(m => {
+    const horarios = m.horarios || [];
+    return horarios
+      .filter(h => (diasMap[h.dia?.toLowerCase()] ?? -1) === diaSemanaHoy)
+      .map(h => ({ materia: m, hora: h.hora || "", duracion: h.duracion || "1h", alumnos: (data.inscripciones||[]).filter(i => i.materiaId === m.id).length }));
+  }).sort((a,b) => a.hora.localeCompare(b.hora));
+
+  // Alertas: alumnos con promedio < 6 o muchas inasistencias
+  const alertas = [];
+  for (const al of als) {
+    const alNotas = notas.filter(n => n.alumnoId === al.id);
+    const vals = alNotas.map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+    const prom = vals.length ? vals.reduce((a,b) => a+b,0) / vals.length : null;
+    if (prom !== null && prom < 6) {
+      const matBaja = mats.filter(m => {
+        const mn = alNotas.filter(n => n.materiaId === m.id).map(n => parseFloat(n.nota)).filter(v => !isNaN(v));
+        return mn.length && mn.reduce((a,b)=>a+b,0)/mn.length < 6;
+      });
+      alertas.push({ tipo: "nota", color: prom < 5 ? "#dc2626" : "#d97706", texto: `${al.apellido}, ${al.nombre} — promedio ${prom.toFixed(1)}${matBaja.length ? ` en ${matBaja.map(m=>m.nombre).join(", ")}` : ""}`, alumnoId: al.id });
+    }
+    const inasist = (data.inasistencias||[]).filter(i => i.alumnoId === al.id);
+    if (inasist.length >= 6) {
+      alertas.push({ tipo: "inasistencia", color: "#d97706", texto: `${al.apellido}, ${al.nombre} — ${inasist.length} inasistencias`, alumnoId: al.id });
+    }
+  }
+
+  // Entregas pendientes (con fecha límite próxima o vencida)
+  const entregasPend = entregas
+    .filter(e => e.estado === "abierta" && e.fechaLimite)
+    .sort((a,b) => new Date(a.fechaLimite) - new Date(b.fechaLimite))
+    .slice(0, 5)
+    .map(e => {
+      const mat = mats.find(m => m.id === e.materiaId);
+      const dias = Math.ceil((new Date(e.fechaLimite + "T12:00:00") - hoy) / 86400000);
+      return { ...e, matNombre: mat?.nombre || "—", dias };
+    });
+
+  // Ahora detectar hora actual para marcar "en curso"
+  const horaActual = hoy.getHours() * 60 + hoy.getMinutes();
+  const parseHora = (h) => { if (!h) return -1; const [hh,mm] = h.split(":").map(Number); return hh*60+(mm||0); };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Header */}
+      <div style={{ background: "#1c1410", borderRadius: 16, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: 11, color: "#fb923c", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>{fechaLabel}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginTop: 2 }}>Buenos días 👋</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#fb923c" }}>{clasesHoy.length}</div>
+          <div style={{ fontSize: 11, color: "#8a6a4a" }}>clases hoy</div>
+        </div>
+      </div>
+
+      {/* Clases de hoy */}
+      <div style={{ background: "#ffffffcc", border: `1px solid #ffffff80`, borderRadius: 16, padding: "16px 20px", backdropFilter: "blur(8px)" }}>
+        <div style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>Clases de hoy</div>
+        {clasesHoy.length === 0 ? (
+          <div style={{ color: "#b45309", fontSize: 14, textAlign: "center", padding: "12px 0" }}>No tenés clases cargadas para hoy.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {clasesHoy.map((c, i) => {
+              const minClase = parseHora(c.hora);
+              const enCurso = horaActual >= minClase && horaActual < minClase + 60;
+              const pasada  = horaActual >= minClase + 60;
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: enCurso ? "#f9731610" : "#fff8f0", borderRadius: 12, borderLeft: `3px solid ${enCurso ? "#fb923c" : pasada ? "#e2e2e2" : "#d1d5db"}`, cursor: "pointer" }}
+                  onClick={() => onChangeTab && onChangeTab("materias")}>
+                  <div style={{ textAlign: "center", minWidth: 38 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1c1410" }}>{c.hora || "—"}</div>
+                    <div style={{ fontSize: 10, color: "#92400e" }}>{c.duracion}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1c1410" }}>{c.materia.nombre}</div>
+                    <div style={{ fontSize: 11, color: "#92400e" }}>{c.materia.division ? `${c.materia.division} · ` : ""}{c.alumnos} alumnos</div>
+                  </div>
+                  {enCurso && <div style={{ background: "#16a34a18", color: "#16a34a", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: "0.5px solid #16a34a33" }}>En curso</div>}
+                  {!enCurso && !pasada && <div style={{ background: "#2563eb18", color: "#2563eb", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: "0.5px solid #2563eb33" }}>Próxima</div>}
+                  {pasada && <div style={{ color: "#b45309", fontSize: 10, fontWeight: 500, padding: "3px 8px" }}>Finalizada</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Alertas */}
+      {alertas.length > 0 && (
+        <div style={{ background: "#ffffffcc", border: `1px solid #ffffff80`, borderRadius: 16, padding: "16px 20px", backdropFilter: "blur(8px)" }}>
+          <div style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>Alertas</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {alertas.slice(0, 5).map((a, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: a.color + "12", borderRadius: 10, border: `0.5px solid ${a.color}30`, cursor: "pointer" }}
+                onClick={() => onChangeTab && onChangeTab("alumnos")}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: a.color, flexShrink: 0 }} />
+                <div style={{ fontSize: 12, color: "#1c1410", flex: 1 }}>{a.texto}</div>
+                <span style={{ fontSize: 11, color: "#b45309" }}>ver →</span>
+              </div>
+            ))}
+            {alertas.length > 5 && <div style={{ fontSize: 12, color: "#92400e", textAlign: "center", paddingTop: 4 }}>+{alertas.length - 5} alertas más</div>}
+          </div>
+        </div>
+      )}
+
+      {/* Entregas pendientes */}
+      <div style={{ background: "#ffffffcc", border: `1px solid #ffffff80`, borderRadius: 16, padding: "16px 20px", backdropFilter: "blur(8px)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>Entregas pendientes</div>
+          {entregasPend.length > 0 && <div style={{ background: "#dc262618", color: "#dc2626", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 6 }}>{entregasPend.length}</div>}
+        </div>
+        {entregasPend.length === 0 ? (
+          <div style={{ color: "#b45309", fontSize: 14, textAlign: "center", padding: "12px 0" }}>No hay entregas pendientes. ✅</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {entregasPend.map((e, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: "#fff8f0", borderRadius: 10, cursor: "pointer" }}
+                onClick={() => onChangeTab && onChangeTab("agenda")}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1c1410" }}>{e.titulo}</div>
+                  <div style={{ fontSize: 11, color: "#92400e" }}>{e.matNombre}</div>
+                </div>
+                <div style={{ background: e.dias <= 0 ? "#dc262618" : e.dias <= 2 ? "#d9770618" : "#16a34a18", color: e.dias <= 0 ? "#dc2626" : e.dias <= 2 ? "#d97706" : "#16a34a", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6 }}>
+                  {e.dias <= 0 ? "Vencida" : e.dias === 1 ? "Hoy" : `${e.dias}d`}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Accesos rápidos */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {[
+          { icon: "📚", label: "Materias", tab: "materias" },
+          { icon: "👤", label: "Alumnos",  tab: "alumnos"  },
+          { icon: "🗓️", label: "Agenda",   tab: "agenda"   },
+          { icon: "📁", label: "Archivos", tab: "documentos" },
+        ].map(it => (
+          <button key={it.tab} onClick={() => onChangeTab && onChangeTab(it.tab)}
+            style={{ background: "#ffffffcc", border: "1px solid #ffffff80", borderRadius: 14, padding: "14px 0", cursor: "pointer", backdropFilter: "blur(8px)", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, transition: "all .15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "#ffffffee"}
+            onMouseLeave={e => e.currentTarget.style.background = "#ffffffcc"}>
+            <span style={{ fontSize: 22 }}>{it.icon}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#1c1410" }}>{it.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = ({ data, setData, colegioId, onChangeTab }) => {
   const [busqueda, setBusqueda] = useState(""); const busLower = busqueda.toLowerCase().trim();
   const [vista, setVista] = useState(null); // null | "materias" | "alumnos" | "notas" | "promedio" | "actividades"
@@ -1122,21 +1289,15 @@ ${link}`), 100);
                 </div> )}
             </div> )}
         </div> )}
-      {/* Stats cards — solo si no hay búsqueda activa */}
-      {!busLower && <>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
-          <SC label="Materias"        value={mats.length}   color={C.blue}   onClick={() => setVista("materias")}    sub="click para ver" />
-          <SC label="Alumnos"         value={als.length}    color={C.accentL} onClick={() => setVista("alumnos")}    sub="click para ver" />
-          <SC label="Notas por curso" value={notas.length}  color={C.yellow} onClick={() => setVista("notas")}       sub="click para ver" />
-          <SC label="Promedio por mat." value={prom ?? "—"} color={nc(prom)} onClick={() => setVista("promedio")}    sub="click para ver" />
-          <SC label="Actividades"     value={acts.length}   color={C.dim}    onClick={() => setVista("actividades")} sub="click para ver" />
-        </div>
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+      {/* Pantalla Hoy — vista por defecto cuando no hay búsqueda */}
+      {!busLower && <PantallaHoy data={data} colegioId={colegioId} onChangeTab={onChangeTab} />}
+      {!busLower && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
           <button onClick={sincronizarTodo} disabled={sincState === "loading"} style={{ background: sincState === "done" ? "#16a34a" : "#1c1410", color: sincState === "done" ? "#fff" : "#fb923c", border: "none", borderRadius: 10, padding: "8px 18px", fontWeight: 700, fontSize: 13, cursor: sincState === "loading" ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6, transition: "all .3s" }}>
             {sincState === "loading" ? "⏳ Sincronizando..." : sincState === "done" ? "✅ Sincronizado" : "🔄 Sincronizar todo"}
           </button>
         </div>
-      </>}
+      )}
       {/* Resumen rápido por materia */}
       {!busLower && mats.length > 0 && (
         <>
