@@ -1,0 +1,18 @@
+{
+  "name": "EduGestión",
+  "short_name": "EduGestión",
+  "description": "Sistema de gestión escolar para docentes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f97316",
+  "theme_color": "#1c1410",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f97316' rx='20'/><text y='.9em' font-size='80' x='10'>🎓</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
