@@ -4208,8 +4208,10 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
             <button onClick={goBack} style={{ background: "transparent", border: "none", color: C.accent, fontSize: 24, cursor: "pointer", padding: "0 2px", lineHeight: 1 }}>‹</button>
           )}
           <div onClick={goInicio} style={{ cursor: "pointer" }}>
-            <div style={{ fontSize: 9, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>Colegio activo</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#1c1410" }}>{col?.nombre}</div>
+            <div style={{ fontSize: 9, color: "#92400e", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.1 }}>
+              {user?.email ? user.email.split("@")[0] : "Colegio activo"}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fb923c" }}>{col?.nombre}</div>
           </div>
         </div>
         <button onClick={() => setMenuOpen(o => !o)} style={{ background: menuOpen ? C.accentDim : "transparent", border: `1px solid ${menuOpen ? C.accent : C.border}`, borderRadius: 10, padding: "8px 12px", color: menuOpen ? C.accentL : C.dim, fontSize: 18, cursor: "pointer" }}>
