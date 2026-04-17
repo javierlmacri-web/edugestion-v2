@@ -4299,8 +4299,10 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
     <div style={{ display: "flex", minHeight: "100vh", background: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)" }}>
       <aside style={{ width: 220, background: "#1c1410", borderRight: "1px solid #2d1f14", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
         <div style={{ padding: "18px 16px 14px", borderBottom: "1px solid #2d1f14", cursor: "pointer" }} onClick={goInicio}>
-          <div style={{ fontSize: 10, color: "#8a6a4a", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>Colegio activo</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: "#f5e6d0", lineHeight: 1.3 }}>{col?.nombre}</div>
+          <div style={{ fontSize: 10, color: "#8a6a4a", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 }}>
+            {user?.email ? user.email.split("@")[0] : "Colegio activo"}
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#fb923c", lineHeight: 1.3 }}>{col?.nombre}</div>
         </div>
         <nav style={{ flex: 1, padding: "12px 9px", display: "flex", flexDirection: "column", gap: 3 }}>
           {TABS.map(t => (
