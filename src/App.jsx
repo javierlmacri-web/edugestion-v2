@@ -4297,78 +4297,78 @@ const AppInterna = ({ data, setData, colegioId, onSalir, onLogout, user }) => {
   // ── DESKTOP LAYOUT ─────────────────────────────────────────────────────────
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "linear-gradient(160deg, #fde68a 0%, #fb923c 60%, #f97316 100%)" }}>
-      <aside style={{ width: 220, background: "#1c1410", borderRight: "1px solid #2d1f14", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
-        <div style={{ padding: "18px 16px 14px", borderBottom: "1px solid #2d1f14", cursor: "pointer" }} onClick={goInicio}>
-          <div style={{ fontSize: 10, color: "#8a6a4a", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 }}>
+      <aside style={{ width: 170, background: "#1c1410", borderRight: "1px solid #2d1f14", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
+        <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid #2d1f14", cursor: "pointer" }} onClick={goInicio}>
+          <div style={{ fontSize: 9, color: "#8a6a4a", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 2 }}>
             {user?.email ? user.email.split("@")[0] : "Colegio activo"}
           </div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: "#fb923c", lineHeight: 1.3 }}>{col?.nombre}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "#fb923c", lineHeight: 1.3 }}>{col?.nombre}</div>
         </div>
-        <nav style={{ flex: 1, padding: "12px 9px", display: "flex", flexDirection: "column", gap: 3 }}>
+        <nav style={{ flex: 1, padding: "8px 6px", display: "flex", flexDirection: "column", gap: 2 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: activeTab === t.id ? 700 : 500, transition: "all .15s", background: activeTab === t.id ? "#f9731622" : "transparent", color: activeTab === t.id ? "#fb923c" : "#8a6a4a", position: "relative" }}>
-              <span style={{ fontSize: 16 }}>{t.icon}</span>
+              style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: activeTab === t.id ? 700 : 500, transition: "all .15s", background: activeTab === t.id ? "#f9731622" : "transparent", color: activeTab === t.id ? "#fb923c" : "#8a6a4a", position: "relative", textAlign: "left" }}>
+              <span style={{ fontSize: 14 }}>{t.icon}</span>
               {t.label}
               {t.id === "agenda" && entregasNuevas > 0 && (
-                <span style={{ position: "absolute", top: 6, right: 8, background: "#dc2626", color: "#fff", borderRadius: 10, fontSize: 10, fontWeight: 900, padding: "1px 6px", minWidth: 16, textAlign: "center" }}>
+                <span style={{ position: "absolute", top: 4, right: 6, background: "#dc2626", color: "#fff", borderRadius: 10, fontSize: 9, fontWeight: 900, padding: "1px 5px", minWidth: 14, textAlign: "center" }}>
                   {entregasNuevas}
                 </span>
               )}
             </button>
           ))}
         </nav>
-        <div style={{ padding: "10px 9px", borderTop: "1px solid #2d1f14", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ padding: "8px 6px", borderTop: "1px solid #2d1f14", display: "flex", flexDirection: "column", gap: 4 }}>
           <button onClick={() => setShowPDF(true)}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: "1px solid #e0791433", cursor: "pointer", fontSize: 13, fontWeight: 700, background: "#e0791412", color: "#fb923c", transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", width: "100%", borderRadius: 8, border: "1px solid #e0791433", cursor: "pointer", fontSize: 11, fontWeight: 700, background: "#e0791412", color: "#fb923c", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#e0791422"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "#e0791412"; }}>
-            <span style={{ fontSize: 15 }}>📄</span>
+            <span style={{ fontSize: 13 }}>📄</span>
             Generar Informe
           </button>
           <button onClick={() => setShowAIChat(true)}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: "1px solid #8b5cf633", cursor: "pointer", fontSize: 13, fontWeight: 700, background: "#8b5cf612", color: "#a78bfa", transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", width: "100%", borderRadius: 8, border: "1px solid #8b5cf633", cursor: "pointer", fontSize: 11, fontWeight: 700, background: "#8b5cf612", color: "#a78bfa", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#8b5cf622"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "#8b5cf612"; }}>
-            <span style={{ fontSize: 15 }}>🤖</span>
+            <span style={{ fontSize: 13 }}>🤖</span>
             Consultar IA
           </button>
           <button onClick={handleExport} disabled={exportando}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: `1px solid #22c55e33`, cursor: exportando ? "wait" : "pointer", fontSize: 13, fontWeight: 700, background: "#22c55e12", color: "#22c55e", transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", width: "100%", borderRadius: 8, border: `1px solid #22c55e33`, cursor: exportando ? "wait" : "pointer", fontSize: 11, fontWeight: 700, background: "#22c55e12", color: "#22c55e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.background = "#22c55e22"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "#22c55e12"; }}>
-            <span style={{ fontSize: 15 }}>{exportando ? "⏳" : "📊"}</span>
+            <span style={{ fontSize: 13 }}>{exportando ? "⏳" : "📊"}</span>
             {exportando ? "Generando..." : "Exportar Excel"}
           </button>
           <button onClick={handleSincronizar} disabled={sincronizando}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", width: "100%", borderRadius: 10, border: `1px solid #f9731633`, cursor: sincronizando ? "wait" : "pointer", fontSize: 13, fontWeight: 700, background: "#f9731612", color: "#fb923c", transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", width: "100%", borderRadius: 8, border: `1px solid #f9731633`, cursor: sincronizando ? "wait" : "pointer", fontSize: 11, fontWeight: 700, background: "#f9731612", color: "#fb923c", transition: "all .15s" }}
             onMouseEnter={e => { if (!sincronizando) e.currentTarget.style.background = "#f9731622"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "#f9731612"; }}>
-            <span style={{ fontSize: 15 }}>{sincronizando ? "⏳" : "🔄"}</span>
+            <span style={{ fontSize: 13 }}>{sincronizando ? "⏳" : "🔄"}</span>
             {sincronizando ? "Sincronizando..." : "Sincronizar"}
           </button>
           <button onClick={onSalir}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", width: "100%", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             ← Cambiar colegio
           </button>
           <button onClick={() => setShowReporte(true)}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", width: "100%", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = C.yellow; }}
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             🐛 Reportar falla
           </button>
           {isAdmin && (
           <button onClick={() => setShowPanel(true)}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", width: "100%", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = C.accent; }}
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             📋 Ver fallas
           </button>
           )}
           <button onClick={onLogout}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", width: "100%", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", width: "100%", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: "transparent", color: "#92400e", transition: "all .15s" }}
             onMouseEnter={e => { e.currentTarget.style.color = C.red; }}
             onMouseLeave={e => { e.currentTarget.style.color = C.muted; }}>
             🚪 Cerrar sesión
